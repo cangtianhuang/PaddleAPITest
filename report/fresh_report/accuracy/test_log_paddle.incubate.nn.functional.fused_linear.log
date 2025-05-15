@@ -1,0 +1,121 @@
+paddle.incubate.nn.functional.fused_linear(Tensor([1024, 16, 1024],"float16"), Tensor([1024, 512],"float16"), Tensor([512],"float16"), name=None, )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear(Tensor([1024, 16, 1024],"float16"), Tensor([1024, 512],"float16"), Tensor([512],"float16"), name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 524288 (0.000191%)
+Max absolute difference: 0.03125
+Max relative difference: 9.35
+ x: array([[-26.45  ,   3.281 ,  -6.715 , ...,   1.247 ,  -2.566 ,   4.156 ],
+       [  6.33  ,  -0.436 ,   0.9756, ...,  -7.09  ,  12.79  ,   7.15  ],
+       [ -0.1233,  -3.166 ,  28.52  , ...,  -6.266 ,  -6.105 , -19.02  ],...
+ y: array([[-26.45  ,   3.281 ,  -6.72  , ...,   1.248 ,  -2.562 ,   4.15  ],
+       [  6.33  ,  -0.4395,   0.9688, ...,  -7.086 ,  12.79  ,   7.15  ],
+       [ -0.124 ,  -3.164 ,  28.5   , ...,  -6.27  ,  -6.1   , -19.02  ],...
+
+paddle.incubate.nn.functional.fused_linear(Tensor([128, 196, 2048],"float16"), Tensor([2048, 512],"float16"), Tensor([512],"float16"), False, None, )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear(Tensor([128, 196, 2048],"float16"), Tensor([2048, 512],"float16"), Tensor([512],"float16"), False, None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 512 (0.195%)
+Max absolute difference: 0.125
+Max relative difference: 0.02628
+ x: array([ -54.56  ,  -62.6   ,   50.34  ,   34.3   ,  -62.88  ,   26.75  ,
+        -12.9   ,  -24.17  ,  118.1   ,   -0.9443,  -47.25  ,  -27.73  ,
+         79.75  ,  -34.88  ,   20.06  ,  -28.11  ,   70.06  ,   77.4   ,...
+ y: array([ -54.56  ,  -62.62  ,   50.34  ,   34.34  ,  -62.84  ,   26.75  ,
+        -12.9   ,  -24.2   ,  118.1   ,   -0.9453,  -47.25  ,  -27.73  ,
+         79.7   ,  -34.88  ,   20.08  ,  -28.11  ,   70.06  ,   77.3   ,...
+
+paddle.incubate.nn.functional.fused_linear(Tensor([128, 196, 512],"float16"), Tensor([512, 2048],"float16"), Tensor([2048],"float16"), False, None, )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear(Tensor([128, 196, 512],"float16"), Tensor([512, 2048],"float16"), Tensor([2048],"float16"), False, None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 42 / 1048576 (0.00401%)
+Max absolute difference: 0.03125
+Max relative difference: 7.477
+ x: array([[-36.6   , -13.305 ,  -1.788 , ...,  10.4   , -17.95  , -16.7   ],
+       [  7.926 , -11.57  ,   7.19  , ..., -14.51  ,  -3.438 ,  -2.752 ],
+       [  4.195 ,   4.24  ,   9.086 , ..., -10.82  ,   5.6   ,  17.77  ],...
+ y: array([[-36.6   , -13.305 ,  -1.785 , ...,  10.4   , -17.97  , -16.7   ],
+       [  7.92  , -11.57  ,   7.19  , ..., -14.516 ,  -3.44  ,  -2.754 ],
+       [  4.203 ,   4.234 ,   9.086 , ..., -10.82  ,   5.605 ,  17.77  ],...
+
+paddle.incubate.nn.functional.fused_linear(Tensor([128, 784, 256],"float16"), Tensor([256, 1024],"float16"), Tensor([1024],"float16"), False, None, )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear(Tensor([128, 784, 256],"float16"), Tensor([256, 1024],"float16"), Tensor([1024],"float16"), False, None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 975 / 262144 (0.372%)
+Max absolute difference: 0.1875
+Max relative difference: 154.1
+ x: array([[  7.99 , -10.45 ,  22.42 , ...,  36.66 , -38.9  , -17.25 ],
+       [-15.11 , -35.9  , -23.39 , ...,   9.14 ,  15.73 , -10.52 ],
+       [-15.38 ,  -7.668,   9.58 , ..., -43.2  ,   2.664, -15.4  ],...
+ y: array([[  7.99 , -10.45 ,  22.42 , ...,  36.66 , -38.88 , -17.23 ],
+       [-15.1  , -35.9  , -23.4  , ...,   9.14 ,  15.7  , -10.53 ],
+       [-15.39 ,  -7.664,   9.586, ..., -43.2  ,   2.676, -15.4  ],...
+
+paddle.incubate.nn.functional.fused_linear(Tensor([16, 1024, 1024],"float16"), Tensor([1024, 512],"float16"), Tensor([512],"float16"), name=None, )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear(Tensor([16, 1024, 1024],"float16"), Tensor([1024, 512],"float16"), Tensor([512],"float16"), name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 4 / 524288 (0.000763%)
+Max absolute difference: 0.03125
+Max relative difference: 33.4
+ x: array([[ -3.973 ,   6.234 ,  -1.03  , ...,  -9.9   ,   2.87  ,  -1.9375],
+       [ 14.9   , -17.08  ,  -3.898 , ...,  10.16  ,   3.625 ,  -1.215 ],
+       [-14.336 ,  -6.434 ,  -8.44  , ...,   9.04  ,   6.08  ,   0.779 ],...
+ y: array([[ -3.973 ,   6.234 ,  -1.032 , ...,  -9.89  ,   2.873 ,  -1.9375],
+       [ 14.9   , -17.06  ,  -3.896 , ...,  10.16  ,   3.623 ,  -1.217 ],
+       [-14.336 ,  -6.434 ,  -8.44  , ...,   9.04  ,   6.08  ,   0.7793],...
+
+paddle.incubate.nn.functional.fused_linear(Tensor([2048, 49, 256],"float16"), Tensor([256, 256],"float16"), Tensor([256],"float16"), False, None, )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear(Tensor([2048, 49, 256],"float16"), Tensor([256, 256],"float16"), Tensor([256],"float16"), False, None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 5 / 256 (1.95%)
+Max absolute difference: 0.5
+Max relative difference: 0.06915
+ x: array([   3.5  ,  -94.6  ,   13.96 ,  -96.75 ,  115.3  ,  -29.98 ,
+       -100.9  ,   38.2  ,  -12.59 ,   16.17 ,  -15.266,  127.44 ,
+          5.812,   38.84 ,   82.2  ,  -73.1  ,    8.28 ,   43.2  ,...
+ y: array([   3.502 ,  -94.7   ,   14.03  ,  -96.8   ,  115.3   ,  -29.98  ,
+       -100.94  ,   38.2   ,  -12.625 ,   16.2   ,  -15.29  ,  127.4   ,
+          5.8   ,   38.78  ,   82.06  ,  -72.9   ,    8.38  ,   43.12  ,...
+
+paddle.incubate.nn.functional.fused_linear(Tensor([512, 49, 512],"float16"), Tensor([512, 1536],"float16"), Tensor([1536],"float16"), False, None, )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear(Tensor([512, 49, 512],"float16"), Tensor([512, 1536],"float16"), Tensor([1536],"float16"), False, None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 27 / 786432 (0.00343%)
+Max absolute difference: 0.0625
+Max relative difference: 21.25
+ x: array([[-17.19 , -10.195,   7.5  , ...,  16.47 ,   1.831,   5.66 ],
+       [ 11.86 ,   7.617,  -1.462, ...,   5.938,  12.85 ,  18.77 ],
+       [-19.02 ,   1.127,  -5.43 , ...,   9.56 ,  10.88 ,   8.74 ],...
+ y: array([[-17.19  , -10.195 ,   7.5   , ...,  16.47  ,   1.834 ,   5.66  ],
+       [ 11.86  ,   7.617 ,  -1.462 , ...,   5.93  ,  12.85  ,  18.77  ],
+       [-19.    ,   1.13  ,  -5.43  , ...,   9.56  ,  10.89  ,   8.74  ],...
+
+paddle.incubate.nn.functional.fused_linear(Tensor([512, 49, 512],"float16"), Tensor([512, 512],"float16"), Tensor([512],"float16"), False, None, )
+W0513 10:03:29.694129 1666738 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 8.9, Driver API Version: 12.2, Runtime API Version: 11.8
+W0513 10:03:29.695045 1666738 gpu_resources.cc:164] device: 0, cuDNN Version: 8.8.
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear(Tensor([512, 49, 512],"float16"), Tensor([512, 512],"float16"), Tensor([512],"float16"), False, None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 6 / 512 (1.17%)
+Max absolute difference: 0.0625
+Max relative difference: 0.807
+ x: array([ 5.6312e+01, -1.4266e+01, -1.2031e+00, -4.4281e+01, -1.7031e+01,
+       -6.8688e+01, -4.0375e+01, -5.3156e+01,  3.4688e+01, -3.5125e+01,
+       -4.9844e+01, -2.7156e+01,  2.2656e+01,  1.0125e+01, -4.7094e+01,...
+ y: array([ 5.6312e+01, -1.4273e+01, -1.2080e+00, -4.4281e+01, -1.7047e+01,
+       -6.8688e+01, -4.0406e+01, -5.3094e+01,  3.4688e+01, -3.5094e+01,
+       -4.9844e+01, -2.7172e+01,  2.2625e+01,  1.0133e+01, -4.7094e+01,...

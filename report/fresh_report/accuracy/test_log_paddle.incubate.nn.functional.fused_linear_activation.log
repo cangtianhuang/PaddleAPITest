@@ -1,0 +1,30 @@
+paddle.incubate.nn.functional.fused_linear_activation(Tensor([8, 4],"float64"), Tensor([4, 128],"float64"), Tensor([128],"float64"), False, False, "gelu", )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear_activation(Tensor([8, 4],"float64"), Tensor([4, 128],"float64"), Tensor([128],"float64"), False, False, "gelu", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 32 / 32 (100%)
+Max absolute difference: 1.26103513
+Max relative difference: 8.22336716
+ x: array([[ 0.144838, -0.071579,  0.720386, -1.290664],
+       [ 0.358139,  0.513102, -0.864194,  1.073949],
+       [ 1.457733,  0.421892, -2.627288,  0.840311],...
+ y: array([[ 0.080357,  0.368942,  0.21851 , -0.901526],
+       [ 0.15902 ,  0.291681, -0.654892,  0.482848],
+       [ 0.802398,  0.468348, -1.379686,  0.551453],...
+
+paddle.incubate.nn.functional.fused_linear_activation(Tensor([8, 4],"float64"), Tensor([4, 128],"float64"), Tensor([128],"float64"), False, False, "relu", )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_linear_activation(Tensor([8, 4],"float64"), Tensor([4, 128],"float64"), Tensor([128],"float64"), False, False, "relu", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 30 / 32 (93.8%)
+Max absolute difference: 1.41482652
+Max relative difference: 46.62347368
+ x: array([[-0.455826, -0.354198,  0.540482,  0.045172],
+       [-0.75133 ,  0.797656, -1.971475, -0.637313],
+       [-2.039761, -0.120606,  0.209574, -0.361797],...
+ y: array([[-0.392849,  0.28746 ,  0.131725,  0.544534],
+       [-0.330472,  0.071597, -0.556649, -0.232106],
+       [-0.950914,  0.023632,  0.211184,  0.423787],...
+

@@ -16,10 +16,6 @@ PADDLE2TORCH_WRONG_CONFIG = frozenset(
         "paddle.nn.functional.group_norm",
         "paddle.nn.functional.interpolate",
         "paddle.nn.functional.local_response_norm",
-        "paddle.nn.functional.pixel_shuffle",
-        "paddle.nn.functional.pixel_unshuffle",
-        "paddle.nn.functional.prelu",
-        "paddle.nn.functional.selu",
     ]
 )
 

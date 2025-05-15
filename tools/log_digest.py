@@ -92,8 +92,8 @@ def process_log_entries(file_path, id, ckpt_id, write_pass):
         cuda_error_count = 0
         other_error_count = 0
         
-        alraedy_warned_log_files = []
-        alraedy_warned_config_files = []
+        written_warned_log_files = []
+        written_warned_config_files = []
 
         # Process each entry
         for entry in entries:
@@ -115,7 +115,6 @@ def process_log_entries(file_path, id, ckpt_id, write_pass):
                 # Write config to accuracy support file if passing write_pass
                 support2torch_file = f"tester/api_config/api_config_support2torch{id}.txt"
                 if write_pass:
-                    print(f"[info] writing pass config to {support2torch_file}")
                     with open(support2torch_file, 'a') as f:
                         f.write(f"{config_line}\n")
                 pass_count += 1
@@ -130,11 +129,12 @@ def process_log_entries(file_path, id, ckpt_id, write_pass):
                 if not os.path.exists(log_file):
                     with open(log_file, 'w') as f:
                         f.write(f"{entry}")
+                    written_warned_log_files.append(log_file)
                 else:
-                    if log_file not in alraedy_warned_log_files:
+                    if log_file not in written_warned_log_files:
                         print(f"[warning] log file {log_file} already exists, appending to it")
-                        alraedy_warned_log_files.append(log_file)
-                        with open(log_file, 'r') as f:
+                        written_warned_log_files.append(log_file)
+                        with open(log_file, 'a') as f:
                             f.write(f"\n===================== below is the new log =====================\n")
                     with open(log_file, 'a') as f:
                         f.write(f"{entry}")
@@ -144,11 +144,12 @@ def process_log_entries(file_path, id, ckpt_id, write_pass):
                 if not os.path.exists(config_file):
                     with open(config_file, 'w') as f:
                         f.write(f"{config_line}\n")
+                    written_warned_config_files.append(config_file)
                 else:
-                    if config_file not in alraedy_warned_config_files:
+                    if config_file not in written_warned_config_files:
                         print(f"[warning] config file {config_file} already exists, appending to it")
-                        alraedy_warned_config_files.append(config_file)
-                        with open(config_file, 'r') as f:
+                        written_warned_config_files.append(config_file)
+                        with open(config_file, 'a') as f:
                             f.write(f"\n===================== below is the new config =====================\n")
                     with open(config_file, 'a') as f:
                         f.write(f"{config_line}\n")
@@ -195,10 +196,12 @@ def process_log_entries(file_path, id, ckpt_id, write_pass):
         
     except Exception as e:
         print(f"Error processing log entries: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 def main():
-    parser = argparse.ArgumentParser(description='Process log files by removing timestamp and prefix.')
+    parser = argparse.ArgumentParser(description='Process log files by removing timestamp and prefix. Ensure you run this script from the PaddleAPITest directory (cwd == PaddleAPITest).')
     parser.add_argument('--file', required=False, help='log file path to process, eg. if you run engine.py by " ... engine.py ... 2&>1 > log.log", then file=log.log')
     parser.add_argument('--dir', required=False, help='Directory containing log files to process')
     parser.add_argument('--id', default='', type=str, help='Identifier to use in output filenames, eg. lhy id==1, xym id==2')

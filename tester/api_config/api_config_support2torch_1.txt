@@ -46791,3 +46791,5 @@ paddle.incubate.softmax_mask_fuse_upper_triangle(x=Tensor([1, 1, 32, 32],"float3
 paddle.incubate.softmax_mask_fuse_upper_triangle(x=Tensor([3, 1, 224, 224],"float32"), )
 paddle.incubate.softmax_mask_fuse_upper_triangle(x=Tensor([5, 7, 224, 224],"float32"), )
 paddle.incubate.softmax_mask_fuse_upper_triangle(x=Tensor([7, 11, 32, 32],"float32"), )
+paddle.incubate.nn.functional.variable_length_memory_efficient_attention(Tensor([1, 1, 31, 64],"float16"), Tensor([1, 1, 31, 64],"float16"), Tensor([1, 1, 31, 64],"float16"), Tensor([1, 1],"int32"), Tensor([1, 1],"int32"), mask=Tensor([1, 1, 50, 50],"float16"), scale=0.125, )
+paddle.incubate.nn.functional.variable_length_memory_efficient_attention(Tensor([2, 1, 232, 64],"float16"), Tensor([2, 1, 232, 64],"float16"), Tensor([2, 1, 232, 64],"float16"), Tensor([2, 1],"int32"), Tensor([2, 1],"int32"), mask=Tensor([2, 1, 4096, 4096],"float16"), scale=0.125, )

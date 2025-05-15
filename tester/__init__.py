@@ -12,8 +12,8 @@ __all__ = [
     'APIConfig', 
     'analyse_configs', 
     'USE_CACHED_NUMPY',
-    'cached_numpy', 
-    'get_cfg', 
+    'cached_numpy',
+    'get_cfg',
     'set_cfg'
 ]
 
@@ -28,9 +28,10 @@ if TYPE_CHECKING:
         APIConfig,
         analyse_configs,
         USE_CACHED_NUMPY,
-        cached_numpy
+        cached_numpy,
+        get_cfg,
+        set_cfg
     )
-    from .config import get_cfg, set_cfg
 
 def __getattr__(name: str) -> Any:
     if name not in __all__:
@@ -67,10 +68,10 @@ def __getattr__(name: str) -> Any:
         from .api_config import cached_numpy
         return cached_numpy
     elif name == 'get_cfg':
-        from .config import get_cfg
+        from .api_config import get_cfg
         return get_cfg
     elif name == 'set_cfg':
-        from .config import set_cfg
+        from .api_config import set_cfg
         return set_cfg
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

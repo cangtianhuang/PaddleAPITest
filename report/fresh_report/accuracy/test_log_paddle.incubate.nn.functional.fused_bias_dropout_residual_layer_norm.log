@@ -1,0 +1,15 @@
+paddle.incubate.nn.functional.fused_bias_dropout_residual_layer_norm(Tensor([8, 128, 1024],"float32"), Tensor([8, 128, 1024],"float32"), None, Tensor([1024],"float32"), Tensor([1024],"float32"), 0.0, 1e-05, )
+[accuracy error] backward  paddle.incubate.nn.functional.fused_bias_dropout_residual_layer_norm(Tensor([8, 128, 1024],"float32"), Tensor([8, 128, 1024],"float32"), None, Tensor([1024],"float32"), Tensor([1024],"float32"), 0.0, 1e-05, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 970419 / 1048576 (92.5%)
+Max absolute difference: 0.6513017
+Max relative difference: 1.
+ x: array([[[-0., -0.,  0., ...,  0.,  0., -0.],
+        [-0.,  0., -0., ...,  0., -0., -0.],
+        [-0.,  0.,  0., ..., -0.,  0.,  0.],...
+ y: array([[[-2.109677e-02, -2.673218e-01,  9.473638e-03, ...,
+          3.421279e-01,  2.568347e-01, -5.806314e-01],
+        [-2.171901e-01,  8.735378e-02, -9.275520e-03, ...,...
+

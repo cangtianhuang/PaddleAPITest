@@ -476,6 +476,21 @@ seq_lens_decoder = locals().get('seq_lens_decoder')
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
+class BinomialRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        pre = """
+total_count = locals().get('count')
+probs = locals().get('prob')
+
+distribution = torch.distributions.binomial.Binomial(total_count=total_count, probs=probs)
+"""
+        core = "result = distribution.sample()"
+        code = Code(preprocess=pre.splitlines(), core=[core])
+        return ConvertResult.success(
+            paddle_api, code, "result", is_torch_corresponding=False
+        )
+
+
 class BroadcastShapeRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         impl = """
@@ -947,13 +962,21 @@ class DataFormatRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         defaults_code, map_code = self.apply_generic()
         pre = """
-if data_format == "NHWC":
+if data_format == "NLC":
+    x = x.transpose(1, 2)
+elif data_format == "NHWC":
     x = x.permute(0, 3, 1, 2)
+elif data_format == "NDHWC":
+    x = x.permute(0, 4, 1, 2, 3)
 """
         core = f"result = {self.torch_api}(**_kwargs)"
         post = """
-if data_format == "NHWC":
+if data_format == "NLC":
+    result = result.transpose(1, 2)
+elif data_format == "NHWC":
     result = result.permute(0, 2, 3, 1)
+elif data_format == "NDHWC":
+    result = result.permute(0, 2, 3, 4, 1)
 """
         code = Code(
             preprocess=defaults_code + pre.splitlines() + map_code,
@@ -966,8 +989,6 @@ if data_format == "NHWC":
 class Distribute_fpn_proposalsRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         core = """
-import math
-        
 def BBoxArea(box, pixel_offset):
     w = box[2] - box[0]
     h = box[3] - box[1]
@@ -1259,6 +1280,130 @@ converted_fill_value = convert_to_scalar(fill_value)
         return ConvertResult.success(paddle_api, code)
 
 
+class FusedBiasDropoutResidualLayerNormRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        preprocess = """
+x = locals().get('x')
+residual = locals().get('residual')
+bias = locals().get('bias', None)
+ln_scale = locals().get('ln_scale', None)
+ln_bias = locals().get('ln_bias', None)
+dropout_rate = locals().get('dropout_rate', 0.5)
+ln_epsilon = locals().get('ln_epsilon', 1e-05)
+training = locals().get('training', True)
+mode = locals().get('mode', 'upscale_in_train')
+
+def fused_bias_dropout_residual_layernorm(x, residual, bias=None, ln_scale=None, ln_bias=None, dropout_rate=0.5, ln_epsilon=1e-05, training=True, mode='upscale_in_train', name=None):
+    if mode == 'upscale_in_train':
+        if bias is not None:
+            x = x + bias
+        x = torch.nn.functional.dropout(x, p=dropout_rate, training=training)
+        x = torch.nn.functional.layer_norm(x + residual, [residual.shape[-1]], weight=ln_scale, bias=ln_bias, eps=ln_epsilon)
+    else:
+        if bias is not None:
+            x = x + bias
+        # handle downscale dropout
+        mask = torch.bernoulli(torch.full(x.shape, 1-dropout_rate)).to(x.device)
+        if training:
+            x = x * mask
+        else:
+            x = x * (1 - dropout_rate)
+        x = torch.nn.functional.layer_norm(x + residual, [residual.shape[-1]], weight=ln_scale, bias=ln_bias, eps=ln_epsilon)
+    return x
+"""
+        core = """
+result = fused_bias_dropout_residual_layernorm(x, residual, bias, ln_scale, ln_bias, dropout_rate, ln_epsilon, training, mode)
+"""
+        code = Code(preprocess=preprocess.splitlines(), core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
+class FusedDropoutAddRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        preprocess = """
+x = locals().get('x')
+y = locals().get('y')
+p = locals().get('p', 0.5)
+training = locals().get('training', True)
+mode = locals().get('mode', 'upscale_in_train')
+
+def fused_dropout_add(x, y, p=0.5, training=True, mode='upscale_in_train'):
+    if mode == 'upscale_in_train':
+        x = torch.nn.functional.dropout(x, p=p, training=training)
+        x = x + y
+    else:
+        # handle downscale dropout
+        mask = torch.bernoulli(torch.full(x.shape, 1-p)).to(x.device)
+        if training:
+            x = x * mask
+        else:
+            x = x * (1 - p)
+        x = x + y
+    return x
+"""
+        core = """
+result = fused_dropout_add(x, y, p, training, mode)
+"""
+        code = Code(preprocess=preprocess.splitlines(), core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
+class FusedLinearActivationRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        preprocess = """
+x = locals().get('x')
+y = locals().get('y')
+bias = locals().get('bias', None)
+trans_x = locals().get('trans_x', False)
+trans_y = locals().get('trans_y', False)
+activation = locals().get('activation', None)
+
+def fused_linear_activation(x, y, bias, trans_x=False, trans_y=False, activation=None):
+    if trans_x:
+        x = x.T
+    if trans_y:
+        y = y.T
+    
+    if activation == 'relu':
+        return torch.nn.functional.relu(torch.nn.functional.linear(x, y.T, bias))
+    elif activation == 'gelu':
+        return torch.nn.functional.gelu(torch.nn.functional.linear(x, y.T, bias))
+    elif activation is None or activation == 'none':
+        return torch.nn.functional.linear(x, y.T, bias)
+    else:
+        raise ValueError(f"Unsupported activation: {activation}")
+"""
+        core = """
+result = fused_linear_activation(x, y, bias, trans_x, trans_y, activation)
+"""
+        code = Code(preprocess=preprocess.splitlines(), core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
+class FusedLinearRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        preprocess = """
+x = locals().get('x')
+weight = locals().get('weight')
+bias = locals().get('bias', None)
+transpose_weight = locals().get('transpose_weight', False)
+
+# paddle expected weight shape: (in_features, out_features)
+# torch expected weight shape: (out_features, in_features)
+transpose_weight = not transpose_weight
+def fused_linear(x, weight, bias=None, transpose_weight=False):
+    if transpose_weight:
+        weight = weight.T
+    x = torch.nn.functional.linear(x, weight, bias)
+    return x
+"""
+        core = """
+result = fused_linear(x, weight, bias, transpose_weight)
+"""
+        code = Code(preprocess=preprocess.splitlines(), core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
 class FillDiagonalTensorRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         defaults_code, _ = self.apply_generic()
@@ -1284,6 +1429,8 @@ result[full_idx] = y
 
 
 # g
+
+
 class GatherRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         # 抽取对应维度的tensor直接进行stack操作
@@ -1352,8 +1499,6 @@ for batch in range(batch_size):
 class GenerateProposalsRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         core = """    
-import torchvision
-import math
 def nms(box1, box2, normaloized):
     if box2[0] > box1[2] or box2[2] < box1[0] or box2[1] > box1[3] or box2[3] < box1[1]:
         return 0
@@ -1657,6 +1802,80 @@ result = window
 
 
 # h
+class HessianRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        pre = """
+batch_axis = locals().get('batch_axis', None)
+
+class Hessian:
+    def __init__(self, ys, xs, batch_axis = None):
+        self.ys = ys
+        self.xs = tuple(xs) if isinstance(xs, (tuple, list)) else (xs,)
+        self.batch_axis = batch_axis
+        self.cache = {}  # 缓存已计算的子矩阵
+        self.device = ys.device
+
+    def _compute_hessian_single(self, x, batch_idx = None) -> torch.Tensor:
+        if self.batch_axis == 0 and batch_idx is not None:
+            # 批量模式，计算单个 batch 的 Hessian
+            def func(x): return torch.sum(self.ys[batch_idx] * x)
+            x_batch = x[batch_idx]
+        else:
+            # 非批量模式或整个批量
+            def func(x): return torch.sum(self.ys * x) if self.batch_axis is None else torch.sum(self.ys @ x)
+        # 计算 Hessian
+        hessian = torch.autograd.functional.hessian(func, x.flatten(), create_graph=False)
+        if self.batch_axis == 0 and batch_idx is None:
+            # 批量模式，返回 [B, N, N]
+            B, N = x.shape
+            return hessian.view(B, N, N)
+        return hessian
+
+    def _compute_hessian_tuple(self, idx1, idx2, batch_idx = None) -> torch.Tensor:
+        x1, x2 = self.xs[idx1], self.xs[idx2]
+        if self.batch_axis == 0 and batch_idx is not None:
+            # 批量模式，单 batch
+            def func(x): return torch.sum(self.ys[batch_idx] * x)
+            x1_batch = x1[batch_idx]
+            x2_batch = x2[batch_idx]
+        else:
+            def func(x): return torch.sum(self.ys * x) if self.batch_axis is None else torch.sum(self.ys @ x)
+        # 计算交叉梯度
+        grad_x1 = torch.autograd.grad(func(x1), x1, create_graph=True)[0]
+        hessian = torch.zeros(x1.shape[-1], x2.shape[-1], device=self.device)
+        for i in range(x1.shape[-1]):
+            hessian[i] = torch.autograd.grad(grad_x1[i], x2, retain_graph=True)[0]
+        return hessian
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            key = (key, key)  # 单个索引转换为元组
+        else:
+            key = tuple(key)
+        # 处理批量索引
+        batch_idx = None
+        if len(key) == 3 and self.batch_axis == 0:
+            batch_idx, idx1, idx2 = key
+        elif len(key) == 2:
+            idx1, idx2 = key
+        # 检查缓存
+        cache_key = (batch_idx, idx1, idx2)
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+        # 计算 Hessian
+        if idx1 == idx2:
+            result = self._compute_hessian_single(self.xs[idx1], batch_idx)
+        else:
+            result = self._compute_hessian_tuple(idx1, idx2, batch_idx)
+        # 缓存结果
+        self.cache[cache_key] = result
+        return result
+"""
+        core = "result = Hessian(ys=ys, xs=xs, batch_axis=batch_axis)"
+        code = Code(preprocess=pre.splitlines(), core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
 class HistogramddRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         pre = """
@@ -1816,6 +2035,88 @@ class IncrementRule(BaseRule):
 
 
 # j
+class JacobianRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        pre = """
+batch_axis = locals().get('batch_axis', None)
+
+class Jacobian:
+    def __init__(self, ys, xs, batch_axis = None):
+        self.ys = tuple(ys) if isinstance(ys, (tuple, list)) else (ys,)
+        self.xs = tuple(xs) if isinstance(xs, (tuple, list)) else (xs,)
+        self.batch_axis = batch_axis
+        self.cache = {}  # 缓存已计算的子矩阵
+        self.device = self.ys[0].device
+        # 计算输出形状
+        self.shapes = []
+        for y in self.ys:
+            for x in self.xs:
+                if batch_axis is None:
+                    M = y.numel()
+                    N = x.numel()
+                    shape = (M, N)
+                else:
+                    B = y.shape[0]
+                    M = y.shape[1] if y.dim() == 2 else 1
+                    N = x.shape[1] if x.dim() == 2 else x.shape[0]
+                    shape = (B, M, N)
+                self.shapes.append(shape)
+
+    def _compute_jacobian(self, y_idx, x_idx, batch_idx = None, row_slice = None) -> torch.Tensor:
+        y = self.ys[y_idx]
+        x = self.xs[x_idx]
+        cache_key = (batch_idx, y_idx, x_idx, row_slice)
+        # 检查缓存
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+        if self.batch_axis is None:
+            # 非批量模式
+            def func(x): return y.flatten()
+            jacobian = torch.autograd.functional.jacobian(func, x.flatten(), create_graph=False)
+        else:
+            # 批量模式
+            if batch_idx is not None:
+                # 单 batch
+                def func(x): return y[batch_idx].flatten()
+                jacobian = torch.autograd.functional.jacobian(func, x[batch_idx].flatten(), create_graph=False)
+            else:
+                # 整个批量
+                B = y.shape[0]
+                M = y.shape[1] if y.dim() == 2 else 1
+                N = x.shape[1] if x.dim() == 2 else x.shape[0]
+                jacobian = torch.zeros(B, M, N, device=self.device)
+                for b in range(B):
+                    def func(x): return y[b].flatten()
+                    jacobian[b] = torch.autograd.functional.jacobian(func, x[b].flatten(), create_graph=False)
+        # 处理行切片
+        if row_slice is not None:
+            jacobian = jacobian[row_slice]
+        # 缓存结果
+        self.cache[cache_key] = jacobian
+        return jacobian
+
+    def __getitem__(self, key):
+        key = tuple(key)
+        if len(key) == 2:
+            # 形式 [y_idx, x_idx] 或 [:, :]
+            y_idx, x_idx = key
+            if isinstance(y_idx, int) and isinstance(x_idx, int):
+                return self._compute_jacobian(y_idx, x_idx)
+            elif isinstance(y_idx, slice) and isinstance(x_idx, slice):
+                # 切片行
+                return self._compute_jacobian(0, 0, row_slice=y_idx)
+        elif len(key) == 3 and self.batch_axis == 0:
+            # 形式 [batch_idx, y_idx, x_idx] 或 [:, y_slice, :]
+            batch_idx, y_idx, x_idx = key
+            if isinstance(batch_idx, int) and isinstance(y_idx, int) and isinstance(x_idx, int):
+                return self._compute_jacobian(y_idx, x_idx, batch_idx=batch_idx)
+            elif isinstance(batch_idx, slice) and isinstance(y_idx, slice) and isinstance(x_idx, slice):
+                # 切片行
+                return self._compute_jacobian(0, 0, row_slice=y_idx)
+"""
+        core = "result = Jacobian(ys=ys, xs=xs, batch_axis=batch_axis)"
+        code = Code(preprocess=pre.splitlines(), core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
 # k
@@ -1954,6 +2255,134 @@ result = torch.stack(temp)
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
+class MaskedMultiheadAttentionRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        pre = """
+def masked_multihead_attention(
+    x: torch.Tensor,
+    cache_kv: torch.Tensor | None = None,
+    bias: torch.Tensor | None = None,
+    src_mask: torch.Tensor | None = None,
+    cum_offsets: torch.Tensor | None = None,
+    sequence_lengths: torch.Tensor | None = None,
+    rotary_tensor: torch.Tensor | None = None,
+    beam_cache_offset: torch.Tensor | None = None,
+    qkv_out_scale: torch.Tensor | None = None,
+    out_shift: torch.Tensor | None = None,
+    out_smooth: torch.Tensor | None = None,
+    seq_len: int = 1,
+    rotary_emb_dims: int = 0,
+    use_neox_rotary_style: bool = False,
+    compute_dtype: str = 'default',
+    out_scale: float = -1.0,
+    quant_round_type: int = 1,
+    quant_max_bound: float = 127.0,
+    quant_min_bound: float = -127.0
+):
+    # Infer dimensions from input
+    _, batch_size, num_head, max_seq_len, head_dim = cache_kv.shape
+    # Reshape and split QKV: [batch_size, 3 * num_head * head_dim] -> [batch_size, 3, num_head, head_dim]
+    x = x.view(batch_size, 3, num_head, head_dim)
+    q, k, v = x[:, 0], x[:, 1], x[:, 2]  # Each is [batch_size, num_head, head_dim]
+    # Apply bias if provided
+    if bias is not None:
+        q = q + bias[0]
+        k = k + bias[1]
+        v = v + bias[2]
+    # Apply QKV quantization if qkv_out_scale is provided
+    if qkv_out_scale is not None:
+        q = q / qkv_out_scale[0]
+        k = k / qkv_out_scale[1]
+        v = v / qkv_out_scale[2]
+        # Apply quantization
+        if quant_round_type == 1:
+            q = torch.round(q).clamp(quant_min_bound, quant_max_bound)
+            k = torch.round(k).clamp(quant_min_bound, quant_max_bound)
+            v = torch.round(v).clamp(quant_min_bound, quant_max_bound)
+    # Handle rotary embeddings
+    if rotary_tensor is not None and rotary_emb_dims > 0:
+        # Apply rotary embeddings to q and k
+        def apply_rotary_emb(x, rotary):
+            if use_neox_rotary_style:
+                # Neox-style: split head_dim into pairs and apply rotation
+                half_dim = rotary_emb_dims // 2
+                x1, x2 = x[..., :half_dim], x[..., half_dim:2 * half_dim]
+                rot1, rot2 = rotary[..., :half_dim], rotary[..., half_dim:2 * half_dim]
+                x_rot = torch.cat((-x2 * rot2 + x1 * rot1, x1 * rot2 + x2 * rot1), dim=-1)
+                return torch.cat((x_rot, x[..., 2 * half_dim:]), dim=-1)
+            else:
+                # Standard rotary: apply cosine and sine rotations
+                cos, sin = rotary[..., ::2], rotary[..., 1::2]
+                x1, x2 = x[..., ::2], x[..., 1::2]
+                x_rot = torch.cat((x1 * cos - x2 * sin, x1 * sin + x2 * cos), dim=-1)
+                return x_rot
+        q = apply_rotary_emb(q, rotary_tensor.squeeze(2))
+        k = apply_rotary_emb(k, rotary_tensor.squeeze(2))
+    # Prepare key and value with cache
+    if cache_kv is not None:
+        cache_k, cache_v = cache_kv[0], cache_kv[1]  # [batch_size, num_head, max_seq_len, head_dim]
+        # Concatenate new k, v to cache
+        k = torch.cat((cache_k, k.unsqueeze(-2)), dim=2)  # Add seq_len dim
+        v = torch.cat((cache_v, v.unsqueeze(-2)), dim=2)
+        cache_kvs_out = torch.stack((k, v), dim=0)
+    else:
+        k = k.unsqueeze(-2)  # [batch_size, num_head, 1, head_dim]
+        v = v.unsqueeze(-2)
+        cache_kvs_out = torch.stack((k, v), dim=0)
+    # Reshape for attention: [batch_size, num_head, seq_len, head_dim]
+    q = q.unsqueeze(2)  # [batch_size, num_head, 1, head_dim]
+    seq_len_kv = k.shape[2]
+    # Compute attention scores
+    attn_scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(head_dim)  # [batch_size, num_head, 1, seq_len_kv]
+    # Apply source mask
+    if src_mask is not None:
+        expected_mask_shape = (batch_size, 1, 1, seq_len_kv)
+        if src_mask.shape[-1] != seq_len_kv:
+            # Pad src_mask with zeros to match seq_len_kv
+            padding = torch.zeros(
+                batch_size, 1, 1, seq_len_kv - src_mask.shape[-1],
+                device=src_mask.device, dtype=src_mask.dtype
+            )
+            src_mask = torch.cat((src_mask, padding), dim=-1)
+        attn_scores = attn_scores + src_mask  # Broadcasting applies mask
+    # Apply sequence lengths if provided
+    if sequence_lengths is not None:
+        mask = torch.arange(seq_len_kv, device=x.device).expand(batch_size, seq_len_kv)
+        mask = mask < sequence_lengths.squeeze(-1).unsqueeze(-1)
+        mask = mask[:, None, None, :]  # [batch_size, 1, 1, seq_len_kv]
+        attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
+    # Softmax to get attention weights
+    attn_weights = torch.nn.functional.softmax(attn_scores, dim=-1)
+    # Compute attention output
+    attn_output = torch.matmul(attn_weights, v)  # [batch_size, num_head, 1, head_dim]
+    attn_output = attn_output.squeeze(-2)  # [batch_size, num_head, head_dim]
+    # Reshape output: [batch_size, num_head * head_dim]
+    attn_output = attn_output.transpose(1, 2).contiguous().view(batch_size, num_head * head_dim)
+    # Apply output quantization
+    if out_scale > 0:
+        attn_output = attn_output / out_scale
+        if out_shift is not None:
+            attn_output = attn_output + out_shift
+        if out_smooth is not None:
+            attn_output = attn_output * out_smooth
+        if quant_round_type == 1:
+            attn_output = torch.round(attn_output).clamp(quant_min_bound, quant_max_bound)
+    # Handle beam_cache_offset
+    beam_cache_offset_out = beam_cache_offset
+    if beam_cache_offset is not None:
+        # In Paddle, beam_cache_offset is typically updated in beam search; here we return as-is
+        # If specific updates are needed, they should be implemented based on model logic
+        pass
+    # Return based on beam_cache_offset presence
+    if beam_cache_offset is not None:
+        return attn_output, cache_kvs_out, beam_cache_offset_out
+    return attn_output, cache_kvs_out, None
+"""
+        core = "result = masked_multihead_attention(**kwargs)"
+        code = Code(preprocess=pre.splitlines(), core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
 # n
 class NanmedianRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
@@ -2087,6 +2516,16 @@ result = torch.tensor(num_elements, dtype=torch.int64)
 """
         code = impl.splitlines()
         return ConvertResult.success(paddle_api, code)
+
+
+class NonzeroRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        pre = """
+x = args[0] if args else next(iter(kwargs.values()))
+"""
+        core = "result = x.__gt__(0).item()"
+        code = Code(preprocess=pre.splitlines(), core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
 class NormalRule(BaseRule):
@@ -2767,6 +3206,22 @@ else:
         return ConvertResult.success(paddle_api, code)
 
 
+class SeluRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        defaults_code, map_code = self.apply_generic()
+        core = f"""
+if scale == 1.0507009873554804934193349852946 and alpha == 1.6732632423543772848170429916717:
+    result = {self.torch_api}(**_kwargs)
+else:
+    result = scale * torch.where(x > 0, x, alpha * (torch.exp(x) - 1))
+"""
+        code = Code(
+            preprocess=defaults_code + map_code,
+            core=core.splitlines(),
+        )
+        return ConvertResult.success(paddle_api, code)
+
+
 class SliceRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         core = """
@@ -2997,6 +3452,23 @@ elif y.dtype == torch.bool:
         return ConvertResult.success(paddle_api, code)
 
 
+class SwigluRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        pre = """
+x = locals().get("x")
+y = locals().get("y", None)
+
+if y == None:
+    x, y = torch.chunk(x, 2, dim=-1)
+"""
+        core = "result = torch.nn.functional.silu(x) * y"
+        code = Code(
+            preprocess=pre.splitlines(),
+            core=[core],
+        )
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
 class SegmentRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         pre = """
@@ -3064,7 +3536,7 @@ mask = mask.view(1, 1, seq_len, seq_len2)
 result = torch.softmax(x + mask, dim=-1)
 """
         code = Code(core=core.splitlines())
-        return ConvertResult.success(paddle_api, code)
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
 # t
@@ -3225,6 +3697,72 @@ class View_As_Rule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         core = "result = x.view_as(other)"
         code = Code(core=[core])
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
+class VariableLengthMemoryEfficientAttentionRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        pre = """
+import math
+
+def variable_length_memory_efficient_attention(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    seq_lens: torch.Tensor,
+    kv_seq_lens: torch.Tensor,
+    mask: torch.Tensor | None = None,
+    scale: float | None = None,
+    causal: bool = False,
+    pre_cache_length: int = 0
+) -> torch.Tensor:
+    batch_size, num_heads, query_seq_len, head_size = query.shape
+    key_seq_len = key.shape[2]
+    # Broadcast key and value to match query's num_heads if needed
+    if key.shape[1] != num_heads:
+        # Repeat key and value along the num_heads dimension
+        repeat_factor = num_heads // key.shape[1]
+        key = key.repeat(1, repeat_factor, 1, 1)
+        value = value.repeat(1, repeat_factor, 1, 1)
+    # Default scale if not provided
+    if scale is None:
+        scale = math.sqrt(1.0 / head_size)
+    scale = torch.tensor(scale, dtype=query.dtype, device=query.device)
+    # Initialize mask if None
+    if mask is None:
+        mask = torch.zeros(batch_size, 1, query_seq_len, key_seq_len,
+                        dtype=query.dtype, device=query.device)
+    else:
+        mask = mask[:, :, :query_seq_len, :key_seq_len]
+    # Apply sequence length masking
+    seq_mask = torch.ones(batch_size, 1, query_seq_len, key_seq_len,
+                         dtype=torch.bool, device=query.device)
+    for b in range(batch_size):
+        q_len = seq_lens[b].squeeze().item()
+        kv_len = kv_seq_lens[b].squeeze().item() + pre_cache_length
+        seq_mask[b, :, q_len:, :] = False
+        seq_mask[b, :, :, kv_len:] = False
+    # Apply causal masking if enabled
+    if causal:
+        causal_mask = torch.tril(
+            torch.ones(1, 1, query_seq_len, key_seq_len, dtype=torch.bool, device=query.device)
+        )
+        seq_mask = seq_mask & causal_mask
+    # Compute attention scores: QK^T
+    qk_res = torch.matmul(query, key.transpose(-1, -2))  # [batch_size, num_heads, query_seq_len, key_seq_len]
+    # Apply scale
+    attention = qk_res * scale
+    attention = attention.masked_fill(~seq_mask, torch.finfo(attention.dtype).min)
+    attention = attention + mask
+    # Softmax over the last dimension
+    softmax_result = torch.nn.functional.softmax(attention, dim=-1)
+    softmax_result = softmax_result.masked_fill(~seq_mask, 0.0)
+    # Compute output: softmax(QK^T)V
+    result = torch.matmul(softmax_result, value)  # [batch_size, num_heads, query_seq_len, head_size]
+    return result
+"""
+        core = "result = variable_length_memory_efficient_attention(**kwargs)"
+        code = Code(preprocess=pre.splitlines(), core=[core])
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
