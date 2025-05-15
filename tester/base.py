@@ -827,6 +827,39 @@ class APITestBase:
             # ),
         )
 
+    def torch_assert_accuracy(self, paddle_tensor, torch_tensor, atol, rtol, re_run=False):
+        if re_run:
+            paddle_tensor = paddle_tensor.cpu().detach()
+            torch_tensor = torch_tensor.cpu().detach()
+
+        paddle_dlpack = paddle.utils.dlpack.to_dlpack(paddle_tensor)
+        converted_paddle_tensor = torch.utils.dlpack.from_dlpack(paddle_dlpack)
+        
+        if not torch.allclose(converted_paddle_tensor, torch_tensor, rtol=rtol, atol=atol, equal_nan=True):
+            total_elements = converted_paddle_tensor.numel()
+            check_elements = min(total_elements, int(1e7))
+
+            flat_paddle = converted_paddle_tensor.flatten()[:check_elements]
+            flat_torch = torch_tensor.flatten()[:check_elements]
+            diff = torch.abs(flat_paddle - flat_torch)
+
+            mismatched = torch.sum(diff > (atol + rtol * torch.abs(flat_torch)))
+            mismatch_ratio = mismatched.float() / check_elements * 100
+
+            max_abs_diff = torch.max(diff).item()
+            max_rel_diff = torch.max(diff / torch.abs(flat_torch).clamp(min=1e-8)).item()
+
+            error_msg = (
+                f"Not equal to tolerance rtol={rtol}, atol={atol}\n"
+                f"Mismatched elements: {mismatched.item()} / {check_elements} "
+                f"({mismatch_ratio:.1f}%)\n"
+                f"Max absolute difference among violations: {max_abs_diff}\n"
+                f"Max relative difference among violations: {max_rel_diff}\n"
+                f"ACTUAL: {flat_paddle[:100]}\n"
+                f"DESIRED: {flat_torch[:100]}"
+            )
+            raise AssertionError(error_msg)
+
     def test(self):
         pass
 
