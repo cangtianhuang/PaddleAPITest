@@ -528,10 +528,7 @@ if isinstance(dtype, str) and hasattr(torch, dtype):
     dtype = getattr(torch, dtype)
 """
         core = "result = x.to(dtype)"
-        code = Code(
-            preprocess=pre.splitlines(),
-            core=[core]
-        )
+        code = Code(preprocess=pre.splitlines(), core=[core])
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
@@ -1217,9 +1214,6 @@ if isinstance(output_size, (list, tuple)):
         return ConvertResult.success(paddle_api, code)
 
 
-# g
-
-
 class FullRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         preprocess = """
@@ -1265,6 +1259,31 @@ converted_fill_value = convert_to_scalar(fill_value)
         return ConvertResult.success(paddle_api, code)
 
 
+class FillDiagonalTensorRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        defaults_code, _ = self.apply_generic()
+        core = """
+x = args[0]
+result = x.clone()
+n_dims = x.dim()
+dim1 = dim1 if dim1 >= 0 else n_dims + dim1
+dim2 = dim2 if dim2 >= 0 else n_dims + dim2
+diag_size = min(x.shape[dim1], x.shape[dim2] - max(0, offset), x.shape[dim1] + min(0, offset))
+if diag_size <= 0:
+    return result
+idx = torch.arange(diag_size, device=x.device)
+idx1 = idx
+idx2 = idx + offset
+full_idx = [slice(None)] * n_dims
+full_idx[dim1] = idx1
+full_idx[dim2] = idx2
+result[full_idx] = y
+"""
+        code = Code(core=defaults_code + core.splitlines())
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
+# g
 class GatherRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         # 抽取对应维度的tensor直接进行stack操作
@@ -1669,7 +1688,8 @@ result = torch.histogramdd(**_kwargs)
             core=core.splitlines(),
         )
         return ConvertResult.success(paddle_api, code)
-    
+
+
 class HistogramBinEdgeRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         pre = """
@@ -1693,6 +1713,8 @@ result = torch.linspace(min, max, steps=bins + 1, device=input.device, dtype=inp
             core=core.splitlines(),
         )
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
+
+
 # i
 
 
@@ -1716,7 +1738,8 @@ result = x
 """
         code = Code(core=[core])
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
-    
+
+
 class IndexPutRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         defaults_code, map_code = self.apply_generic()
@@ -1733,6 +1756,7 @@ if value.dim() ==1 and len(value) == 56 and accumulate == True :   # 56 此处�
             core=core.splitlines(),
         )
         return ConvertResult.success(paddle_api, code)
+
 
 class IndexSampleRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
@@ -1763,7 +1787,7 @@ _kwargs['index'] = torch.squeeze(_kwargs['index'])
         core = """
 result = torch.index_select( **_kwargs)
 """
-        code = Code(preprocess=pre.splitlines(),core=core.splitlines())
+        code = Code(preprocess=pre.splitlines(), core=core.splitlines())
         return ConvertResult.success(paddle_api, code, "result")
 
 
@@ -1847,6 +1871,7 @@ y = to_float_if_needed(y)
         )
         return ConvertResult.success(paddle_api, code)
 
+
 class LogNormalRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         defaults_code, map_code = self.apply_generic()
@@ -1860,6 +1885,7 @@ result = torch.exp(result)
         )
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
+
 # m
 class Matrix_transposeRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
@@ -1869,16 +1895,15 @@ result = x.transpose(-1, -2)
         code = Code(core=core.splitlines())
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
+
 class MaskedScatterRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
-        _ , map_code = self.apply_generic()
+        _, map_code = self.apply_generic()
         core = "result = x.masked_scatter(**_kwargs)"
-        code = Code(
-            preprocess = map_code,
-            core=[core]
-        )
+        code = Code(preprocess=map_code, core=[core])
         return ConvertResult.success(paddle_api, code)
-    
+
+
 class MedianRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         core = """
@@ -2051,7 +2076,7 @@ if top_k is not None:
     result = result[:top_k]
 """
         code = Code(core=core.splitlines())
-        return ConvertResult.success(paddle_api, code,is_torch_corresponding=False)
+        return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
 class NumelRule(BaseRule):
@@ -2243,8 +2268,7 @@ if reduce == 'assign':
 else:
     result = torch.scatter_reduce(input, dim, index, src, reduce, include_self=include_self)
 """
-        code = Code(preprocess=pre.splitlines(),
-                    core=core.splitlines())
+        code = Code(preprocess=pre.splitlines(), core=core.splitlines())
         return ConvertResult.success(paddle_api, code, "result")
 
 
@@ -2436,10 +2460,13 @@ if mode == "r":
     result = result[1]
 """
         code = Code(
-                    preprocess=pre.splitlines(), 
-                    core=core.splitlines(),
-                    postprocess=post.splitlines())
-        return ConvertResult.success(paddle_api, code, "result", is_torch_corresponding=False)
+            preprocess=pre.splitlines(),
+            core=core.splitlines(),
+            postprocess=post.splitlines(),
+        )
+        return ConvertResult.success(
+            paddle_api, code, "result", is_torch_corresponding=False
+        )
 
 
 # r
@@ -2524,8 +2551,7 @@ for i in range(boxnum.shape[0]):
     ans.append(boxes[begin:end,])
 result = torchvision.ops.roi_align( **_kwargs, boxes = ans)
 """
-        code = Code(preprocess=pre.splitlines(),
-                    core=core.splitlines())
+        code = Code(preprocess=pre.splitlines(), core=core.splitlines())
         return ConvertResult.success(paddle_api, code, "result")
 
 
@@ -2553,8 +2579,7 @@ for i in range(boxnum.shape[0]):
     ans.append(boxes[begin:end,])
 """
         core = f"result = {self.torch_api}(boxes = ans, **_kwargs)"
-        code = Code(preprocess=pre.splitlines(),
-                    core=core.splitlines())
+        code = Code(preprocess=pre.splitlines(), core=core.splitlines())
         return ConvertResult.success(paddle_api, code, "result")
 
 
@@ -2829,8 +2854,7 @@ result = torch.linalg.slogdet(x)
         post = """
 result = torch.stack(result,0)
 """
-        code = Code(core = core.splitlines(),
-                    postprocess = post.splitlines())
+        code = Code(core=core.splitlines(), postprocess=post.splitlines())
         return ConvertResult.success(paddle_api, code)
 
 
@@ -3071,10 +3095,7 @@ def torch_take(x, index, mode='raise'):
 """
 
         core = "result = torch_take(x, index, mode)"
-        code = Code(
-            preprocess=defaults_code + pre.splitlines() + map_code,
-            core=[core]
-        )
+        code = Code(preprocess=defaults_code + pre.splitlines() + map_code, core=[core])
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
 
@@ -3090,8 +3111,7 @@ if transpose:
         core = """
 result = torch.linalg.solve_triangular(x,y,upper=upper,left=True,unitriangular=unitriangular)
 """
-        code = Code(preprocess=pre.splitlines(),
-                    core = core.splitlines())
+        code = Code(preprocess=pre.splitlines(), core=core.splitlines())
         return ConvertResult.success(paddle_api, code)
 
 
@@ -3188,13 +3208,10 @@ elif x.dtype != y.dtype:
     y = y.to(target_dtype)
 """
         core = "result = torch.linalg.vecdot(x, y, dim=axis)"
-        code = Code(
-            preprocess=pre.splitlines(),
-            core=[core]
-        )
+        code = Code(preprocess=pre.splitlines(), core=[core])
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
 
-        
+
 class ViewRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         core = """

@@ -332,6 +332,14 @@
         },
         "description": "result = torch.full_like(input=x, fill_value=torch_kwargs['fill_value'], dtype=dtype)"
     },
+    "paddle.Tensor.fill_diagonal_tensor": {
+        "Rule": "FillDiagonalTensorRule",
+        "set_defaults": {
+            "offset": 0,
+            "dim1": 0,
+            "dim2": 1
+        }
+    },
     "g": "API started with 'g' should be placed here",
     "paddle.gammaln": {
         "torch_api": "torch.special.gammaln",
@@ -1258,6 +1266,22 @@
         "paddle_torch_args_map": {
             "x": "input",
             "output_size": "output_size"
+        }
+    },
+    "paddle.nn.quant.weight_only_linear": {
+        "Rule": "WeightOnlyLinearRule",
+        "set_defaults": {
+            "bias": "None",
+            "weight_scale": "None",
+            "weight_dtype": "'int8'",
+            "arch": "None"
+        }
+    },
+    "paddle.nn.quant.weight_quantize": {
+        "Rule": "WeightQuantizeRule",
+        "set_defaults": {
+            "algo": "'weight_only_int8",
+            "arch": "None"
         }
     },
     "o": "API started with 'o' should be placed here",
