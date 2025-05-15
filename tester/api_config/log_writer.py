@@ -96,12 +96,12 @@ def read_log(log_type):
         return set()
 
 
-def aggregate_logs(mkdir=False):
+def aggregate_logs(end=False, api_configs=None):
     """聚合所有相同类型的日志文件"""
-    if not TMP_LOG_PATH.exists():
-        if mkdir:
-            TMP_LOG_PATH.mkdir(exist_ok=True)
+    if not TMP_LOG_PATH.exists() and not end:
+        TMP_LOG_PATH.mkdir(exist_ok=True)
         return
+
     for prefix in LOG_PREFIXES.values():
         log_files = list(TMP_LOG_PATH.glob(f"{prefix}_*.txt"))
         if not log_files:
@@ -126,32 +126,38 @@ def aggregate_logs(mkdir=False):
         shutil.rmtree(TMP_LOG_PATH)
     except OSError:
         pass
-    if mkdir:
+    if not end:
         TMP_LOG_PATH.mkdir(exist_ok=True)
 
+    if end and api_configs:
+        api_configs = set(api_configs)
+        log_counts = {}
+        for log_type, prefix in LOG_PREFIXES.items():
+            log_file = TEST_LOG_PATH / f"{prefix}.txt"
+            if not log_file.exists():
+                continue
+            try:
+                with log_file.open("r") as f:
+                    lines = set(line.strip() for line in f if line.strip())
+                    if log_type != "checkpoint":
+                        api_configs -= lines
+                    log_counts[log_type] = len(lines)
+            except Exception as err:
+                print(f"Error reading {log_file}: {err}", flush=True)
+        if api_configs:
+            log_counts["skip"] = len(api_configs)
+            skip_file = TEST_LOG_PATH / "api_config_skip.txt"
+            try:
+                with skip_file.open("w") as f:
+                    f.writelines(f"{line}\n" for line in sorted(api_configs))
+            except Exception as err:
+                print(f"Error writing to {skip_file}: {err}", flush=True)
+        return log_counts
 
-def print_log_info(all_case, fail_case):
+
+def print_log_info(all_case, fail_case, log_counts={}):
     """打印日志统计信息"""
-    log_counts = {}
-    recorded_count = 0
-
-    for log_type, prefix in LOG_PREFIXES.items():
-        log_file = TEST_LOG_PATH / f"{prefix}.txt"
-        if not log_file.exists():
-            continue
-        try:
-            with log_file.open("r") as f:
-                count = sum(1 for _ in f)
-                log_counts[log_type] = count
-                if log_type not in ["checkpoint", "timeout", "crash"]:
-                    recorded_count += count
-        except Exception as err:
-            print(f"Error reading {log_file}: {err}", flush=True)
-
-    skipped_case = all_case - recorded_count - fail_case
-    assert (
-        skipped_case >= 0
-    ), f"skipped_case should be non-negative, but got {skipped_case}"
+    skipped_case = log_counts.get("skip", 0)
 
     # 打印统计信息
     print("\n" + "=" * 50)
@@ -160,8 +166,12 @@ def print_log_info(all_case, fail_case):
     print(f"{'Total cases':<30}: {all_case}")
     print(f"{'Failed cases':<30}: {fail_case}")
     print(f"{'Skipped cases':<30}: {skipped_case}")
-    print("-" * 50)
-    print("Log Type Breakdown:")
-    for log_type, count in log_counts.items():
-        print(f"  {log_type:<28}: {count}")
+    if log_counts:
+        print("-" * 50)
+        print("Log Type Breakdown:")
+        for log_type, count in log_counts.items():
+            print(f"  {log_type:<28}: {count}")
     print("=" * 50 + "\n")
+
+    assert fail_case == log_counts.get("crash", 0) + log_counts.get("timeout", 0)
+    assert all_case == sum(log_counts.values()) - log_counts.get("checkpoint", 0)

@@ -269,6 +269,8 @@ def run_test_case(api_config_str, options):
         case.test()
     except Exception as err:
         print(f"[test error] {api_config_str} {str(err)}", flush=True)
+        if "CUDA error" in str(err) or "memory corruption" in str(err):
+            exit(0)
     finally:
         case.clear_tensor()
         del case
@@ -381,9 +383,9 @@ def main():
                     return
             else:
                 config_files = [options.api_config_file_pattern]
-            print("\nConfig files to be tested:")
+            print("Config files to be tested:", flush=True)
             for i, config_file in enumerate(sorted(config_files), 1):
-                print(f"{i}. {config_file}")
+                print(f"{i}. {config_file}", flush=True)
         else:
             config_files = [options.api_config_file]
 
@@ -503,7 +505,7 @@ def main():
                                 flush=True,
                             )
                             fail_case += 1
-                    aggregate_logs(mkdir=True)
+                    aggregate_logs()
                 print(f"{all_case} cases tested, {fail_case} failed.", flush=True)
                 pool.close()
                 pool.join()
@@ -511,8 +513,8 @@ def main():
                 print(f"Unexpected error: {e}", flush=True)
                 cleanup(pool)
             finally:
-                aggregate_logs()
-                print_log_info(all_case, fail_case)
+                log_counts = aggregate_logs(end=True, api_configs=api_configs)
+                print_log_info(all_case, fail_case, log_counts)
         else:
             # Single worker
             from tester import (APIConfig, APITestAccuracy,
