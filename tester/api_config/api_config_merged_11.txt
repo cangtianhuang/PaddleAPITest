@@ -718,8 +718,6 @@ paddle.nn.functional.pad(Tensor([8, 1, 64, 448],"float32"), Tensor([4],"int32"),
 paddle.nn.functional.pad(Tensor([8, 1, 64, 480],"float32"), Tensor([4],"int32"), value=0, )
 paddle.nn.functional.pad(Tensor([9, 1, 32, 416],"float32"), Tensor([4],"int32"), value=0, )
 paddle.nn.functional.pad(Tensor([9, 1, 64, 352],"float32"), Tensor([4],"int32"), value=0, )
-paddle.roll(Tensor([3, 3],"bool"), shifts=1, )
-paddle.roll(Tensor([3, 3],"bool"), shifts=1, axis=0, )
 paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float16"), Tensor([3, 16, 64, 1024],"float16"), Tensor([1024, 1024],"float16"), False, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, Tensor([3, 16, 64],"float16"), Tensor([1024],"float16"), None, Tensor([8, 16, 128, 128],"float16"), 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=False, )
 paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float32"), Tensor([1024, 3072],"float32"), Tensor([1024, 1024],"float32"), False, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, None, None, None, Tensor([8, 16, 128, 128],"float32"), 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=True, )
 paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float32"), Tensor([1024, 3072],"float32"), Tensor([1024, 1024],"float32"), False, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, Tensor([3072],"float32"), Tensor([1024],"float32"), None, Tensor([8, 16, 128, 128],"float32"), 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=True, )
