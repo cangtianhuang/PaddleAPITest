@@ -225,6 +225,12 @@ def run_test_case(api_config_str, options):
     cuda_visible = os.environ.get("CUDA_VISIBLE_DEVICES", "0")
     gpu_id = int(cuda_visible.split(",")[0])
 
+    write_to_log("checkpoint", api_config_str)
+    print(
+        f"{datetime.now()} GPU {gpu_id} {os.getpid()} test begin: {api_config_str}",
+        flush=True,
+    )
+
     pynvml.nvmlInit()
     try:
         while True:
@@ -245,11 +251,6 @@ def run_test_case(api_config_str, options):
     finally:
         pynvml.nvmlShutdown()
 
-    write_to_log("checkpoint", api_config_str)
-    print(
-        f"{datetime.now()} GPU {gpu_id} {os.getpid()} test begin: {api_config_str}",
-        flush=True,
-    )
     try:
         api_config = APIConfig(api_config_str)
     except Exception as err:
@@ -415,11 +416,11 @@ def main():
         api_configs = sorted(api_configs - finish_configs)
         all_case = len(api_configs)
         fail_case = 0
-        tested_case = api_config_count - all_case
-        if tested_case:
-            print(tested_case, "cases already tested.", flush=True)
+        finish_case = api_config_count - all_case
+        if finish_case:
+            print(finish_case, "cases already tested.", flush=True)
         print(all_case, "cases will be tested.", flush=True)
-        del api_config_count, dup_case, tested_case
+        del api_config_count, dup_case, finish_case
 
         if options.num_gpus != 0 or options.gpu_ids:
             # Multi GPUs
@@ -469,7 +470,7 @@ def main():
 
             def cleanup_handler(*args):
                 cleanup(pool)
-                sys.exit(1)
+                sys.exit(0)
 
             signal.signal(signal.SIGINT, cleanup_handler)
             signal.signal(signal.SIGTERM, cleanup_handler)
@@ -513,8 +514,8 @@ def main():
                 print(f"Unexpected error: {e}", flush=True)
                 cleanup(pool)
             finally:
-                log_counts = aggregate_logs(end=True, api_configs=api_configs)
-                print_log_info(all_case, fail_case, log_counts)
+                log_counts = aggregate_logs(end=True)
+                print_log_info(all_case, log_counts)
         else:
             # Single worker
             from tester import (APIConfig, APITestAccuracy,
