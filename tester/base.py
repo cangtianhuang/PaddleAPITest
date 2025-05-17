@@ -836,15 +836,20 @@ class APITestBase:
         converted_paddle_tensor = torch.utils.dlpack.from_dlpack(paddle_dlpack)
 
         def error_msg(msg):
-            flat_paddle = converted_paddle_tensor.flatten()[:100]
-            flat_torch = torch_tensor.flatten()[:100]
+            total_count = converted_paddle_tensor.numel()
+            display_count = min(total_count, 100)
+            flat_paddle = converted_paddle_tensor.flatten()[:display_count]
+            flat_torch = torch_tensor.flatten()[:display_count]
 
             msg = '\n'.join(msg.splitlines()[2:])
+            elements_text = f"First {display_count} elements" if display_count < total_count else "All elements"
             return (
                 f"Not equal to tolerance rtol={rtol}, atol={atol}\n"
                 f"{msg}\n"
-                f"ACTUAL: {flat_paddle}\n"
-                f"DESIRED: {flat_torch}"
+                f"ACTUAL: (shape={converted_paddle_tensor.shape}, dtype={converted_paddle_tensor.dtype})\n"
+                f"{elements_text}: {flat_paddle}\n"
+                f"DESIRED: (shape={torch_tensor.shape}, dtype={torch_tensor.dtype})\n"
+                f"{elements_text}: {flat_torch}"
             )
 
         torch.testing.assert_close(

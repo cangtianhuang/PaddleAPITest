@@ -20,10 +20,10 @@ class APITestAccuracy(APITestBase):
     @func_set_timeout(600)
     def test(self, re_run=False):
         if re_run:
-            print("[Re-run]", self.api_config.config, flush=True)
+            print("[re-run]", self.api_config.config, flush=True)
 
         if self.need_skip():
-            print("[Skip]", flush=True)
+            print("[skip]", flush=True)
             return
 
         if not self.ana_api_info():
