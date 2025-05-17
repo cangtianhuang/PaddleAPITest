@@ -116,7 +116,7 @@ class APITestAccuracy(APITestBase):
             traceback.print_exc()
             write_to_log("torch_error", self.api_config.config)
             if "CUDA error" in str(err) or "memory corruption" in str(err):
-                raise Exception(err)
+                raise
             return
 
         torch_grad_success = None
@@ -141,7 +141,7 @@ class APITestAccuracy(APITestBase):
                 print(str(err), flush=True)
                 torch_grad_success = False
                 if "CUDA error" in str(err) or "memory corruption" in str(err) or "CUDA out of memory" in str(err):
-                    raise Exception(err)
+                    raise
         else:
             del self.torch_args, self.torch_kwargs
 
@@ -218,8 +218,11 @@ class APITestAccuracy(APITestBase):
             print("[paddle error]", self.api_config.config, "\n", str(err), flush=True)
             write_to_log("paddle_error", self.api_config.config)
             if "CUDA error" in str(err) or "memory corruption" in str(err):
-                raise Exception(err)
-            if not re_run and "CUDA out of memory" in str(err):
+                raise
+            if "CUDA out of memory" in str(err):
+                if re_run:
+                    print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
+                    raise
                 self.test(re_run=True)
             return
 
@@ -230,6 +233,8 @@ class APITestAccuracy(APITestBase):
             write_to_log("paddle_error", self.api_config.config)
             return
         
+        paddle.device.cuda.empty_cache()
+        
         if isinstance(paddle_output, paddle.Tensor):
             if isinstance(torch_output, torch.Tensor):
                 try:
@@ -239,6 +244,11 @@ class APITestAccuracy(APITestBase):
                     # self.np_assert_accuracy(paddle_output.numpy(), torch_output.numpy(), 1e-2, 1e-2, self.api_config)
                     self.torch_assert_accuracy(paddle_output, torch_output, 1e-2, 1e-2, re_run)
                 except Exception as err:
+                    if "Comparing" in str(err):
+                        if re_run:
+                            print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
+                            raise
+                        self.test(re_run=True)
                     print("[accuracy error]", self.api_config.config, "\n", str(err), flush=True)
                     write_to_log("accuracy_error", self.api_config.config)
                     return
@@ -300,16 +310,21 @@ class APITestAccuracy(APITestBase):
                             # self.np_assert_accuracy(item_paddle.numpy(), item_torch.cpu().detach().numpy(), 1e-2, 1e-2, self.api_config)
                             self.torch_assert_accuracy(item_paddle, item_torch, 1e-2, 1e-2, re_run)
                     except Exception as err:
+                        if "Comparing" in str(err):
+                            if re_run:
+                                print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
+                                raise
+                            self.test(re_run=True)
                         print("[accuracy error]", self.api_config.config, "\n", str(err), flush=True)
                         write_to_log("accuracy_error", self.api_config.config)
                         return                    
                 else:
                     if isinstance(paddle_output[i], int):
-                        # self.np_assert_accuracy(numpy.array(paddle_output[i]), numpy.array(torch_output[i]), 1e-2, 1e-2, self.api_config)
-                        self.torch_assert_accuracy(paddle.to_tensor(paddle_output[i]), torch.tensor(torch_output[i]), 1e-2, 1e-2, re_run)
+                        self.np_assert_accuracy(numpy.array(paddle_output[i]), numpy.array(torch_output[i]), 1e-2, 1e-2, self.api_config)
+                        # self.torch_assert_accuracy(paddle.to_tensor(paddle_output[i]), torch.tensor(torch_output[i]), 1e-2, 1e-2, re_run)
                     elif 'tolist' in self.api_config.api_name:
-                        # self.np_assert_accuracy(numpy.array(paddle_output[i]), numpy.array(torch_output[i]), 1e-2, 1e-2, self.api_config)
-                        self.torch_assert_accuracy(paddle.to_tensor(paddle_output[i]), torch.tensor(torch_output[i]), 1e-2, 1e-2, re_run)
+                        self.np_assert_accuracy(numpy.array(paddle_output[i]), numpy.array(torch_output[i]), 1e-2, 1e-2, self.api_config)
+                        # self.torch_assert_accuracy(paddle.to_tensor(paddle_output[i]), torch.tensor(torch_output[i]), 1e-2, 1e-2, re_run)
                     elif not isinstance(paddle_output[i], paddle.Tensor):
                         print("[not compare] ", paddle_output[i], torch_output[i], flush=True)
                         write_to_log("accuracy_error", self.api_config.config)
@@ -326,11 +341,17 @@ class APITestAccuracy(APITestBase):
                             # self.np_assert_accuracy(paddle_output[i].numpy(), torch_output[i].numpy(), 1e-2, 1e-2, self.api_config)
                             self.torch_assert_accuracy(paddle_output[i], torch_output[i], 1e-2, 1e-2, re_run)
                         except Exception as err:
+                            if "Comparing" in str(err):
+                                if re_run:
+                                    print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
+                                    raise
+                                self.test(re_run=True)
                             print("[accuracy error]", self.api_config.config, "\n", str(err), flush=True)
                             write_to_log("accuracy_error", self.api_config.config)
                             return
 
         if torch_grad_success:
+            torch.cuda.empty_cache()
             try:
                 paddle_out_grads = None
                 inputs_list = self.get_paddle_input_list()
@@ -343,7 +364,12 @@ class APITestAccuracy(APITestBase):
                 print("[paddle error]", self.api_config.config, "\n", str(err), flush=True)
                 write_to_log("paddle_error", self.api_config.config)
                 if "CUDA error" in str(err) or "memory corruption" in str(err):
-                    raise Exception(err)
+                    raise
+                if "CUDA out of memory" in str(err):
+                    if re_run:
+                        print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
+                        raise
+                    self.test(re_run=True)
                 return
 
             try:
@@ -357,6 +383,8 @@ class APITestAccuracy(APITestBase):
                 torch_out_grads = torch_out_grads[0]
                 paddle_out_grads = paddle_out_grads[0]
 
+            paddle.device.cuda.empty_cache()
+
             if isinstance(paddle_out_grads, paddle.Tensor):
                 if isinstance(torch_out_grads, torch.Tensor):
                     try:
@@ -366,6 +394,11 @@ class APITestAccuracy(APITestBase):
                         # self.np_assert_accuracy(paddle_out_grads.numpy(), torch_out_grads.numpy(), 1e-2, 1e-2, self.api_config)
                         self.torch_assert_accuracy(paddle_out_grads, torch_out_grads, 1e-2, 1e-2, re_run)
                     except Exception as err:
+                        if "Comparing" in str(err):
+                            if re_run:
+                                print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
+                                raise
+                            self.test(re_run=True)
                         print("[accuracy error] backward ", self.api_config.config, "\n", str(err), flush=True)
                         write_to_log("accuracy_error", self.api_config.config)
                         return
@@ -387,8 +420,8 @@ class APITestAccuracy(APITestBase):
                     return
                 for i in range(len(paddle_out_grads)):
                     if isinstance(paddle_out_grads[i], int):
-                        # self.np_assert_accuracy(numpy.array(paddle_out_grads[i]), numpy.array(torch_out_grads[i]), 1e-2, 1e-2, self.api_config)
-                        self.torch_assert_accuracy(paddle.to_tensor(paddle_out_grads[i]), torch.tensor(torch_out_grads[i]), 1e-2, 1e-2, re_run)
+                        self.np_assert_accuracy(numpy.array(paddle_out_grads[i]), numpy.array(torch_out_grads[i]), 1e-2, 1e-2, self.api_config)
+                        # self.torch_assert_accuracy(paddle.to_tensor(paddle_out_grads[i]), torch.tensor(torch_out_grads[i]), 1e-2, 1e-2, re_run)
                     elif not isinstance(paddle_out_grads[i], paddle.Tensor):
                         print("[not compare] ", paddle_out_grads[i], torch_out_grads[i], flush=True)
                         write_to_log("accuracy_error", self.api_config.config)
@@ -405,6 +438,11 @@ class APITestAccuracy(APITestBase):
                             # self.np_assert_accuracy(paddle_out_grads[i].numpy(), torch_out_grads[i].numpy(), 1e-2, 1e-2, self.api_config)
                             self.torch_assert_accuracy(paddle_out_grads[i], torch_out_grads[i], 1e-2, 1e-2, re_run)
                         except Exception as err:
+                            if "Comparing" in str(err):
+                                if re_run:
+                                    print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
+                                    raise
+                                self.test(re_run=True)
                             print("[accuracy error] backward ", self.api_config.config, "\n", str(err), flush=True)
                             write_to_log("accuracy_error", self.api_config.config)
                             return

@@ -205,7 +205,7 @@ class APITestBase:
             paddle_sig = inspect.signature(self.paddle_api)
             paddle_bound_args = paddle_sig.bind(*self.api_config.args, **self.api_config.kwargs)
             paddle_args_dict = paddle_bound_args.arguments
-            # fix paddle.arange wrong binding 
+            # fix paddle.arange wrong binding
             if self.api_config.api_name == "paddle.arange":
                 # if end is not provided, use the 'start' kwargs as end
                 if "end" not in paddle_args_dict:
@@ -386,11 +386,11 @@ class APITestBase:
         
         be sure to call gen_numpy_input() before use gen_paddle_input() since gen_paddle_input() do not pass index or key to get_paddle_tensor() or get_numpy_tensor() while gen_numpy_input() pass.
         """
-        
+
         self.paddle_args = []
         self.paddle_kwargs = collections.OrderedDict()
         self.paddle_merged_kwargs = collections.OrderedDict()
-        
+
         for arg_config in self.paddle_args_config:
             if isinstance(arg_config, TensorConfig):
                 self.paddle_args.append(arg_config.get_paddle_tensor(self.api_config))
@@ -440,7 +440,6 @@ class APITestBase:
             (k, _deep_copy(v)) for k, v in self.paddle_kwargs.items()
         )
         return args, kwargs
-
 
     def get_paddle_input_list(self):
         result = []
@@ -726,7 +725,6 @@ class APITestBase:
         )
         return args, kwargs
 
-
     def _handle_list_or_tuple_torch(self, config_items, is_tuple=False):
         """处理 list 或 tuple """
         tmp = []
@@ -750,7 +748,7 @@ class APITestBase:
         
         be sure to call gen_numpy_input() before use gen_torch_input() since gen_torch_input() do not pass index or key to get_torch_tensor() or get_numpy_tensor() while gen_numpy_input() pass.
         """
-        
+
         self.torch_args = []
         self.torch_kwargs = collections.OrderedDict()
         for arg_config in self.torch_args_config:
@@ -827,38 +825,35 @@ class APITestBase:
             # ),
         )
 
-    def torch_assert_accuracy(self, paddle_tensor, torch_tensor, atol, rtol, re_run=False):
+    def torch_assert_accuracy(
+        self, paddle_tensor, torch_tensor, atol, rtol, re_run=False
+    ):
         if re_run:
             paddle_tensor = paddle_tensor.cpu().detach()
             torch_tensor = torch_tensor.cpu().detach()
 
         paddle_dlpack = paddle.utils.dlpack.to_dlpack(paddle_tensor)
         converted_paddle_tensor = torch.utils.dlpack.from_dlpack(paddle_dlpack)
-        
-        if not torch.allclose(converted_paddle_tensor, torch_tensor, rtol=rtol, atol=atol, equal_nan=True):
-            total_elements = converted_paddle_tensor.numel()
-            check_elements = min(total_elements, int(1e7))
 
-            flat_paddle = converted_paddle_tensor.flatten()[:check_elements]
-            flat_torch = torch_tensor.flatten()[:check_elements]
-            diff = torch.abs(flat_paddle - flat_torch)
+        def error_msg(msg):
+            flat_paddle = converted_paddle_tensor.flatten()[:100]
+            flat_torch = torch_tensor.flatten()[:100]
 
-            mismatched = torch.sum(diff > (atol + rtol * torch.abs(flat_torch)))
-            mismatch_ratio = mismatched.float() / check_elements * 100
-
-            max_abs_diff = torch.max(diff).item()
-            max_rel_diff = torch.max(diff / torch.abs(flat_torch).clamp(min=1e-8)).item()
-
-            error_msg = (
+            return (
                 f"Not equal to tolerance rtol={rtol}, atol={atol}\n"
-                f"Mismatched elements: {mismatched.item()} / {check_elements} "
-                f"({mismatch_ratio:.1f}%)\n"
-                f"Max absolute difference among violations: {max_abs_diff}\n"
-                f"Max relative difference among violations: {max_rel_diff}\n"
-                f"ACTUAL: {flat_paddle[:100]}\n"
-                f"DESIRED: {flat_torch[:100]}"
+                f"{msg}\n"
+                f"ACTUAL: {flat_paddle}\n"
+                f"DESIRED: {flat_torch}"
             )
-            raise AssertionError(error_msg)
+
+        torch.testing.assert_close(
+            converted_paddle_tensor,
+            torch_tensor,
+            rtol=rtol,
+            atol=atol,
+            equal_nan=True,
+            msg=error_msg,
+        )
 
     def test(self):
         pass
