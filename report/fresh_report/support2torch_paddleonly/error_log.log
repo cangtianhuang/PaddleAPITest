@@ -1,0 +1,192 @@
+2025-05-17 11:51:31.763892 Worker PID: 119845, Assigned GPU ID: 4
+2025-05-17 11:51:31.787911 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([1, 1024, 128],"bfloat16"), Tensor([128],"bfloat16"), )
+W0517 11:51:35.613073 119890 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 8.0, Driver API Version: 12.0, Runtime API Version: 11.8
+W0517 11:51:35.614219 119890 gpu_resources.cc:164] device: 0, cuDNN Version: 8.6.
+W0517 11:51:35.626755 119890 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([1, 1024, 128],"bfloat16"), Tensor([128],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:35.648960 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([1, 1024, 2, 16],"bfloat16"), Tensor([1, 1024, 1, 16],"bfloat16"), )
+W0517 11:51:35.652350 119916 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([1, 1024, 2, 16],"bfloat16"), Tensor([1, 1024, 1, 16],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:35.670738 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([1, 1024, 32, 128],"bfloat16"), Tensor([1, 1024, 1, 128],"bfloat16"), )
+W0517 11:51:35.796149 119917 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([1, 1024, 32, 128],"bfloat16"), Tensor([1, 1024, 1, 128],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:35.817345 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([1, 1024, 4096],"bfloat16"), Tensor([4096],"bfloat16"), )
+W0517 11:51:35.916674 119920 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([1, 1024, 4096],"bfloat16"), Tensor([4096],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:35.939920 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([1, 1024, 768],"bfloat16"), Tensor([768],"bfloat16"), )
+W0517 11:51:35.957731 119924 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([1, 1024, 768],"bfloat16"), Tensor([768],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:35.978743 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([1, 1024, 8, 16],"bfloat16"), Tensor([1, 1024, 1, 16],"bfloat16"), )
+W0517 11:51:35.984004 119926 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([1, 1024, 8, 16],"bfloat16"), Tensor([1, 1024, 1, 16],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:35.999834 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([1, 1024, 8, 96],"bfloat16"), Tensor([1, 1024, 1, 96],"bfloat16"), )
+W0517 11:51:36.017869 119929 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([1, 1024, 8, 96],"bfloat16"), Tensor([1, 1024, 1, 96],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:36.033449 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([10, 2],"bfloat16"), Tensor([10, 2],"bfloat16"), )
+W0517 11:51:36.035341 119930 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([10, 2],"bfloat16"), Tensor([10, 2],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:36.058999 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([2, 114, 64],"bfloat16"), Tensor([64],"bfloat16"), )
+W0517 11:51:36.060719 119931 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([2, 114, 64],"bfloat16"), Tensor([64],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:36.080975 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([2, 302, 768],"bfloat16"), Tensor([768],"bfloat16"), )
+W0517 11:51:36.091358 119932 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([2, 302, 768],"bfloat16"), Tensor([768],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:36.109164 GPU 4 119845 test begin: paddle.Tensor.__mul__(Tensor([2, 302, 8, 96],"bfloat16"), Tensor([2, 302, 1, 96],"bfloat16"), )
+W0517 11:51:36.120869 119933 backward.cc:437] While running Node (MultiplyGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.Tensor.__mul__(Tensor([2, 302, 8, 96],"bfloat16"), Tensor([2, 302, 1, 96],"bfloat16"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (float32) does not match the type of data (bfloat16) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():16 != phi::CppTypeToDataType<T>::Type():10.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:36.147550 GPU 4 119845 test begin: paddle.logaddexp(Tensor([10, 200, 300],"int32"), Tensor([10, 200, 300],"int32"), )
+W0517 11:51:36.167251 119934 backward.cc:437] While running Node (AbsGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.logaddexp(Tensor([10, 200, 300],"int32"), Tensor([10, 200, 300],"int32"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (int32) does not match the type of data (float32) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():10 != phi::CppTypeToDataType<T>::Type():7.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:36.188903 GPU 4 119845 test begin: paddle.logaddexp(Tensor([10, 200, 300],"int64"), Tensor([10, 200, 300],"int64"), )
+W0517 11:51:36.208423 119935 backward.cc:437] While running Node (AbsGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.logaddexp(Tensor([10, 200, 300],"int64"), Tensor([10, 200, 300],"int64"), ) 
+ (InvalidArgument) The type of data we are trying to retrieve (int64) does not match the type of data (float32) currently contained in the container.
+  [Hint: Expected dtype() == phi::CppTypeToDataType<T>::Type(), but received dtype():10 != phi::CppTypeToDataType<T>::Type():9.] (at ../paddle/phi/core/dense_tensor.cc:153)
+
+2025-05-17 11:51:36.224857 GPU 4 119845 test begin: paddle.meshgrid(list[Tensor([2],"int64"),Tensor([2],"int64"),Tensor([1],"int64"),Tensor([0],"int64"),], )
+
+
+--------------------------------------
+C++ Traceback (most recent call last):
+--------------------------------------
+0   egr::Grad(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, bool, bool, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&)
+1   egr::RunBackward(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&)
+2   MeshgridGradNode::operator()(paddle::small_vector<std::vector<paddle::Tensor, std::allocator<paddle::Tensor> >, 15u>&, bool, bool)
+3   paddle::experimental::meshgrid_grad(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor*, std::allocator<paddle::Tensor*> >)
+4   phi::KernelImpl<void (*)(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >), &(void phi::MeshgridGradKernel<long, phi::GPUContext>(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >))>::VariadicCompute(phi::DeviceContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >)
+5   void phi::MeshgridGradKernel<long, phi::GPUContext>(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >)
+6   phi::funcs::EigenBroadcastGrad<Eigen::GpuDevice, long, 4>::Eval(Eigen::GpuDevice const&, Eigen::TensorMap<Eigen::Tensor<long, 1, 1, long>, 0, Eigen::MakePointer>, Eigen::TensorMap<Eigen::Tensor<long const, 1, 1, long>, 0, Eigen::MakePointer>, Eigen::DSizes<long, 4> const&, Eigen::DSizes<long, 8> const&)
+
+----------------------
+Error Message Summary:
+----------------------
+FatalError: `Erroneous arithmetic operation` is detected by the operating system.
+  [TimeInfo: *** Aborted at 1747453896 (unix time) try "date -d @1747453896" if you are using GNU date ***]
+  [SignalInfo: *** SIGFPE (@0x7f0361c370ef) received by PID 119845 (TID 0x7f02930d1700) from PID 1640198383 ***]
+
+[fatal] Worker crashed for paddle.meshgrid(list[Tensor([2],"int64"),Tensor([2],"int64"),Tensor([1],"int64"),Tensor([0],"int64"),], ): Abnormal termination
+2025-05-17 11:51:49.657298 Worker PID: 119999, Assigned GPU ID: 4
+2025-05-17 11:51:49.682481 GPU 4 119999 test begin: paddle.meshgrid(list[Tensor([3],"int32"),Tensor([5],"int32"),Tensor([3],"int32"),Tensor([0],"int32"),], )
+W0517 11:51:53.403715 120033 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 8.0, Driver API Version: 12.0, Runtime API Version: 11.8
+W0517 11:51:53.404812 120033 gpu_resources.cc:164] device: 0, cuDNN Version: 8.6.
+
+
+--------------------------------------
+C++ Traceback (most recent call last):
+--------------------------------------
+0   egr::Grad(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, bool, bool, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&)
+1   egr::RunBackward(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&)
+2   MeshgridGradNode::operator()(paddle::small_vector<std::vector<paddle::Tensor, std::allocator<paddle::Tensor> >, 15u>&, bool, bool)
+3   paddle::experimental::meshgrid_grad(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor*, std::allocator<paddle::Tensor*> >)
+4   phi::KernelImpl<void (*)(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >), &(void phi::MeshgridGradKernel<int, phi::GPUContext>(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >))>::VariadicCompute(phi::DeviceContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >)
+5   void phi::MeshgridGradKernel<int, phi::GPUContext>(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >)
+6   phi::funcs::EigenBroadcastGrad<Eigen::GpuDevice, int, 4>::Eval(Eigen::GpuDevice const&, Eigen::TensorMap<Eigen::Tensor<int, 1, 1, long>, 0, Eigen::MakePointer>, Eigen::TensorMap<Eigen::Tensor<int const, 1, 1, long>, 0, Eigen::MakePointer>, Eigen::DSizes<long, 4> const&, Eigen::DSizes<long, 8> const&)
+
+----------------------
+Error Message Summary:
+----------------------
+FatalError: `Erroneous arithmetic operation` is detected by the operating system.
+  [TimeInfo: *** Aborted at 1747453913 (unix time) try "date -d @1747453913" if you are using GNU date ***]
+  [SignalInfo: *** SIGFPE (@0x7f9079c620ef) received by PID 119999 (TID 0x7f8fab0d1700) from PID 2043027695 ***]
+
+[fatal] Worker crashed for paddle.meshgrid(list[Tensor([3],"int32"),Tensor([5],"int32"),Tensor([3],"int32"),Tensor([0],"int32"),], ): Abnormal termination
+2025-05-17 11:51:56.797635 Worker PID: 120061, Assigned GPU ID: 4
+2025-05-17 11:51:56.822050 GPU 4 120061 test begin: paddle.meshgrid(list[Tensor([4],"int32"),Tensor([4],"int32"),Tensor([5],"int32"),Tensor([0],"int32"),], )
+W0517 11:52:00.407042 120097 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 8.0, Driver API Version: 12.0, Runtime API Version: 11.8
+W0517 11:52:00.408039 120097 gpu_resources.cc:164] device: 0, cuDNN Version: 8.6.
+
+
+--------------------------------------
+C++ Traceback (most recent call last):
+--------------------------------------
+0   egr::Grad(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, bool, bool, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&)
+1   egr::RunBackward(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&)
+2   MeshgridGradNode::operator()(paddle::small_vector<std::vector<paddle::Tensor, std::allocator<paddle::Tensor> >, 15u>&, bool, bool)
+3   paddle::experimental::meshgrid_grad(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor*, std::allocator<paddle::Tensor*> >)
+4   phi::KernelImpl<void (*)(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >), &(void phi::MeshgridGradKernel<int, phi::GPUContext>(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >))>::VariadicCompute(phi::DeviceContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >)
+5   void phi::MeshgridGradKernel<int, phi::GPUContext>(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >)
+6   phi::funcs::EigenBroadcastGrad<Eigen::GpuDevice, int, 4>::Eval(Eigen::GpuDevice const&, Eigen::TensorMap<Eigen::Tensor<int, 1, 1, long>, 0, Eigen::MakePointer>, Eigen::TensorMap<Eigen::Tensor<int const, 1, 1, long>, 0, Eigen::MakePointer>, Eigen::DSizes<long, 4> const&, Eigen::DSizes<long, 8> const&)
+
+----------------------
+Error Message Summary:
+----------------------
+FatalError: `Erroneous arithmetic operation` is detected by the operating system.
+  [TimeInfo: *** Aborted at 1747453920 (unix time) try "date -d @1747453920" if you are using GNU date ***]
+  [SignalInfo: *** SIGFPE (@0x7fc55ee3b0ef) received by PID 120061 (TID 0x7fc490395700) from PID 1591980271 ***]
+
+[fatal] Worker crashed for paddle.meshgrid(list[Tensor([4],"int32"),Tensor([4],"int32"),Tensor([5],"int32"),Tensor([0],"int32"),], ): Abnormal termination
+2025-05-17 11:52:13.682387 Worker PID: 120198, Assigned GPU ID: 4
+2025-05-17 11:52:13.710745 GPU 4 120198 test begin: paddle.meshgrid(list[Tensor([5],"int64"),Tensor([4],"int64"),Tensor([4],"int64"),Tensor([0],"int64"),], )
+W0517 11:52:17.529013 120226 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 8.0, Driver API Version: 12.0, Runtime API Version: 11.8
+W0517 11:52:17.530016 120226 gpu_resources.cc:164] device: 0, cuDNN Version: 8.6.
+
+
+--------------------------------------
+C++ Traceback (most recent call last):
+--------------------------------------
+0   egr::Grad(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, bool, bool, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&)
+1   egr::RunBackward(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, bool, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&)
+2   MeshgridGradNode::operator()(paddle::small_vector<std::vector<paddle::Tensor, std::allocator<paddle::Tensor> >, 15u>&, bool, bool)
+3   paddle::experimental::meshgrid_grad(std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor, std::allocator<paddle::Tensor> > const&, std::vector<paddle::Tensor*, std::allocator<paddle::Tensor*> >)
+4   phi::KernelImpl<void (*)(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >), &(void phi::MeshgridGradKernel<long, phi::GPUContext>(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >))>::VariadicCompute(phi::DeviceContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >)
+5   void phi::MeshgridGradKernel<long, phi::GPUContext>(phi::GPUContext const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor const*, std::allocator<phi::DenseTensor const*> > const&, std::vector<phi::DenseTensor*, std::allocator<phi::DenseTensor*> >)
+6   phi::funcs::EigenBroadcastGrad<Eigen::GpuDevice, long, 4>::Eval(Eigen::GpuDevice const&, Eigen::TensorMap<Eigen::Tensor<long, 1, 1, long>, 0, Eigen::MakePointer>, Eigen::TensorMap<Eigen::Tensor<long const, 1, 1, long>, 0, Eigen::MakePointer>, Eigen::DSizes<long, 4> const&, Eigen::DSizes<long, 8> const&)
+
+----------------------
+Error Message Summary:
+----------------------
+FatalError: `Erroneous arithmetic operation` is detected by the operating system.
+  [TimeInfo: *** Aborted at 1747453937 (unix time) try "date -d @1747453937" if you are using GNU date ***]
+  [SignalInfo: *** SIGFPE (@0x7f68535f30ef) received by PID 120198 (TID 0x7f678447d700) from PID 1398747375 ***]
+
+[fatal] Worker crashed for paddle.meshgrid(list[Tensor([5],"int64"),Tensor([4],"int64"),Tensor([4],"int64"),Tensor([0],"int64"),], ): Abnormal termination
+2025-05-17 11:52:20.865865 Worker PID: 120265, Assigned GPU ID: 4
+W0517 11:52:24.557044 120297 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 8.0, Driver API Version: 12.0, Runtime API Version: 11.8
+W0517 11:52:24.558028 120297 gpu_resources.cc:164] device: 0, cuDNN Version: 8.6.
+2025-05-17 11:52:24.585971 GPU 4 120265 test begin: paddle.roll(Tensor([3, 3],"bool"), shifts=1, )
+W0517 11:52:24.588301 120325 backward.cc:437] While running Node (RollGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.roll(Tensor([3, 3],"bool"), shifts=1, ) 
+ (NotFound) The kernel with key (GPU, Undefined(AnyLayout), bool) of kernel `roll_grad` is not registered and fail to fallback to CPU one. Selected wrong DataType `bool`. Paddle support following DataTypes: float64, complex64, int32, int64, float16, bfloat16, complex128, float32.
+  [Hint: Expected kernel_iter != iter->second.end(), but received kernel_iter == iter->second.end().] (at ../paddle/phi/core/kernel_factory.cc:380)
+
+2025-05-17 11:52:24.604614 GPU 4 120265 test begin: paddle.roll(Tensor([3, 3],"bool"), shifts=1, axis=0, )
+W0517 11:52:24.606164 120326 backward.cc:437] While running Node (RollGradNode) raises an EnforceNotMet exception
+[paddle error] paddle.roll(Tensor([3, 3],"bool"), shifts=1, axis=0, ) 
+ (NotFound) The kernel with key (GPU, Undefined(AnyLayout), bool) of kernel `roll_grad` is not registered and fail to fallback to CPU one. Selected wrong DataType `bool`. Paddle support following DataTypes: float64, complex64, int32, int64, float16, bfloat16, complex128, float32.
+  [Hint: Expected kernel_iter != iter->second.end(), but received kernel_iter == iter->second.end().] (at ../paddle/phi/core/kernel_factory.cc:380)

@@ -1,0 +1,4 @@
+paddle.Tensor.__mul__
+paddle.logaddexp
+paddle.meshgrid
+paddle.roll

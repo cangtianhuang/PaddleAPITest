@@ -1,0 +1,4 @@
+paddle.meshgrid(list[Tensor([2],"int64"),Tensor([2],"int64"),Tensor([1],"int64"),Tensor([0],"int64"),], )
+paddle.meshgrid(list[Tensor([3],"int32"),Tensor([5],"int32"),Tensor([3],"int32"),Tensor([0],"int32"),], )
+paddle.meshgrid(list[Tensor([4],"int32"),Tensor([4],"int32"),Tensor([5],"int32"),Tensor([0],"int32"),], )
+paddle.meshgrid(list[Tensor([5],"int64"),Tensor([4],"int64"),Tensor([4],"int64"),Tensor([0],"int64"),], )
