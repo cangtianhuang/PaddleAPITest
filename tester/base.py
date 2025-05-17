@@ -829,8 +829,8 @@ class APITestBase:
         self, paddle_tensor, torch_tensor, atol, rtol, re_run=False
     ):
         if re_run:
-            paddle_tensor = paddle_tensor.cpu().detach()
-            torch_tensor = torch_tensor.cpu().detach()
+            paddle_tensor = paddle_tensor.cpu()
+            torch_tensor = torch_tensor.cpu()
 
         paddle_dlpack = paddle.utils.dlpack.to_dlpack(paddle_tensor)
         converted_paddle_tensor = torch.utils.dlpack.from_dlpack(paddle_dlpack)
@@ -839,6 +839,7 @@ class APITestBase:
             flat_paddle = converted_paddle_tensor.flatten()[:100]
             flat_torch = torch_tensor.flatten()[:100]
 
+            msg = '\n'.join(msg.splitlines()[2:])
             return (
                 f"Not equal to tolerance rtol={rtol}, atol={atol}\n"
                 f"{msg}\n"
@@ -854,6 +855,10 @@ class APITestBase:
             equal_nan=True,
             msg=error_msg,
         )
+
+        if re_run:
+            paddle_tensor = paddle_tensor.cuda()
+            torch_tensor = torch_tensor.cuda()
 
     def test(self):
         pass

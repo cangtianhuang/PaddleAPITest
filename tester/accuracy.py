@@ -19,6 +19,9 @@ class APITestAccuracy(APITestBase):
 
     @func_set_timeout(600)
     def test(self, re_run=False):
+        if re_run:
+            print("[Re-run]", self.api_config.config, flush=True)
+
         if self.need_skip():
             print("[Skip]", flush=True)
             return
@@ -206,6 +209,7 @@ class APITestAccuracy(APITestBase):
                         paddle_output = api(*self.paddle_args[1:], **self.paddle_kwargs)
                 else:
                     paddle_output = api(*self.paddle_args[1:], **self.paddle_kwargs)
+                del api
             else:
                 if self.test_amp:
                     with paddle.amp.auto_cast():
@@ -223,7 +227,12 @@ class APITestAccuracy(APITestBase):
                 if re_run:
                     print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
                     raise
+                del torch_output, torch_out_grads
+                gc.collect()
+                torch.cuda.empty_cache()
+                paddle.device.cuda.empty_cache()
                 self.test(re_run=True)
+                return
             return
 
         try:
@@ -232,9 +241,9 @@ class APITestAccuracy(APITestBase):
             print("[cuda error]", self.api_config.config, "\n", str(err), flush=True)
             write_to_log("paddle_error", self.api_config.config)
             return
-        
+
         paddle.device.cuda.empty_cache()
-        
+
         if isinstance(paddle_output, paddle.Tensor):
             if isinstance(torch_output, torch.Tensor):
                 try:
@@ -248,7 +257,12 @@ class APITestAccuracy(APITestBase):
                         if re_run:
                             print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
                             raise
+                        del torch_output, torch_out_grads, paddle_output
+                        gc.collect()
+                        torch.cuda.empty_cache()
+                        paddle.device.cuda.empty_cache()
                         self.test(re_run=True)
+                        return
                     print("[accuracy error]", self.api_config.config, "\n", str(err), flush=True)
                     write_to_log("accuracy_error", self.api_config.config)
                     return
@@ -314,7 +328,12 @@ class APITestAccuracy(APITestBase):
                             if re_run:
                                 print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
                                 raise
+                            del torch_output, torch_out_grads, paddle_output
+                            gc.collect()
+                            torch.cuda.empty_cache()
+                            paddle.device.cuda.empty_cache()
                             self.test(re_run=True)
+                            return
                         print("[accuracy error]", self.api_config.config, "\n", str(err), flush=True)
                         write_to_log("accuracy_error", self.api_config.config)
                         return                    
@@ -345,7 +364,12 @@ class APITestAccuracy(APITestBase):
                                 if re_run:
                                     print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
                                     raise
+                                del torch_output, torch_out_grads, paddle_output
+                                gc.collect()
+                                torch.cuda.empty_cache()
+                                paddle.device.cuda.empty_cache()
                                 self.test(re_run=True)
+                                return
                             print("[accuracy error]", self.api_config.config, "\n", str(err), flush=True)
                             write_to_log("accuracy_error", self.api_config.config)
                             return
@@ -369,7 +393,12 @@ class APITestAccuracy(APITestBase):
                     if re_run:
                         print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
                         raise
+                    del torch_output, torch_out_grads, paddle_output
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                    paddle.device.cuda.empty_cache()
                     self.test(re_run=True)
+                    return
                 return
 
             try:
@@ -398,7 +427,12 @@ class APITestAccuracy(APITestBase):
                             if re_run:
                                 print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
                                 raise
+                            del torch_output, torch_out_grads, paddle_output, paddle_out_grads
+                            gc.collect()
+                            torch.cuda.empty_cache()
+                            paddle.device.cuda.empty_cache()
                             self.test(re_run=True)
+                            return
                         print("[accuracy error] backward ", self.api_config.config, "\n", str(err), flush=True)
                         write_to_log("accuracy_error", self.api_config.config)
                         return
@@ -442,7 +476,12 @@ class APITestAccuracy(APITestBase):
                                 if re_run:
                                     print("[cuda out of memory]", self.api_config.config, "\n", str(err), flush=True)
                                     raise
+                                del torch_output, torch_out_grads, paddle_output, paddle_out_grads
+                                gc.collect()
+                                torch.cuda.empty_cache()
+                                paddle.device.cuda.empty_cache()
                                 self.test(re_run=True)
+                                return
                             print("[accuracy error] backward ", self.api_config.config, "\n", str(err), flush=True)
                             write_to_log("accuracy_error", self.api_config.config)
                             return
