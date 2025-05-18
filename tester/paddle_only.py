@@ -12,7 +12,7 @@ class APITestPaddleOnly(APITestBase):
         self.test_amp = test_amp
     
     @func_set_timeout(600)
-    def test(self):
+    def test(self, retry=False):
         
         if self.need_skip():
             print("[Skip]", flush=True)

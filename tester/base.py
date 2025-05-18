@@ -826,9 +826,15 @@ class APITestBase:
         )
 
     def torch_assert_accuracy(
-        self, paddle_tensor, torch_tensor, atol, rtol, re_run=False
+        self, paddle_tensor, torch_tensor, atol, rtol, retry=False
     ):
-        if re_run:
+        # if not retry:
+        #     tensor_size = paddle_tensor.numel() * paddle_tensor.element_size()
+        #     free_mem = torch.cuda.mem_get_info()[0]
+        #     if free_mem <= 4 * tensor_size:
+        #         retry = True
+
+        if retry:
             paddle_tensor = paddle_tensor.cpu()
             torch_tensor = torch_tensor.cpu()
 
@@ -861,7 +867,7 @@ class APITestBase:
             msg=error_msg,
         )
 
-        if re_run:
+        if retry:
             paddle_tensor = paddle_tensor.cuda()
             torch_tensor = torch_tensor.cuda()
 
