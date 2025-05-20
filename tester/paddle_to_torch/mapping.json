@@ -813,6 +813,14 @@
         }
     },
     "m": "API started with 'm' should be placed here",
+    "paddle.matmul": {
+        "Rule": "MatmulRule",
+        "torch_api": "torch.matmul",
+        "paddle_torch_args_map": {
+            "x": "input",
+            "y": "other"
+        }
+    },
     "paddle.matrix_transpose":{
         "Rule": "Matrix_transposeRule"
     },
@@ -5134,14 +5142,6 @@
             "x": "A"
         },
         "min_input_args": 1
-    },
-    "paddle.matmul": {
-        "torch_api": "torch.linalg.matmul",
-        "paddle_torch_args_map": {
-            "x": "input",
-            "y": "other"
-        },
-        "min_input_args": 2
     },
     "paddle.linalg.matrix_norm": {
         "torch_api": "torch.linalg.matrix_norm",

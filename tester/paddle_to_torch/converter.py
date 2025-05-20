@@ -9,11 +9,7 @@ import torch
 from . import rules
 from .rules import BaseRule, ConvertResult, ErrorRule, GenericRule
 
-PADDLE2TORCH_WRONG_CONFIG = frozenset(
-    [
-        "paddle.matmul"
-    ]
-)
+PADDLE2TORCH_WRONG_CONFIG = frozenset([])
 
 
 class Paddle2TorchConverter:

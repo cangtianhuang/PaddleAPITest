@@ -4,8 +4,7 @@ from pathlib import Path
 
 # 日志文件路径
 DIR_PATH = Path(__file__).resolve()
-while DIR_PATH.name != "PaddleAPITest":
-    DIR_PATH = DIR_PATH.parent
+DIR_PATH = DIR_PATH.parent.parent.parent
 TEST_LOG_PATH = DIR_PATH / "tester/api_config/test_log"
 TEST_LOG_PATH.mkdir(parents=True, exist_ok=True)
 TMP_LOG_PATH = TEST_LOG_PATH / ".tmp"
@@ -20,6 +19,7 @@ LOG_PREFIXES = {
     "accuracy_error": "api_config_accuracy_error",
     "timeout": "api_config_timeout",
     "crash": "api_config_crash",
+    "oom": "api_config_oom",
 }
 
 is_engineV2 = False
@@ -96,12 +96,12 @@ def read_log(log_type):
         return set()
 
 
-def aggregate_logs(mkdir=False):
+def aggregate_logs(end=False):
     """聚合所有相同类型的日志文件"""
-    if not TMP_LOG_PATH.exists():
-        if mkdir:
-            TMP_LOG_PATH.mkdir(exist_ok=True)
+    if not TMP_LOG_PATH.exists() and not end:
+        TMP_LOG_PATH.mkdir(exist_ok=True)
         return
+
     for prefix in LOG_PREFIXES.values():
         log_files = list(TMP_LOG_PATH.glob(f"{prefix}_*.txt"))
         if not log_files:
@@ -126,42 +126,62 @@ def aggregate_logs(mkdir=False):
         shutil.rmtree(TMP_LOG_PATH)
     except OSError:
         pass
-    if mkdir:
+
+    if not end:
         TMP_LOG_PATH.mkdir(exist_ok=True)
-
-
-def print_log_info(all_case, fail_case):
-    """打印日志统计信息"""
-    log_counts = {}
-    recorded_count = 0
-
-    for log_type, prefix in LOG_PREFIXES.items():
-        log_file = TEST_LOG_PATH / f"{prefix}.txt"
-        if not log_file.exists():
-            continue
+    else:
+        log_counts = {}
+        checkpoint_file = TEST_LOG_PATH / "checkpoint.txt"
+        api_configs = set()
         try:
-            with log_file.open("r") as f:
-                count = sum(1 for _ in f)
-                log_counts[log_type] = count
-                if log_type not in ["checkpoint", "timeout", "crash"]:
-                    recorded_count += count
+            with checkpoint_file.open("r") as f:
+                api_configs = set(line.strip() for line in f if line.strip())
+                log_counts["checkpoint"] = len(api_configs)
         except Exception as err:
-            print(f"Error reading {log_file}: {err}", flush=True)
+            print(f"Error reading {checkpoint_file}: {err}", flush=True)
 
-    skipped_case = all_case - recorded_count - fail_case
-    assert (
-        skipped_case >= 0
-    ), f"skipped_case should be non-negative, but got {skipped_case}"
+        for log_type, prefix in LOG_PREFIXES.items():
+            if log_type == "checkpoint":
+                continue
+            log_file = TEST_LOG_PATH / f"{prefix}.txt"
+            if not log_file.exists():
+                continue
+            try:
+                with log_file.open("r") as f:
+                    lines = set(line.strip() for line in f if line.strip())
+                    api_configs -= lines
+                    log_counts[log_type] = len(lines)
+            except Exception as err:
+                print(f"Error reading {log_file}: {err}", flush=True)
+
+        if api_configs:
+            log_counts["skip"] = len(api_configs)
+            skip_file = TEST_LOG_PATH / "api_config_skip.txt"
+            try:
+                with skip_file.open("w") as f:
+                    f.writelines(f"{line}\n" for line in sorted(api_configs))
+            except Exception as err:
+                print(f"Error writing to {skip_file}: {err}", flush=True)
+        return log_counts
+
+
+def print_log_info(all_case, log_counts={}):
+    """打印日志统计信息"""
+    test_case = log_counts.get("checkpoint", 0)
+    fail_case = log_counts.get("crash", 0) + log_counts.get("timeout", 0)
+    skip_case = log_counts.get("skip", 0)
 
     # 打印统计信息
     print("\n" + "=" * 50)
     print("Test Case Statistics".center(50))
     print("=" * 50)
     print(f"{'Total cases':<30}: {all_case}")
+    print(f"{'Tested cases':<30}: {test_case}")
     print(f"{'Failed cases':<30}: {fail_case}")
-    print(f"{'Skipped cases':<30}: {skipped_case}")
-    print("-" * 50)
-    print("Log Type Breakdown:")
-    for log_type, count in log_counts.items():
-        print(f"  {log_type:<28}: {count}")
+    print(f"{'Skipped cases':<30}: {skip_case}")
+    if log_counts:
+        print("-" * 50)
+        print("Log Type Breakdown:")
+        for log_type, count in log_counts.items():
+            print(f"  {log_type:<28}: {count}")
     print("=" * 50 + "\n")

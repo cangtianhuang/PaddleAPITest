@@ -1,13 +1,14 @@
 import collections
 import copy
 import math
+import os
 import re
 
 import numpy
 import paddle
 import torch
 
-USE_CACHED_NUMPY = False
+USE_CACHED_NUMPY = os.getenv("USE_CACHED_NUMPY", "False").lower() == "true"
 cached_numpy = {}
 
 not_zero_apis = [
