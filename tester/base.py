@@ -835,8 +835,8 @@ class APITestBase:
         #         retry = True
 
         if retry:
-            paddle_tensor = paddle_tensor.cpu()
-            torch_tensor = torch_tensor.cpu()
+            paddle_tensor = paddle_tensor.cpu().detach()
+            torch_tensor = torch_tensor.cpu().detach()
 
         paddle_dlpack = paddle.utils.dlpack.to_dlpack(paddle_tensor)
         converted_paddle_tensor = torch.utils.dlpack.from_dlpack(paddle_dlpack)
@@ -867,9 +867,6 @@ class APITestBase:
             msg=error_msg,
         )
 
-        if retry:
-            paddle_tensor = paddle_tensor.cuda()
-            torch_tensor = torch_tensor.cuda()
 
     def test(self):
         pass
