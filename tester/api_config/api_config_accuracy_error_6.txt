@@ -1,0 +1,3 @@
+paddle.linalg.norm(Tensor([16, 16],"float32"), 2.0, ) 
+paddle.linalg.norm(x=Tensor([3, 4],"float32"), p=2, axis=None, keepdim=False, ) 
+paddle.linalg.norm(x=Tensor([3, 4],"float32"), p=2, axis=None, keepdim=True, ) 

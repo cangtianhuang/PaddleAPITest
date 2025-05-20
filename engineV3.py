@@ -101,7 +101,7 @@ def worker_process(gpu_id, task_queue, result_queue, idx, args_mode):
                     import torch
 
                     api_config = APIConfig(api_config_str.strip())
-                    case = test_class(api_config)
+                    case = test_class(api_config, False)
                     case.test()
                     case.clear_tensor()
 
@@ -117,6 +117,9 @@ def worker_process(gpu_id, task_queue, result_queue, idx, args_mode):
                 except Exception as e:
                     print(f"[Worker {idx}] Error on Task {task_id}: {e}")
                     result_queue.put((task_id, "error", str(e)))
+                    if "CUDA error" in str(e) or "memory corruption" in str(e) or "CUDA out of memory" in str(e):
+                        print(f"[Worker {idx}] OOM on Task {task_id}: {e}") 
+                        exit(1)
 
         except Exception as e:
             print(f"[Worker {idx}] Fatal Error: {e}")
@@ -202,7 +205,7 @@ def main():
     total_worker_num = len(gpu_list) * concurrency
     pending_task_index = 0  # 下一个要塞的任务索引
     task_id_counter = 0
-    total_tasks = 0  # 🔥新增，动态记录总任务数
+    total_tasks = 0  # ���新增，动态记录总任务数
     max_queue_size = total_worker_num * 3  # 队列最大保持一定量
     print(f"Launching {total_worker_num} workers...")
     master_log.write(f"{datetime.now()} Launching {total_worker_num} workers...\n")
@@ -297,11 +300,27 @@ def main():
                         worker_last_task_time[worker_idx] = time.time()
 
         # 检查worker意外挂掉  这里之前有个bug，就是如果hang了，很多时候进程会自己kill，然后到超时的时候任务会二次kill进程，导致正常任务被杀死，所以禁用了这个检测
-        # for idx, p in list(workers.items()):
-        #     if not p.is_alive():
-        #         print(f"[Master] Worker {idx} (PID={p.pid}) died unexpectedly, restarting...")
-        #         workers[idx] = spawn_worker(gpu_list, concurrency, idx, task_queue, result_queue, selected_mode)
-        #         worker_last_task_time[idx] = time.time()
+        for idx, p in list(workers.items()):
+            if not p.is_alive():
+                print(f"[Master] Worker {idx} (PID={p.pid}) died unexpectedly, restarting...")
+
+                # 找出这个worker正在执行的任务
+                tasks_of_dead_worker = [tid for tid, worker_idx in task_id_to_worker_idx.items() if
+                                        worker_idx == idx and tid not in completed_task_ids]
+
+                for tid in tasks_of_dead_worker:
+                    start_time, api_config_str = task_status.pop(tid, (None, None))
+                    if api_config_str:
+                        completed_task_ids.add(tid)
+                        error_count += 1
+                        master_log.write(f"{datetime.now()} Task {tid} ERROR (Worker died): {api_config_str}\n")
+                        error_cases.write(f"{api_config_str}\n")
+                        master_log.flush()
+                        error_cases.flush()
+
+                # 重启新的worker
+                workers[idx] = spawn_worker(gpu_list, concurrency, idx, task_queue, result_queue, selected_mode)
+                worker_last_task_time[idx] = time.time()
 
     # 收尾
     for _ in range(total_worker_num):
@@ -321,3 +340,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+

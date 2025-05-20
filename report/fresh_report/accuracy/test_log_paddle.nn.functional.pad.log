@@ -1,0 +1,319 @@
+paddle.nn.functional.pad(Tensor([1, 160, 120, 96],"float32"), list[0,0,0,1,0,6,0,0,], data_format="NHWC", )
+paddle.nn.functional.pad(Tensor([1, 2, 1],"float32"), pad=list[0,0,0,0,1,0,], mode="constant", value=1.0, )
+paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"complex128"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", )
+paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"complex64"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", )
+paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"float32"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", )
+paddle.nn.functional.pad(Tensor([1, 20, 15, 768],"float32"), list[0,0,0,1,0,6,0,0,], data_format="NHWC", )
+paddle.nn.functional.pad(Tensor([1, 24, 18, 1536],"float32"), list[0,0,0,0,0,6,0,0,], data_format="NHWC", )
+paddle.nn.functional.pad(Tensor([1, 40, 30, 384],"float32"), list[0,0,0,2,0,5,0,0,], data_format="NHWC", )
+paddle.nn.functional.pad(Tensor([1, 80, 60, 192],"float32"), list[0,0,0,4,0,3,0,0,], data_format="NHWC", )
+paddle.nn.functional.pad(Tensor([13, 64, 7],"float32"), tuple(-3,0,), data_format="NCL", )
+paddle.nn.functional.pad(Tensor([14, 64, 7],"float32"), tuple(-3,0,), data_format="NCL", )
+paddle.nn.functional.pad(Tensor([16, 64, 10, 6],"complex64"), list[0,0,0,0,0,10,0,5,], )
+paddle.nn.functional.pad(Tensor([2, 2, 1],"float32"), pad=list[0,0,0,0,1,0,], mode="constant", value=1.0, )
+paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"complex128"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", )
+paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"complex64"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", )
+paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"float32"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", )
+paddle.nn.functional.pad(Tensor([3, 4, 5],"complex128"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", )
+paddle.nn.functional.pad(Tensor([3, 4, 5],"complex64"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", )
+paddle.nn.functional.pad(Tensor([3, 4, 5],"float32"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", )
+paddle.nn.functional.pad(Tensor([4, 32, 32, 16],"complex64"), list[0,0,0,0,0,0,0,17,], )
+paddle.nn.functional.pad(x=Tensor([1, 1, 1, 2, 3],"float64"), pad=list[0,0,0,0,0,0,1,1,0,0,], mode="constant", value=0, )
+paddle.nn.functional.pad(x=Tensor([1, 1, 1, 2, 3],"float64"), pad=list[0,0,0,0,0,0,1,1,0,0,], mode="constant", value=Tensor([1],"float64"), )
+
+
+grep: warning: GREP_OPTIONS is deprecated; please use an alias or script
+2025-05-14 08:13:53.624747 test begin: paddle.nn.functional.pad(Tensor([1, 160, 120, 96],"float32"), list[0,0,0,1,0,6,0,0,], data_format="NHWC", )
+W0514 08:13:59.904340 11589 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 6.1, Driver API Version: 12.0, Runtime API Version: 11.8
+W0514 08:13:59.905481 11589 gpu_resources.cc:164] device: 0, cuDNN Version: 8.8.
+torch.Size([1, 102, 161, 120])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 160, 120, 96],"float32"), list[0,0,0,1,0,6,0,0,], data_format="NHWC", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (1, 161, 126, 96), (1, 161, 120, 102) mismatch)
+ x: array([[[[ 0.067735, -0.032009,  0.268896, ..., -0.170143,  0.112744,
+          -0.010392],
+         [ 0.054463, -0.248296, -0.319815, ...,  0.387583,  0.425459,...
+ y: array([[[[ 0.067735, -0.032009,  0.268896, ...,  0.      ,  0.      ,
+           0.      ],
+         [ 0.054463, -0.248296, -0.319815, ...,  0.      ,  0.      ,...
+2025-05-14 08:14:34.916046 test begin: paddle.nn.functional.pad(Tensor([1, 2, 1],"float32"), pad=list[0,0,0,0,1,0,], mode="constant", value=1.0, )
+torch.Size([2, 2, 1])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 2, 1],"float32"), pad=list[0,0,0,0,1,0,], mode="constant", value=1.0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (1, 2, 2), (2, 2, 1) mismatch)
+ x: array([[[ 1.      , -0.075857],
+        [ 1.      , -0.394148]]], dtype=float32)
+ y: array([[[ 1.      ],
+        [ 1.      ]],
+...
+2025-05-14 08:14:35.164349 test begin: paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"complex128"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", )
+torch.Size([16, 13, 10, 6, 8])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"complex128"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (4, 4, 10, 15, 20), (16, 13, 10, 6, 8) mismatch)
+ x: array([[[[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+           100.+0.j],
+          [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+ y: array([[[[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+           100.+0.j],
+          [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+2025-05-14 08:14:35.444316 test begin: paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"complex64"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", )
+torch.Size([16, 13, 10, 6, 8])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"complex64"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (4, 4, 10, 15, 20), (16, 13, 10, 6, 8) mismatch)
+ x: array([[[[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+           100.+0.j],
+          [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+ y: array([[[[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+           100.+0.j],
+          [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+2025-05-14 08:14:35.746492 test begin: paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"float32"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", )
+torch.Size([16, 13, 10, 6, 8])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 2, 3, 4, 5],"float32"), pad=list[1,2,1,1,3,4,5,6,7,8,], mode="constant", value=100, data_format="NCDHW", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (4, 4, 10, 15, 20), (16, 13, 10, 6, 8) mismatch)
+ x: array([[[[[100., 100., 100., ..., 100., 100., 100.],
+          [100., 100., 100., ..., 100., 100., 100.],
+          [100., 100., 100., ..., 100., 100., 100.],...
+ y: array([[[[[100., 100., 100., ..., 100., 100., 100.],
+          [100., 100., 100., ..., 100., 100., 100.],
+          [100., 100., 100., ..., 100., 100., 100.],...
+2025-05-14 08:14:35.976999 test begin: paddle.nn.functional.pad(Tensor([1, 20, 15, 768],"float32"), list[0,0,0,1,0,6,0,0,], data_format="NHWC", )
+torch.Size([1, 774, 21, 15])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 20, 15, 768],"float32"), list[0,0,0,1,0,6,0,0,], data_format="NHWC", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (1, 21, 21, 768), (1, 21, 15, 774) mismatch)
+ x: array([[[[ 0.231656, -0.160918,  0.289121, ..., -0.183624, -0.02694 ,
+          -0.316288],
+         [ 0.001792,  0.209728, -0.367524, ..., -0.470535,  0.216064,...
+ y: array([[[[ 0.231656, -0.160918,  0.289121, ...,  0.      ,  0.      ,
+           0.      ],
+         [ 0.001792,  0.209728, -0.367524, ...,  0.      ,  0.      ,...
+2025-05-14 08:14:36.158096 test begin: paddle.nn.functional.pad(Tensor([1, 24, 18, 1536],"float32"), list[0,0,0,0,0,6,0,0,], data_format="NHWC", )
+torch.Size([1, 1542, 24, 18])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 24, 18, 1536],"float32"), list[0,0,0,0,0,6,0,0,], data_format="NHWC", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (1, 24, 24, 1536), (1, 24, 18, 1542) mismatch)
+ x: array([[[[ 0.321875,  0.042409,  0.204044, ..., -0.343051, -0.15955 ,
+           0.065323],
+         [ 0.282421, -0.182231,  0.022016, ..., -0.25033 ,  0.214285,...
+ y: array([[[[ 0.321875,  0.042409,  0.204044, ...,  0.      ,  0.      ,
+           0.      ],
+         [ 0.282421, -0.182231,  0.022016, ...,  0.      ,  0.      ,...
+2025-05-14 08:14:36.352954 test begin: paddle.nn.functional.pad(Tensor([1, 40, 30, 384],"float32"), list[0,0,0,2,0,5,0,0,], data_format="NHWC", )
+torch.Size([1, 389, 42, 30])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 40, 30, 384],"float32"), list[0,0,0,2,0,5,0,0,], data_format="NHWC", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (1, 42, 35, 384), (1, 42, 30, 389) mismatch)
+ x: array([[[[-0.249119, -0.036201, -0.391862, ..., -0.47713 ,  0.344156,
+          -0.380632],
+         [-0.389455,  0.255585, -0.17783 , ...,  0.423494, -0.214148,...
+ y: array([[[[-0.249119, -0.036201, -0.391862, ...,  0.      ,  0.      ,
+           0.      ],
+         [-0.389455,  0.255585, -0.17783 , ...,  0.      ,  0.      ,...
+2025-05-14 08:14:36.532103 test begin: paddle.nn.functional.pad(Tensor([1, 80, 60, 192],"float32"), list[0,0,0,4,0,3,0,0,], data_format="NHWC", )
+torch.Size([1, 195, 84, 60])
+[accuracy error] paddle.nn.functional.pad(Tensor([1, 80, 60, 192],"float32"), list[0,0,0,4,0,3,0,0,], data_format="NHWC", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (1, 84, 63, 192), (1, 84, 60, 195) mismatch)
+ x: array([[[[-0.429737, -0.39349 , -0.443875, ..., -0.131175, -0.466439,
+           0.226954],
+         [-0.481382, -0.255588,  0.162635, ..., -0.347733,  0.367913,...
+ y: array([[[[-0.429737, -0.39349 , -0.443875, ...,  0.      ,  0.      ,
+           0.      ],
+         [-0.481382, -0.255588,  0.162635, ...,  0.      ,  0.      ,...
+2025-05-14 08:14:36.735627 test begin: paddle.nn.functional.pad(Tensor([13, 64, 7],"float32"), tuple(-3,0,), data_format="NCL", )
+torch.Size([13, 64, 4])
+[accuracy error] backward  paddle.nn.functional.pad(Tensor([13, 64, 7],"float32"), tuple(-3,0,), data_format="NCL", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 2442 / 5824 (41.9%)
+Max absolute difference: 0.4999911
+Max relative difference: 0.
+ x: array([[[-0.011017, -0.003315, -0.264732, ...,  0.080174,  0.39264 ,
+         -0.202595],
+        [ 0.080174,  0.39264 , -0.202595, ...,  0.31595 ,  0.275785,...
+ y: array([[[ 0.      ,  0.      ,  0.      , ...,  0.080174,  0.39264 ,
+         -0.202595],
+        [ 0.      ,  0.      ,  0.      , ...,  0.31595 ,  0.275785,...
+2025-05-14 08:14:36.899060 test begin: paddle.nn.functional.pad(Tensor([14, 64, 7],"float32"), tuple(-3,0,), data_format="NCL", )
+torch.Size([14, 64, 4])
+[accuracy error] backward  paddle.nn.functional.pad(Tensor([14, 64, 7],"float32"), tuple(-3,0,), data_format="NCL", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 2637 / 6272 (42%)
+Max absolute difference: 0.4999584
+Max relative difference: 0.
+ x: array([[[-0.074426,  0.204198,  0.067321, ..., -0.168665, -0.323115,
+          0.245959],
+        [-0.168665, -0.323115,  0.245959, ...,  0.490677, -0.027526,...
+ y: array([[[ 0.      ,  0.      ,  0.      , ..., -0.168665, -0.323115,
+          0.245959],
+        [ 0.      ,  0.      ,  0.      , ...,  0.490677, -0.027526,...
+2025-05-14 08:14:37.060227 test begin: paddle.nn.functional.pad(Tensor([16, 64, 10, 6],"complex64"), list[0,0,0,0,0,10,0,5,], )
+torch.Size([21, 74, 10, 6])
+[accuracy error] paddle.nn.functional.pad(Tensor([16, 64, 10, 6],"complex64"), list[0,0,0,0,0,10,0,5,], ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (16, 64, 20, 11), (21, 74, 10, 6) mismatch)
+ x: array([[[[-0.345184+0.j,  0.20251 +0.j, -0.395423+0.j, ...,
+           0.      +0.j,  0.      +0.j,  0.      +0.j],
+         [ 0.467691+0.j,  0.452235+0.j,  0.06523 +0.j, ...,...
+ y: array([[[[-0.345184+0.j,  0.20251 +0.j, -0.395423+0.j, -0.297182+0.j,
+          -0.427692+0.j, -0.11614 +0.j],
+         [ 0.467691+0.j,  0.452235+0.j,  0.06523 +0.j,  0.091024+0.j,...
+2025-05-14 08:14:37.255380 test begin: paddle.nn.functional.pad(Tensor([2, 2, 1],"float32"), pad=list[0,0,0,0,1,0,], mode="constant", value=1.0, )
+torch.Size([3, 2, 1])
+[accuracy error] paddle.nn.functional.pad(Tensor([2, 2, 1],"float32"), pad=list[0,0,0,0,1,0,], mode="constant", value=1.0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (2, 2, 2), (3, 2, 1) mismatch)
+ x: array([[[ 1.      , -0.043083],
+        [ 1.      , -0.106232]],
+...
+ y: array([[[ 1.      ],
+        [ 1.      ]],
+...
+2025-05-14 08:14:37.407250 test begin: paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"complex128"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", )
+torch.Size([13, 10, 6, 8])
+[accuracy error] paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"complex128"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (5, 5, 11, 16), (13, 10, 6, 8) mismatch)
+ x: array([[[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+          100.+0.j],
+         [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+ y: array([[[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+          100.+0.j],
+         [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+2025-05-14 08:14:37.605873 test begin: paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"complex64"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", )
+torch.Size([13, 10, 6, 8])
+[accuracy error] paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"complex64"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (5, 5, 11, 16), (13, 10, 6, 8) mismatch)
+ x: array([[[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+          100.+0.j],
+         [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+ y: array([[[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+          100.+0.j],
+         [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+2025-05-14 08:14:37.785019 test begin: paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"float32"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", )
+torch.Size([13, 10, 6, 8])
+[accuracy error] paddle.nn.functional.pad(Tensor([2, 3, 4, 5],"float32"), pad=list[1,2,1,1,3,4,5,6,], mode="constant", value=100, data_format="NCHW", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (5, 5, 11, 16), (13, 10, 6, 8) mismatch)
+ x: array([[[[100., 100., 100., ..., 100., 100., 100.],
+         [100., 100., 100., ..., 100., 100., 100.],
+         [100., 100., 100., ..., 100., 100., 100.],...
+ y: array([[[[100., 100., 100., ..., 100., 100., 100.],
+         [100., 100., 100., ..., 100., 100., 100.],
+         [100., 100., 100., ..., 100., 100., 100.],...
+2025-05-14 08:14:37.957641 test begin: paddle.nn.functional.pad(Tensor([3, 4, 5],"complex128"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", )
+torch.Size([18, 15, 12])
+[accuracy error] paddle.nn.functional.pad(Tensor([3, 4, 5],"complex128"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (10, 15, 20), (18, 15, 12) mismatch)
+ x: array([[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+         100.+0.j],
+        [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+ y: array([[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+         100.+0.j],
+        [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+2025-05-14 08:14:38.117289 test begin: paddle.nn.functional.pad(Tensor([3, 4, 5],"complex64"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", )
+torch.Size([18, 15, 12])
+[accuracy error] paddle.nn.functional.pad(Tensor([3, 4, 5],"complex64"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (10, 15, 20), (18, 15, 12) mismatch)
+ x: array([[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+         100.+0.j],
+        [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+ y: array([[[100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,
+         100.+0.j],
+        [100.+0.j, 100.+0.j, 100.+0.j, ..., 100.+0.j, 100.+0.j,...
+2025-05-14 08:14:38.264260 test begin: paddle.nn.functional.pad(Tensor([3, 4, 5],"float32"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", )
+torch.Size([18, 15, 12])
+[accuracy error] paddle.nn.functional.pad(Tensor([3, 4, 5],"float32"), pad=list[3,4,5,6,7,8,], mode="constant", value=100, data_format="NCL", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (10, 15, 20), (18, 15, 12) mismatch)
+ x: array([[[100., 100., 100., ..., 100., 100., 100.],
+        [100., 100., 100., ..., 100., 100., 100.],
+        [100., 100., 100., ..., 100., 100., 100.],...
+ y: array([[[100., 100., 100., ..., 100., 100., 100.],
+        [100., 100., 100., ..., 100., 100., 100.],
+        [100., 100., 100., ..., 100., 100., 100.],...
+2025-05-14 08:14:38.426615 test begin: paddle.nn.functional.pad(Tensor([4, 32, 32, 16],"complex64"), list[0,0,0,0,0,0,0,17,], )
+torch.Size([21, 32, 32, 16])
+[accuracy error] paddle.nn.functional.pad(Tensor([4, 32, 32, 16],"complex64"), list[0,0,0,0,0,0,0,17,], ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (4, 32, 32, 33), (21, 32, 32, 16) mismatch)
+ x: array([[[[ 0.209858+0.j, -0.274741+0.j,  0.237186+0.j, ...,
+           0.      +0.j,  0.      +0.j,  0.      +0.j],
+         [-0.344866+0.j,  0.027725+0.j,  0.156692+0.j, ...,...
+ y: array([[[[ 2.098579e-01+0.j, -2.747406e-01+0.j,  2.371857e-01+0.j, ...,
+          -4.105943e-01+0.j, -2.822542e-01+0.j,  2.478739e-02+0.j],
+         [-3.448657e-01+0.j,  2.772495e-02+0.j,  1.566919e-01+0.j, ...,...
+2025-05-14 08:14:38.619718 test begin: paddle.nn.functional.pad(x=Tensor([1, 1, 1, 2, 3],"float64"), pad=list[0,0,0,0,0,0,1,1,0,0,], mode="constant", value=0, )
+torch.Size([1, 3, 1, 2, 3])
+[accuracy error] paddle.nn.functional.pad(x=Tensor([1, 1, 1, 2, 3],"float64"), pad=list[0,0,0,0,0,0,1,1,0,0,], mode="constant", value=0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (1, 1, 1, 4, 3), (1, 3, 1, 2, 3) mismatch)
+ x: array([[[[[ 0.      ,  0.      ,  0.      ],
+          [ 0.125208, -0.480904,  0.369531],
+          [ 0.24287 ,  0.415876,  0.331846],
+          [ 0.      ,  0.      ,  0.      ]]]]])
+ y: array([[[[[ 0.      ,  0.      ,  0.      ],
+          [ 0.      ,  0.      ,  0.      ]]],
+...
+2025-05-14 08:14:38.785962 test begin: paddle.nn.functional.pad(x=Tensor([1, 1, 1, 2, 3],"float64"), pad=list[0,0,0,0,0,0,1,1,0,0,], mode="constant", value=Tensor([1],"float64"), )
+torch.Size([1, 3, 1, 2, 3])
+One of the differentiated Tensors appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.
+[accuracy error] paddle.nn.functional.pad(x=Tensor([1, 1, 1, 2, 3],"float64"), pad=list[0,0,0,0,0,0,1,1,0,0,], mode="constant", value=Tensor([1],"float64"), ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+(shapes (1, 1, 1, 4, 3), (1, 3, 1, 2, 3) mismatch)
+ x: array([[[[[-0.389843, -0.389843, -0.389843],
+          [ 0.242869,  0.301935, -0.341583],
+          [ 0.466481, -0.072082, -0.248208],
+          [-0.389843, -0.389843, -0.389843]]]]])
+ y: array([[[[[-0.389843, -0.389843, -0.389843],
+          [-0.389843, -0.389843, -0.389843]]],
+...

@@ -1,0 +1,190 @@
+paddle.nn.functional.upsample(Tensor([128, 192, 7, 7],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([128, 48, 14, 14],"float32"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([128, 48, 28, 28],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([128, 48, 7, 7],"float32"), scale_factor=8, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([128, 96, 14, 14],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([128, 96, 7, 7],"float32"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([16, 256, 20, 20],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 256, 20, 20],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 256, 40, 40],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 256, 80, 80],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 64, 20, 20],"float16"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 64, 20, 20],"float32"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 64, 40, 40],"float16"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 64, 40, 40],"float32"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 64, 80, 80],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([16, 64, 80, 80],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([24, 96, 16, 16],"float32"), size=list[31,31,], mode="nearest", )
+paddle.nn.functional.upsample(Tensor([24, 96, 31, 31],"float32"), size=list[61,61,], mode="nearest", )
+paddle.nn.functional.upsample(Tensor([24, 96, 61, 61],"float32"), size=list[122,122,], mode="nearest", )
+paddle.nn.functional.upsample(Tensor([4, 24, 120, 120],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 24, 30, 30],"float32"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 24, 60, 60],"float32"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 256, 120, 120],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 256, 20, 20],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 256, 20, 20],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 256, 30, 30],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 256, 40, 40],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 256, 60, 60],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 256, 80, 80],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 48, 40, 40],"float32"), size=list[80,80,], mode="nearest", )
+paddle.nn.functional.upsample(Tensor([4, 64, 120, 120],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 64, 20, 20],"float16"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 64, 20, 20],"float32"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 64, 30, 30],"float32"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 64, 40, 40],"float16"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 64, 40, 40],"float32"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 64, 60, 60],"float32"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 64, 80, 80],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 64, 80, 80],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 96, 120, 120],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 96, 30, 30],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([4, 96, 60, 60],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([64, 160, 7, 7],"float16"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 160, 7, 7],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 18, 14, 14],"float16"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 18, 14, 14],"float32"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 18, 28, 28],"float16"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 18, 28, 28],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 18, 7, 7],"float16"), scale_factor=8, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 18, 7, 7],"float32"), scale_factor=8, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 36, 14, 14],"float16"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 36, 14, 14],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 36, 7, 7],"float16"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 36, 7, 7],"float32"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 40, 14, 14],"float16"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 40, 14, 14],"float32"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 40, 28, 28],"float16"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 40, 28, 28],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 40, 7, 7],"float16"), scale_factor=8, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 40, 7, 7],"float32"), scale_factor=8, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 72, 7, 7],"float16"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 72, 7, 7],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 80, 14, 14],"float16"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 80, 14, 14],"float32"), scale_factor=2, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 80, 7, 7],"float16"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 80, 7, 7],"float32"), scale_factor=4, mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 96, 16, 16],"float16"), size=list[31,31,], mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 96, 31, 31],"float16"), size=list[61,61,], mode="nearest", )
+paddle.nn.functional.upsample(Tensor([64, 96, 61, 61],"float16"), size=list[122,122,], mode="nearest", )
+paddle.nn.functional.upsample(Tensor([8, 24, 120, 120],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 120, 120],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 20, 20],"float16"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 20, 20],"float32"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 30, 30],"float16"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 30, 30],"float32"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 40, 40],"float16"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 40, 40],"float32"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 60, 60],"float16"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 60, 60],"float32"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 80, 80],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 24, 80, 80],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 256, 120, 120],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float16"), scale_factor=2, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float16"), scale_factor=8, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float32"), scale_factor=2, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float32"), scale_factor=8, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 30, 30],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 256, 40, 40],"float16"), scale_factor=2, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 40, 40],"float16"), scale_factor=4, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 40, 40],"float32"), scale_factor=2, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 40, 40],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 256, 40, 40],"float32"), scale_factor=4, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 60, 60],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 256, 80, 80],"float16"), scale_factor=2, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 80, 80],"float32"), scale_factor=2, mode="bilinear", )
+paddle.nn.functional.upsample(Tensor([8, 256, 80, 80],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 120, 120],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 20, 20],"float16"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 20, 20],"float32"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 30, 30],"float32"), scale_factor=8, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 40, 40],"float16"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 40, 40],"float32"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 60, 60],"float32"), scale_factor=4, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 80, 80],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 64, 80, 80],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 96, 120, 120],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 96, 20, 20],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 96, 20, 20],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 96, 30, 30],"float16"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 96, 30, 30],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 96, 40, 40],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 96, 60, 60],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(Tensor([8, 96, 80, 80],"float32"), scale_factor=2, mode="nearest", align_mode=1, )
+paddle.nn.functional.upsample(x=Tensor([1, 2, 1],"float64"), size=Tensor([1],"float64"), scale_factor=None, mode="linear", align_corners=False, align_mode=0, data_format="NWC", )
+paddle.nn.functional.upsample(x=Tensor([1, 2, 2, 1],"float64"), size=None, scale_factor=Tensor([2],"float64"), mode="bicubic", align_corners=False, align_mode=0, data_format="NHWC", )
+paddle.nn.functional.upsample(x=Tensor([1, 2, 2, 1],"float64"), size=Tensor([2],"float64"), scale_factor=None, mode="bicubic", align_corners=False, align_mode=0, data_format="NHWC", )
+paddle.nn.functional.upsample(x=Tensor([1, 2, 2, 1],"float64"), size=Tensor([2],"float64"), scale_factor=None, mode="bilinear", align_corners=True, align_mode=1, data_format="NHWC", )
+paddle.nn.functional.upsample(x=Tensor([1, 2, 2, 2, 1],"float64"), size=Tensor([3],"float64"), scale_factor=None, mode="trilinear", align_corners=True, align_mode=1, data_format="NDHWC", )
+paddle.nn.functional.upsample(x=Tensor([2, 1, 4, 4],"float32"), size=Tensor([2],"float32"), scale_factor=None, mode="nearest", align_corners=False, align_mode=0, data_format="NCHW", )
+paddle.nn.functional.upsample(x=Tensor([2, 1, 4, 4],"float64"), size=Tensor([2],"float64"), scale_factor=None, mode="nearest", align_corners=False, align_mode=0, data_format="NCHW", )
+paddle.nn.functional.upsample(x=Tensor([2, 3, 6, 6],"float32"), size=list[Tensor([],"int32"),Tensor([],"int32"),], mode="bilinear", align_corners=False, )
+
+[accuracy error] backward  paddle.nn.functional.upsample(Tensor([64, 40, 7, 7],"float16"), scale_factor=8, mode="nearest", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 125440 (0.000797%)
+Max absolute difference: 0.02344
+Max relative difference: 18.78
+ x: array([[[[ 2.4180e+00,  1.8398e+00,  1.9170e+00, ...,  2.4707e+00,
+           6.0312e+00,  1.2393e+00],
+         [ 3.0781e+00, -1.0029e+00,  2.1914e+00, ..., -1.5830e+00,...
+ y: array([[[[ 2.4180e+00,  1.8408e+00,  1.9199e+00, ...,  2.4707e+00,
+           6.0312e+00,  1.2412e+00],
+         [ 3.0781e+00, -1.0039e+00,  2.1934e+00, ..., -1.5771e+00,...
+
+2025-05-14 11:31:29.545395 test begin: paddle.nn.functional.upsample(Tensor([8, 24, 20, 20],"float16"), scale_factor=8, mode="nearest", align_mode=1, )
+<string>:2: UserWarning: `nn.functional.upsample` is deprecated. Use `nn.functional.interpolate` instead.
+[accuracy error] backward  paddle.nn.functional.upsample(Tensor([8, 24, 20, 20],"float16"), scale_factor=8, mode="nearest", align_mode=1, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 76800 (0.0013%)
+Max absolute difference: 0.02344
+Max relative difference: 32.2
+ x: array([[[[-6.0547e+00, -1.5869e+00,  7.0166e-01, ..., -3.4727e+00,
+          -2.2715e+00,  3.3301e+00],
+         [ 2.8945e+00,  1.1490e-02,  1.8311e+00, ...,  1.3682e+00,...
+ y: array([[[[-6.0586e+00, -1.5859e+00,  7.0264e-01, ..., -3.4746e+00,
+          -2.2715e+00,  3.3320e+00],
+         [ 2.8984e+00,  1.4130e-02,  1.8320e+00, ...,  1.3682e+00,...
+
+
+2025-05-14 11:31:49.957096 test begin: paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float16"), scale_factor=8, mode="bilinear", )
+<string>:2: UserWarning: `nn.functional.upsample` is deprecated. Use `nn.functional.interpolate` instead.
+[accuracy error] backward  paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float16"), scale_factor=8, mode="bilinear", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 56 / 819200 (0.00684%)
+Max absolute difference: 0.0547
+Max relative difference: 143.5
+ x: array([[[[-1.4099e-01,  1.2734e+00,  8.7109e-01, ...,  1.1504e+00,
+          -1.4414e+00, -1.1562e+00],
+         [ 6.6797e-01,  1.6035e+00, -5.5420e-01, ...,  7.9736e-01,...
+ y: array([[[[-1.4294e-01,  1.2725e+00,  8.7207e-01, ...,  1.1514e+00,
+          -1.4414e+00, -1.1543e+00],
+         [ 6.6602e-01,  1.6016e+00, -5.5566e-01, ...,  7.9785e-01,...
+2025-05-14 11:31:57.962514 test begin: paddle.nn.functional.upsample(Tensor([8, 256, 20, 20],"float32"), scale_factor=2, mode="bilinear", )
+<string>:2: UserWarning: `nn.functional.upsample` is deprecated. Use `nn.functional.interpolate` instead.
+
+
+2025-05-14 11:32:39.358660 test begin: paddle.nn.functional.upsample(Tensor([8, 64, 20, 20],"float16"), scale_factor=8, mode="nearest", align_mode=1, )
+<string>:2: UserWarning: `nn.functional.upsample` is deprecated. Use `nn.functional.interpolate` instead.
+[accuracy error] backward  paddle.nn.functional.upsample(Tensor([8, 64, 20, 20],"float16"), scale_factor=8, mode="nearest", align_mode=1, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 204800 (0.000488%)
+Max absolute difference: 0.02344
+Max relative difference: 76.06
+ x: array([[[[-4.8164e+00,  1.7158e+00,  2.0605e+00, ..., -1.1133e-01,
+           9.6875e-01,  1.9062e+00],
+         [ 6.0791e-01,  1.5112e-01, -1.1826e+00, ...,  1.0908e+00,...
+ y: array([[[[-4.8164e+00,  1.7158e+00,  2.0586e+00, ..., -1.1414e-01,
+           9.6875e-01,  1.9062e+00],
+         [ 6.1035e-01,  1.5112e-01, -1.1807e+00, ...,  1.0898e+00,...
+

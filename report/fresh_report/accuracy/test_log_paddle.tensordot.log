@@ -1,0 +1,5 @@
+[accuracy error] backward  paddle.tensordot(Tensor([3, 4, 4],"float32"), Tensor([4, 4, 5],"float32"), list[Tensor([2],"int64"),Tensor([2],"int64"),], ) 
+[output type diff error2],  4 2
+
+[accuracy error] backward  paddle.tensordot(Tensor([3, 4, 4],"float64"), Tensor([4, 4, 5],"float64"), list[Tensor([2],"int64"),Tensor([2],"int64"),], ) 
+[output type diff error2],  4 2

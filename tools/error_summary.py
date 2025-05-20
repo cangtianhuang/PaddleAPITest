@@ -30,6 +30,7 @@ with open(os.path.join(output_dir, "error_log.log"), "w") as error_log:
                         if log_str:
                             if "[torch error]" not in log_str and ("[accuracy error]" in log_str or
                                     "[cuda error]" in log_str or
+                                    "[paddle error]" in log_str or
                                     "FatalError" in log_str or
                                     "cudaErrorIllegalAddress" in log_str or
                                     "cudaErrorLaunchFailure" in log_str or
@@ -59,6 +60,7 @@ with open(os.path.join(output_dir, "error_log.log"), "w") as error_log:
                 if log_str:
                     if "[torch error]" not in log_str and ("[accuracy error]" in log_str or
                             "[cuda error]" in log_str or
+                            "[paddle error]" in log_str or
                             "FatalError" in log_str or
                             "cudaErrorIllegalAddress" in log_str or
                             "cudaErrorLaunchFailure" in log_str or

@@ -1,0 +1,27 @@
+2025-05-15 06:07:52.012644 test begin: paddle.cumsum(Tensor([1, 32000],"float16"), axis=-1, )
+[accuracy error] paddle.cumsum(Tensor([1, 32000],"float16"), axis=-1, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 12 / 32000 (0.0375%)
+Max absolute difference: 0.375
+Max relative difference: 3.898
+ x: array([[ -0.3765,  -0.7915,  -0.7466, ..., -58.6   , -58.84  , -58.62  ]],
+      dtype=float16)
+ y: array([[ -0.3765,  -0.7915,  -0.7466, ..., -58.62  , -58.88  , -58.66  ]],
+      dtype=float16)
+2025-05-15 06:10:12.667447 test begin: paddle.cumsum(Tensor([5, 12000],"float32"), axis=-1, )
+
+[accuracy error] backward  paddle.cumsum(Tensor([5, 12000],"float32"), axis=-1, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 26612 / 60000 (44.4%)
+Max absolute difference: 53.78162
+Max relative difference: 2889.4556
+ x: array([[  0.329257,   0.726322,   1.112611, ...,   0.571625,   0.081473,
+         -0.270696],
+       [-14.032531, -13.823304, -14.320135, ...,  -0.671473,  -0.510366,...
+ y: array([[  0.329252,   0.726317,   1.112606, ...,   0.571625,   0.081473,
+         -0.270696],
+       [-14.032525, -13.823298, -14.320129, ...,  -0.671473,  -0.510366,...

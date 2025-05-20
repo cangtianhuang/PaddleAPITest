@@ -31,6 +31,8 @@
 `test_pipline` 目录旨在组织针对不同测试目标、环境或类型的辅助脚本和配置文件。每个子目录代表一个特定的测试场景。这种结构有助于保持相关工具的集中和清晰。
 
 以下是当前的子目录及其用途说明：
+*   **`cpu_0size/`**: <a name="cpu_0size"></a>
+    *   **用途**: 存放 CPU 环境下处理 PaddlePaddle API 0-size tensor 报错信息的python脚本。
 
 *   **`gpu_0size/`**: <a name="gpu_0size"></a>
     *   **用途**: 存放与在 GPU 环境下测试 PaddlePaddle API 处理 0-size tensor 相关的工具和脚本。

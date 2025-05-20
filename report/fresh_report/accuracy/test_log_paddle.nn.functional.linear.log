@@ -1,0 +1,46 @@
+paddle.nn.functional.linear(x=Tensor([1, 1024, 768],"bfloat16"), weight=Tensor([768, 11008],"bfloat16"), bias=None, name=None, )
+paddle.nn.functional.linear(x=Tensor([10, 499, 512],"float32"), weight=Tensor([512, 43],"float16"), bias=Tensor([43],"float16"), name=None, )
+paddle.nn.functional.linear(x=tuple(Tensor([1, 10],"float32"),), weight=Tensor([10, 10],"float16"), bias=None, name=None, )
+
+paddle.nn.functional.linear(x=Tensor([64, 25088],"float16"), weight=Tensor([25088, 4096],"float16"), bias=Tensor([4096],"float16"), name=None, )
+
+[accuracy error] paddle.nn.functional.linear(x=Tensor([64, 25088],"float16"), weight=Tensor([25088, 4096],"float16"), bias=Tensor([4096],"float16"), name=None, )
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 2 / 262144 (0.000763%)
+Max absolute difference: 0.0625
+Max relative difference: 13.06
+ x: array([[-14.164 ,   0.2566, -12.51  , ..., -38.7   ,  -0.3398,   1.839 ],
+       [ -3.521 , -34.6   ,   2.143 , ...,   5.68  ,  15.336 , -16.14  ],
+       [  2.732 , -10.234 ,  14.7   , ...,  11.4   ,  -8.086 ,  -4.2   ],...
+ y: array([[-14.164 ,   0.2578, -12.516 , ..., -38.7   ,  -0.3396,   1.84  ],
+       [ -3.525 , -34.6   ,   2.143 , ...,   5.684 ,  15.336 , -16.14  ],
+       [  2.732 , -10.234 ,  14.7   , ...,  11.4   ,  -8.086 ,  -4.207 ],...
+
+[accuracy error] backward  paddle.nn.functional.linear(x=Tensor([1, 1024, 768],"bfloat16"), weight=Tensor([768, 11008],"bfloat16"), bias=None, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 3 / 786432 (0.000381%)
+Max absolute difference: 0.25
+Max relative difference: 16.375
+ x: array([[[  9.3125  ,  -2.734375,  12.1875  , ...,   4.      ,
+          10.625   ,  -9.625   ],
+        [ 20.875   ,  -5.625   ,  -5.5     , ...,  -4.9375  ,...
+ y: array([[[  9.3125  ,  -2.734375,  12.1875  , ...,   4.03125 ,
+          10.625   ,  -9.625   ],
+        [ 20.875   ,  -5.625   ,  -5.5     , ...,  -4.9375  ,...
+2025-05-15 10:23:00.176407 test begin: paddle.nn.functional.linear(x=Tensor([10, 499, 512],"float32"), weight=Tensor([512, 43],"float16"), bias=Tensor([43],"float16"), name=None, )
+[accuracy error] backward  paddle.nn.functional.linear(x=Tensor([10, 499, 512],"float32"), weight=Tensor([512, 43],"float16"), bias=Tensor([43],"float16"), name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 10 / 22016 (0.0454%)
+Max absolute difference: 0.04688
+Max relative difference: 685.5
+ x: array([[ -5.55  ,   8.336 ,   4.63  , ...,   2.432 ,  -7.55  ,   8.39  ],
+       [  8.97  ,   1.555 ,   0.5444, ...,  -4.15  ,  -8.64  ,   3.33  ],
+       [ -5.266 ,   1.967 ,   2.03  , ...,  -7.523 ,   7.695 ,   2.969 ],...
+ y: array([[ -5.555,   8.32 ,   4.633, ...,   2.436,  -7.547,   8.41 ],
+       [  8.97 ,   1.553,   0.544, ...,  -4.145,  -8.63 ,   3.332],
+       [ -5.258,   1.96 ,   2.025, ...,  -7.527,   7.695,   2.97 ],...

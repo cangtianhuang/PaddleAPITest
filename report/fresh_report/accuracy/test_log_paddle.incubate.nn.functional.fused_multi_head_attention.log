@@ -1,0 +1,168 @@
+paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float32"), Tensor([3, 16, 64, 1024],"float32"), Tensor([1024, 1024],"float32"), True, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, Tensor([3, 16, 64],"float32"), Tensor([1024],"float32"), None, None, 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=False, )
+paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float32"), Tensor([3, 16, 64, 1024],"float32"), Tensor([1024, 1024],"float32"), True, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, Tensor([3, 16, 64],"float32"), Tensor([1024],"float32"), None, Tensor([8, 16, 128, 128],"float32"), 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=False, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([1, 2, 4],"float32"), qkv_weight=Tensor([3, 2, 2, 4],"float32"), linear_weight=Tensor([4, 4],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([4],"float32"), ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=None, linear_bias=None, cache_kv=None, attn_mask=Tensor([1, 2, 2, 2],"float32"), dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=2, transpose_qkv_wb=False, name=None, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([1, 2, 4],"float32"), qkv_weight=Tensor([4, 12],"float32"), linear_weight=Tensor([4, 4],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([4],"float32"), ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=None, linear_bias=None, cache_kv=None, attn_mask=Tensor([1, 2, 2, 2],"float32"), dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=2, transpose_qkv_wb=True, name=None, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([32, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([32, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([32, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([32, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([64, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([64, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([64, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([64, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([8, 128, 256],"float32"), qkv_weight=Tensor([3, 16, 16, 256],"float32"), linear_weight=Tensor([256, 256],"float32"), pre_layer_norm=True, pre_ln_scale=Tensor([256],"float32"), pre_ln_bias=Tensor([256],"float32"), ln_scale=None, ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 16, 16],"float32"), linear_bias=Tensor([256],"float32"), cache_kv=None, attn_mask=None, dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=16, transpose_qkv_wb=False, name=None, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([96, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([96, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([96, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([96, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+
+2025-05-14 19:52:41.938560 GPU 0 52777 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float32"), Tensor([3, 16, 64, 1024],"float32"), Tensor([1024, 1024],"float32"), True, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, Tensor([3, 16, 64],"float32"), Tensor([1024],"float32"), None, None, 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=False, )
+One of the differentiated Tensors appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float32"), Tensor([3, 16, 64, 1024],"float32"), Tensor([1024, 1024],"float32"), True, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, Tensor([3, 16, 64],"float32"), Tensor([1024],"float32"), None, None, 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 54735 / 1048576 (5.22%)
+Max absolute difference among violations: 0.2938881
+Max relative difference among violations: 1148.4686
+ ACTUAL: array([[[ 1.021714e+01, -1.390763e+01, -1.645987e+01, ...,
+          1.170853e+01,  1.789406e+01, -1.238445e+01],
+        [-2.768465e+01, -1.325934e+01, -6.094492e+01, ...,...
+ DESIRED: array([[[ 1.020340e+01, -1.393972e+01, -1.647772e+01, ...,
+          1.171415e+01,  1.788076e+01, -1.238248e+01],
+        [-2.775487e+01, -1.334464e+01, -6.095738e+01, ...,...
+2025-05-14 19:52:42.178566 GPU 0 52777 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float32"), Tensor([3, 16, 64, 1024],"float32"), Tensor([1024, 1024],"float32"), True, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, Tensor([3, 16, 64],"float32"), Tensor([1024],"float32"), None, Tensor([8, 16, 128, 128],"float32"), 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=False, )
+One of the differentiated Tensors appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(Tensor([8, 128, 1024],"float32"), Tensor([3, 16, 64, 1024],"float32"), Tensor([1024, 1024],"float32"), True, Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), Tensor([1024],"float32"), 1e-05, Tensor([3, 16, 64],"float32"), Tensor([1024],"float32"), None, Tensor([8, 16, 128, 128],"float32"), 0.0, 0.0, 1e-05, num_heads=16, transpose_qkv_wb=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 55050 / 1048576 (5.25%)
+Max absolute difference among violations: 0.26420212
+Max relative difference among violations: 687.93774
+ ACTUAL: array([[[  8.113314, -12.048616,  22.621323, ...,  25.17149 ,
+         -34.48962 ,  -0.960006],
+        [-22.109598, -14.520758,  11.522505, ...,  26.774164,...
+ DESIRED: array([[[  8.095881, -12.046317,  22.604677, ...,  25.157427,
+         -34.458473,  -0.990074],
+        [-22.08002 , -14.573256,  11.498806, ...,  26.737377,...
+2025-05-14 19:52:42.453401 GPU 0 52777 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([1, 2, 4],"float32"), qkv_weight=Tensor([3, 2, 2, 4],"float32"), linear_weight=Tensor([4, 4],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([4],"float32"), ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=None, linear_bias=None, cache_kv=None, attn_mask=Tensor([1, 2, 2, 2],"float32"), dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=2, transpose_qkv_wb=False, name=None, )
+One of the differentiated Tensors appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([1, 2, 4],"float32"), qkv_weight=Tensor([3, 2, 2, 4],"float32"), linear_weight=Tensor([4, 4],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([4],"float32"), ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=None, linear_bias=None, cache_kv=None, attn_mask=Tensor([1, 2, 2, 2],"float32"), dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=2, transpose_qkv_wb=False, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 8 / 8 (100%)
+Max absolute difference among violations: 0.9395312
+Max relative difference among violations: 2.8207943
+ ACTUAL: array([[[ 0.323569,  0.012886,  0.582709,  0.04958 ],
+        [-0.059302, -0.031355, -0.43981 ,  0.031232]]], dtype=float32)
+ DESIRED: array([[[ 0.443127,  0.429701, -0.356822,  0.383084],
+        [-0.070584, -0.369572,  0.241548,  0.020486]]], dtype=float32)
+2025-05-14 19:54:07.282017 GPU 0 53434 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([1, 2, 4],"float32"), qkv_weight=Tensor([4, 12],"float32"), linear_weight=Tensor([4, 4],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([4],"float32"), ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=None, linear_bias=None, cache_kv=None, attn_mask=Tensor([1, 2, 2, 2],"float32"), dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=2, transpose_qkv_wb=True, name=None, )
+/root/miniconda3/envs/paddle/lib/python3.12/site-packages/torch/autograd/graph.py:823: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at /pytorch/aten/src/ATen/cuda/CublasHandlePool.cpp:180.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+One of the differentiated Tensors appears to not have been used in the graph. Set allow_unused=True if this is the desired behavior.
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([1, 2, 4],"float32"), qkv_weight=Tensor([4, 12],"float32"), linear_weight=Tensor([4, 4],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([4],"float32"), ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=None, linear_bias=None, cache_kv=None, attn_mask=Tensor([1, 2, 2, 2],"float32"), dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=2, transpose_qkv_wb=True, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 8 / 8 (100%)
+Max absolute difference among violations: 0.3328213
+Max relative difference among violations: 8.978001
+ ACTUAL: array([[[-0.256086,  0.016718, -0.158084,  0.447791],
+        [-0.266052,  0.022266, -0.159418,  0.387643]]], dtype=float32)
+ DESIRED: array([[[-0.025665,  0.349539, -0.052731,  0.500937],
+        [-0.393259,  0.151639, -0.419083,  0.224337]]], dtype=float32)
+2025-05-14 19:54:30.354015 GPU 0 53535 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([32, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([32, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([32, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([32, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 2517295 / 3145728 (80%)
+Max absolute difference among violations: 2.082
+Max relative difference among violations: inf
+ ACTUAL: array([[[ 0.4507  , -0.783   ,  0.2432  , ..., -0.3003  ,  0.298   ,
+          0.3464  ],
+        [ 0.2274  , -0.116   , -0.559   , ...,  0.09283 , -0.1346  ,...
+ DESIRED: array([[[ 4.2456e-01, -7.7930e-01, -3.7231e-01, ..., -3.5181e-01,
+          2.6807e-01,  4.6851e-01],
+        [ 8.9966e-02, -1.2170e-01, -9.1162e-01, ...,  1.1646e-01,...
+2025-05-14 19:54:36.268173 GPU 0 53535 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([32, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([32, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([32, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([32, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 2546750 / 3145728 (81%)
+Max absolute difference among violations: 2.3125026
+Max relative difference among violations: 526704.4
+ ACTUAL: array([[[ 0.215691,  0.06868 , -0.183273, ..., -0.279453, -0.459707,
+          0.089875],
+        [ 0.156714, -0.138037, -0.061281, ..., -0.299388, -0.180372,...
+ DESIRED: array([[[ 1.674436e-01,  1.106833e-01, -2.157202e-01, ...,
+         -3.415109e-01, -4.590425e-01, -1.937338e-03],
+        [ 1.648425e-01,  1.356338e-01, -7.194228e-02, ...,...
+2025-05-14 19:54:36.721585 GPU 0 53535 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([64, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([64, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([64, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([64, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 5035613 / 6291456 (80%)
+Max absolute difference among violations: 2.428
+Max relative difference among violations: inf
+ ACTUAL: array([[[-0.503   , -0.2563  , -0.1564  , ...,  0.177   ,  0.06067 ,
+          0.587   ],
+        [-0.483   , -0.1349  ,  0.4756  , ...,  0.0969  , -0.3792  ,...
+ DESIRED: array([[[-0.4949  , -0.2556  ,  0.1404  , ...,  0.01717 ,  0.1294  ,
+          0.609   ],
+        [-0.3962  , -0.1584  ,  0.6865  , ...,  0.2007  ,  0.04224 ,...
+2025-05-14 19:54:37.728262 GPU 0 53535 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([64, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([64, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([64, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([64, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 4996134 / 6291456 (79.4%)
+Max absolute difference among violations: 2.298508
+Max relative difference among violations: 1617824.5
+ ACTUAL: array([[[ 1.741014e-01,  1.066937e+00,  1.029509e+00, ...,
+          1.675565e-01,  1.066288e+00, -1.798985e-01],
+        [ 1.677637e-01,  2.892020e-01,  3.039969e-01, ...,...
+ DESIRED: array([[[ 1.702576e-01,  3.470454e-01,  8.317262e-01, ...,
+          9.479917e-03,  1.000549e+00, -2.202717e-01],
+        [ 1.698309e-01,  3.610719e-01,  3.291144e-01, ...,...
+2025-05-14 19:54:55.547635 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([8, 128, 256],"float32"), qkv_weight=Tensor([3, 16, 16, 256],"float32"), linear_weight=Tensor([256, 256],"float32"), pre_layer_norm=True, pre_ln_scale=Tensor([256],"float32"), pre_ln_bias=Tensor([256],"float32"), ln_scale=None, ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 16, 16],"float32"), linear_bias=Tensor([256],"float32"), cache_kv=None, attn_mask=None, dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=16, transpose_qkv_wb=False, name=None, )
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([8, 128, 256],"float32"), qkv_weight=Tensor([3, 16, 16, 256],"float32"), linear_weight=Tensor([256, 256],"float32"), pre_layer_norm=True, pre_ln_scale=Tensor([256],"float32"), pre_ln_bias=Tensor([256],"float32"), ln_scale=None, ln_bias=None, pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 16, 16],"float32"), linear_bias=Tensor([256],"float32"), cache_kv=None, attn_mask=None, dropout_rate=0.0, attn_dropout_rate=0.0, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=16, transpose_qkv_wb=False, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 52 / 262144 (0.0198%)
+Max absolute difference among violations: 0.02117538
+Max relative difference among violations: 27.381147
+ ACTUAL: array([[[-11.016706,  22.01047 ,  -2.249434, ..., -12.015592,
+           3.773903,   3.330055],
+        [-10.818612,  20.799541,   5.822388, ..., -10.650739,...
+ DESIRED: array([[[-11.020688,  22.013073,  -2.241823, ..., -12.010427,
+           3.771848,   3.323458],
+        [-10.814379,  20.799292,   5.820322, ..., -10.657495,...
+2025-05-14 19:55:00.992692 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([96, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([96, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([96, 128, 768],"float16"), qkv_weight=Tensor([3, 12, 64, 768],"float16"), linear_weight=Tensor([768, 768],"float16"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float16"), linear_bias=Tensor([768],"float16"), cache_kv=None, attn_mask=Tensor([96, 1, 1, 128],"float16"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 7594795 / 9437184 (80.5%)
+Max absolute difference among violations: 2.59
+Max relative difference among violations: inf
+ ACTUAL: array([[[-0.2761  ,  0.426   , -0.1428  , ..., -0.2219  ,  0.8394  ,
+          0.01031 ],
+        [-0.2175  ,  0.6562  ,  0.05038 , ..., -0.05325 ,  0.06824 ,...
+ DESIRED: array([[[-0.3115  ,  0.4714  , -0.4695  , ..., -0.301   ,  0.9385  ,
+          0.4321  ],
+        [-0.1912  ,  0.561   ,  0.3489  , ..., -0.02492 ,  0.5234  ,...
+2025-05-14 19:55:02.472803 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([96, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([96, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, )
+[accuracy error] paddle.incubate.nn.functional.fused_multi_head_attention(x=Tensor([96, 128, 768],"float32"), qkv_weight=Tensor([3, 12, 64, 768],"float32"), linear_weight=Tensor([768, 768],"float32"), pre_layer_norm=False, pre_ln_scale=None, pre_ln_bias=None, ln_scale=Tensor([768],"float32"), ln_bias=Tensor([768],"float32"), pre_ln_epsilon=1e-05, qkv_bias=Tensor([3, 12, 64],"float32"), linear_bias=Tensor([768],"float32"), cache_kv=None, attn_mask=Tensor([96, 1, 1, 128],"float32"), dropout_rate=0.1, attn_dropout_rate=0.1, ln_epsilon=1e-05, training=True, ring_id=-1, num_heads=12, transpose_qkv_wb=False, name=None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 7532415 / 9437184 (79.8%)
+Max absolute difference among violations: 2.2931108
+Max relative difference among violations: 4570489.
+ ACTUAL: array([[[ 0.358103, -0.46872 ,  0.376696, ..., -0.03095 , -0.29968 ,
+          0.084915],
+        [-0.671759, -0.343525,  0.150619, ...,  0.036246, -0.0725  ,...
+ DESIRED: array([[[-3.433583e-01, -4.799156e-01,  3.636471e-01, ...,
+         -7.294171e-02, -1.443079e-01,  3.440119e-02],
+        [-7.313725e-01, -5.233982e-01,  4.252523e-01, ...,...

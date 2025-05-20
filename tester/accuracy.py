@@ -4,7 +4,7 @@ import traceback
 import numpy
 import paddle
 import torch
-from func_timeout import func_set_timeout
+#from func_timeout import func_set_timeout
 
 from .api_config.log_writer import write_to_log
 from .base import APITestBase
@@ -17,9 +17,8 @@ class APITestAccuracy(APITestBase):
         self.test_amp = test_amp
         self.converter = get_converter()
 
-    @func_set_timeout(600)
+    #@func_set_timeout(600)
     def test(self, retry=False):
-
         if self.need_skip():
             print("[Skip]", flush=True)
             return
@@ -238,6 +237,9 @@ class APITestAccuracy(APITestBase):
             print("[cuda error]", self.api_config.config, "\n", str(err), flush=True)
             write_to_log("paddle_error", self.api_config.config)
             return
+        
+        if self.api_config.api_name == "paddle.incubate.nn.functional.fused_rms_norm": 
+            paddle_output = paddle_output[0]
 
         paddle.device.cuda.empty_cache()
 

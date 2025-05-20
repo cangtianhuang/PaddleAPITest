@@ -1,0 +1,30 @@
+2025-05-17 08:20:31.779123 GPU 0 543 test begin: paddle.linalg.norm(Tensor([16, 16],"float32"), 2.0, )
+[accuracy error] paddle.linalg.norm(Tensor([16, 16],"float32"), 2.0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 1 (100%)
+Max absolute difference: 2.6213608
+Max relative difference: 1.2364159
+ x: array(4.741489, dtype=float32)
+ y: array(2.120129, dtype=float32)
+2025-05-17 08:20:39.573208 GPU 0 543 test begin: paddle.linalg.norm(x=Tensor([3, 4],"float32"), p=2, axis=None, keepdim=False, )
+[accuracy error] paddle.linalg.norm(x=Tensor([3, 4],"float32"), p=2, axis=None, keepdim=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 1 (100%)
+Max absolute difference: 0.21489042
+Max relative difference: 0.3540284
+ x: array(0.821877, dtype=float32)
+ y: array(0.606986, dtype=float32)
+2025-05-17 08:20:39.738363 GPU 0 543 test begin: paddle.linalg.norm(x=Tensor([3, 4],"float32"), p=2, axis=None, keepdim=True, )
+[accuracy error] paddle.linalg.norm(x=Tensor([3, 4],"float32"), p=2, axis=None, keepdim=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 1 (100%)
+Max absolute difference: 0.23257995
+Max relative difference: 0.265437
+ x: array([[1.108795]], dtype=float32)
+ y: array([[0.876215]], dtype=float32)

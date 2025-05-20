@@ -1,0 +1,255 @@
+paddle.nn.functional.ctc_loss(Tensor([25, 256, 37],"float32"), Tensor([256, 25],"int32"), Tensor([256],"int64"), Tensor([256],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([25, 256, 96],"float32"), Tensor([256, 25],"int32"), Tensor([256],"int64"), Tensor([256],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([25, 512, 37],"float32"), Tensor([512, 25],"int32"), Tensor([512],"int64"), Tensor([512],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([40, 128, 6625],"float32"), Tensor([128, 25],"int32"), Tensor([128],"int64"), Tensor([128],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([40, 192, 6625],"float32"), Tensor([192, 25],"int32"), Tensor([192],"int64"), Tensor([192],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([40, 64, 6625],"float32"), Tensor([64, 25],"int32"), Tensor([64],"int64"), Tensor([64],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([80, 64, 6625],"float32"), Tensor([64, 25],"int32"), Tensor([64],"int64"), Tensor([64],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([25, 256, 37],"float32"), Tensor([256, 25],"int32"), Tensor([256],"int64"), Tensor([256],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([25, 256, 96],"float32"), Tensor([256, 25],"int32"), Tensor([256],"int64"), Tensor([256],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([25, 512, 37],"float32"), Tensor([512, 25],"int32"), Tensor([512],"int64"), Tensor([512],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([3, 3, 15],"float32"), Tensor([3, 2],"int32"), Tensor([3],"int64"), Tensor([3],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([4, 4, 34],"float32"), Tensor([4, 4],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), blank=33, reduction="mean", )
+paddle.nn.functional.ctc_loss(Tensor([4, 4, 34],"float32"), Tensor([4, 4],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), blank=33, reduction="sum", )
+paddle.nn.functional.ctc_loss(Tensor([40, 192, 6625],"float32"), Tensor([192, 25],"int32"), Tensor([192],"int64"), Tensor([192],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([40, 4, 6625],"float32"), Tensor([4, 25],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([40, 64, 6625],"float32"), Tensor([64, 25],"int32"), Tensor([64],"int64"), Tensor([64],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([40, 8, 6625],"float32"), Tensor([8, 25],"int32"), Tensor([8],"int64"), Tensor([8],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([40, 96, 6625],"float32"), Tensor([96, 25],"int32"), Tensor([96],"int64"), Tensor([96],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), labels=Tensor([2, 3],"int32"), input_lengths=Tensor([2],"int64"), label_lengths=Tensor([2],"int64"), blank=0, reduction="mean", )
+paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), labels=Tensor([2, 3],"int32"), input_lengths=Tensor([2],"int64"), label_lengths=Tensor([2],"int64"), blank=0, reduction="none", )
+paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), Tensor([2, 3],"int32"), Tensor([2],"int64"), Tensor([2],"int64"), 0, "mean", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), Tensor([2, 3],"int32"), Tensor([2],"int64"), Tensor([2],"int64"), 0, "none", norm_by_times=False, )
+paddle.nn.functional.ctc_loss(Tensor([80, 64, 6625],"float32"), Tensor([64, 25],"int32"), Tensor([64],"int64"), Tensor([64],"int64"), 0, "none", norm_by_times=False, )
+
+grep: warning: GREP_OPTIONS is deprecated; please use an alias or script
+2025-05-12 06:38:40.958654 test begin: paddle.nn.functional.ctc_loss(Tensor([25, 256, 37],"float32"), Tensor([256, 25],"int32"), Tensor([256],"int64"), Tensor([256],"int64"), 0, "none", norm_by_times=False, )
+/usr/local/lib/python3.9/dist-packages/torch/utils/_device.py:104: UserWarning: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument.
+  return func(*args, **kwargs)
+One of the differentiated Tensors does not require grad
+W0512 06:38:46.898422 11373 gpu_resources.cc:119] Please NOTE: device: 0, GPU Compute Capability: 6.1, Driver API Version: 12.0, Runtime API Version: 11.8
+W0512 06:38:46.899725 11373 gpu_resources.cc:164] device: 0, cuDNN Version: 8.8.
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([25, 256, 37],"float32"), Tensor([256, 25],"int32"), Tensor([256],"int64"), Tensor([256],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 189 / 256 (73.8%)
+Max absolute difference: 11.457581
+Max relative difference: 0.18334465
+ x: array([71.455894, 53.48981 , 56.55836 ,  5.399667, 54.83433 , 66.553986,
+       39.15268 , 48.104443,  0.      , 77.26467 , 46.70119 , 17.64265 ,
+       35.711967,  0.      , 58.26586 ,  0.      , 35.92957 , 56.90759 ,...
+ y: array([62.177914, 45.59236 , 49.321617,  4.712529, 48.162846, 59.471195,
+       33.977234, 41.271862,  0.      , 68.65559 , 42.025772, 15.448569,
+       31.444439,  0.      , 52.152294,  0.      , 31.637056, 49.555225,...
+2025-05-12 06:39:17.997731 test begin: paddle.nn.functional.ctc_loss(Tensor([25, 256, 96],"float32"), Tensor([256, 25],"int32"), Tensor([256],"int64"), Tensor([256],"int64"), 0, "none", norm_by_times=False, )
+/usr/local/lib/python3.9/dist-packages/torch/utils/_device.py:104: UserWarning: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument.
+  return func(*args, **kwargs)
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([25, 256, 96],"float32"), Tensor([256, 25],"int32"), Tensor([256],"int64"), Tensor([256],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 167 / 256 (65.2%)
+Max absolute difference: 34.661453
+Max relative difference: 0.5866795
+ x: array([104.258575,   0.      ,   0.      ,   0.      ,  86.62745 ,
+         0.      ,   0.      ,   0.      ,   0.      ,  66.0884  ,
+        19.967018,  63.469685,  78.13432 ,   0.      ,   7.810737,...
+ y: array([70.79007 ,  0.      ,  0.      ,  0.      , 55.643307,  0.      ,
+        0.      ,  0.      ,  0.      , 43.586952, 13.056653, 42.981495,
+       55.274117,  0.      ,  5.193206, 59.61629 ,  0.      ,  0.      ,...
+2025-05-12 06:39:18.298526 test begin: paddle.nn.functional.ctc_loss(Tensor([25, 512, 37],"float32"), Tensor([512, 25],"int32"), Tensor([512],"int64"), Tensor([512],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([25, 512, 37],"float32"), Tensor([512, 25],"int32"), Tensor([512],"int64"), Tensor([512],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 343 / 512 (67%)
+Max absolute difference: 11.024376
+Max relative difference: 0.19940327
+ x: array([ 0.      , 68.46111 ,  0.      ,  0.      , 40.173164,  0.      ,
+        0.      , 65.65366 , 32.122677, 66.16002 ,  0.      , 50.14864 ,
+       60.99284 , 10.397691,  0.      ,  0.      , 15.648196, 18.672113,...
+ y: array([ 0.      , 58.200787,  0.      ,  0.      , 35.35471 ,  0.      ,
+        0.      , 58.204773, 28.234028, 56.884346,  0.      , 43.90792 ,
+       52.302475,  9.493767,  0.      ,  0.      , 13.483515, 15.898826,...
+2025-05-12 06:39:18.482955 test begin: paddle.nn.functional.ctc_loss(Tensor([3, 3, 15],"float32"), Tensor([3, 2],"int32"), Tensor([3],"int64"), Tensor([3],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([3, 3, 15],"float32"), Tensor([3, 2],"int32"), Tensor([3],"int64"), Tensor([3],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 3 / 3 (100%)
+Max absolute difference: 4.7816734
+Max relative difference: 3.026443
+ x: array([6.046175, 2.410947, 6.535182], dtype=float32)
+ y: array([1.501617, 0.906674, 1.753509], dtype=float32)
+2025-05-12 06:39:18.650614 test begin: paddle.nn.functional.ctc_loss(Tensor([4, 4, 34],"float32"), Tensor([4, 4],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), blank=33, reduction="mean", )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([4, 4, 34],"float32"), Tensor([4, 4],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), blank=33, reduction="mean", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 1 (100%)
+Max absolute difference: 3.0125113
+Max relative difference: 2.7582495
+ x: array(4.104693, dtype=float32)
+ y: array(1.092182, dtype=float32)
+2025-05-12 06:39:18.798831 test begin: paddle.nn.functional.ctc_loss(Tensor([4, 4, 34],"float32"), Tensor([4, 4],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), blank=33, reduction="sum", )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([4, 4, 34],"float32"), Tensor([4, 4],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), blank=33, reduction="sum", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 1 (100%)
+Max absolute difference: 17.29548
+Max relative difference: 2.5967524
+ x: array(23.955908, dtype=float32)
+ y: array(6.660427, dtype=float32)
+2025-05-12 06:39:18.971524 test begin: paddle.nn.functional.ctc_loss(Tensor([40, 128, 6625],"float32"), Tensor([128, 25],"int32"), Tensor([128],"int64"), Tensor([128],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([40, 128, 6625],"float32"), Tensor([128, 25],"int32"), Tensor([128],"int64"), Tensor([128],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 99 / 128 (77.3%)
+Max absolute difference: 204.08621
+Max relative difference: 1.845762
+ x: array([237.00444 ,   0.      , 196.79982 , 275.73267 ,   0.      ,
+        64.10442 , 205.75592 ,   0.      , 172.1     , 119.555   ,
+       214.65207 , 135.70724 , 308.2167  ,  80.993774,   0.      ,...
+ y: array([ 83.36869 ,   0.      ,  69.3585  , 102.1846  ,   0.      ,
+        23.399559,  72.86368 ,   0.      ,  64.6136  ,  42.365566,
+        77.0611  ,  49.65349 , 109.28196 ,  29.652622,   0.      ,...
+2025-05-12 06:39:19.923097 test begin: paddle.nn.functional.ctc_loss(Tensor([40, 192, 6625],"float32"), Tensor([192, 25],"int32"), Tensor([192],"int64"), Tensor([192],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([40, 192, 6625],"float32"), Tensor([192, 25],"int32"), Tensor([192],"int64"), Tensor([192],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 147 / 192 (76.6%)
+Max absolute difference: 204.56491
+Max relative difference: 1.8412659
+ x: array([ 94.84021 , 226.12076 ,   0.      , 214.11426 , 311.44452 ,
+         0.      , 135.41386 ,   0.      ,   0.      ,   0.      ,
+       194.26944 ,  89.372314, 244.09796 , 119.48859 ,   0.      ,...
+ y: array([ 33.775013,  82.94289 ,   0.      ,  81.442276, 116.50021 ,
+         0.      ,  48.28915 ,   0.      ,   0.      ,   0.      ,
+        72.212906,  33.0012  ,  91.48941 ,  49.04363 ,   0.      ,...
+2025-05-12 06:39:21.236231 test begin: paddle.nn.functional.ctc_loss(Tensor([40, 4, 6625],"float32"), Tensor([4, 25],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([40, 4, 6625],"float32"), Tensor([4, 25],"int32"), Tensor([4],"int64"), Tensor([4],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 3 / 4 (75%)
+Max absolute difference: 106.87062
+Max relative difference: 1.8179076
+ x: array([  0.     , 159.18849, 159.1175 , 180.65942], dtype=float32)
+ y: array([ 0.      , 56.491737, 56.898674, 73.7888  ], dtype=float32)
+2025-05-12 06:39:21.444224 test begin: paddle.nn.functional.ctc_loss(Tensor([40, 64, 6625],"float32"), Tensor([64, 25],"int32"), Tensor([64],"int64"), Tensor([64],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([40, 64, 6625],"float32"), Tensor([64, 25],"int32"), Tensor([64],"int64"), Tensor([64],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 45 / 64 (70.3%)
+Max absolute difference: 200.21715
+Max relative difference: 1.8409913
+ x: array([  0.      , 210.6342  ,   0.      , 240.17816 , 220.84445 ,
+       194.51697 , 261.79416 , 317.44794 ,  73.46096 , 274.23697 ,
+       289.02463 ,   0.      , 323.31372 ,  34.101128, 130.63428 ,...
+ y: array([  0.      ,  83.08271 ,   0.      ,  87.139114,  77.945786,
+        72.25343 ,  98.88553 , 125.24004 ,  27.492344, 100.53054 ,
+       105.144356,   0.      , 123.09657 ,  13.782316,  48.817226,...
+2025-05-12 06:39:22.043930 test begin: paddle.nn.functional.ctc_loss(Tensor([40, 8, 6625],"float32"), Tensor([8, 25],"int32"), Tensor([8],"int64"), Tensor([8],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([40, 8, 6625],"float32"), Tensor([8, 25],"int32"), Tensor([8],"int64"), Tensor([8],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 4 / 8 (50%)
+Max absolute difference: 194.62268
+Max relative difference: 1.788748
+ x: array([  0.     ,   0.     ,  36.26455, 175.56316, 238.99767, 319.51846,
+         0.     ,   0.     ], dtype=float32)
+ y: array([  0.      ,   0.      ,  15.823564,  63.340096,  85.70071 ,
+       124.89579 ,   0.      ,   0.      ], dtype=float32)
+2025-05-12 06:39:22.273953 test begin: paddle.nn.functional.ctc_loss(Tensor([40, 96, 6625],"float32"), Tensor([96, 25],"int32"), Tensor([96],"int64"), Tensor([96],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([40, 96, 6625],"float32"), Tensor([96, 25],"int32"), Tensor([96],"int64"), Tensor([96],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 69 / 96 (71.9%)
+Max absolute difference: 203.75687
+Max relative difference: 1.8485423
+ x: array([252.55241 , 217.9789  , 208.09653 , 199.13705 , 260.10196 ,
+       302.41235 , 261.57043 ,   0.      , 198.34087 , 259.505   ,
+       280.12943 , 245.8034  , 249.50339 ,   0.      ,   0.      ,...
+ y: array([ 93.62388 ,  80.443535,  85.31957 ,  76.27301 ,  91.31055 ,
+       112.811646,  92.51176 ,   0.      ,  70.499756,  97.09284 ,
+        99.65896 ,  86.96054 ,  97.08016 ,   0.      ,   0.      ,...
+2025-05-12 06:39:23.027919 test begin: paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), Tensor([2, 3],"int32"), Tensor([2],"int64"), Tensor([2],"int64"), 0, "mean", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), Tensor([2, 3],"int32"), Tensor([2],"int64"), Tensor([2],"int64"), 0, "mean", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 1 (100%)
+Max absolute difference: 0.64423351
+Max relative difference: 0.42874535
+ x: array(0.858368)
+ y: array(1.502602)
+2025-05-12 06:39:23.167966 test begin: paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), Tensor([2, 3],"int32"), Tensor([2],"int64"), Tensor([2],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), Tensor([2, 3],"int32"), Tensor([2],"int64"), Tensor([2],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 2 / 2 (100%)
+Max absolute difference: 1.22472593
+Max relative difference: 0.46771772
+ x: array([1.393789, 1.034662])
+ y: array([2.618515, 1.716611])
+2025-05-12 06:39:23.341906 test begin: paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), labels=Tensor([2, 3],"int32"), input_lengths=Tensor([2],"int64"), label_lengths=Tensor([2],"int64"), blank=0, reduction="mean", )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), labels=Tensor([2, 3],"int32"), input_lengths=Tensor([2],"int64"), label_lengths=Tensor([2],"int64"), blank=0, reduction="mean", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 1 / 1 (100%)
+Max absolute difference: 1.06256474
+Max relative difference: 0.47596194
+ x: array(1.169893)
+ y: array(2.232457)
+2025-05-12 06:39:23.529768 test begin: paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), labels=Tensor([2, 3],"int32"), input_lengths=Tensor([2],"int64"), label_lengths=Tensor([2],"int64"), blank=0, reduction="none", )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([5, 2, 3],"float64"), labels=Tensor([2, 3],"int32"), input_lengths=Tensor([2],"int64"), label_lengths=Tensor([2],"int64"), blank=0, reduction="none", ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 2 / 2 (100%)
+Max absolute difference: 2.27324116
+Max relative difference: 0.5451081
+ x: array([1.897016, 1.264347])
+ y: array([4.170258, 1.698651])
+2025-05-12 06:39:23.679691 test begin: paddle.nn.functional.ctc_loss(Tensor([80, 64, 6625],"float32"), Tensor([64, 25],"int32"), Tensor([64],"int64"), Tensor([64],"int64"), 0, "none", norm_by_times=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.nn.functional.ctc_loss(Tensor([80, 64, 6625],"float32"), Tensor([64, 25],"int32"), Tensor([64],"int64"), Tensor([64],"int64"), 0, "none", norm_by_times=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 58 / 64 (90.6%)
+Max absolute difference: 349.1942
+Max relative difference: 1.2810388
+ x: array([563.4369  , 617.65485 , 411.26425 , 240.97359 ,   0.      ,
+       255.97939 , 543.4984  , 480.9821  , 421.8599  , 506.88623 ,
+       485.30322 , 563.2427  , 429.82547 , 170.82587 ,  79.96047 ,...
+ y: array([255.00558 , 286.85037 , 181.56783 , 113.42679 ,   0.      ,
+       122.63259 , 251.56822 , 216.17673 , 187.7112  , 240.60284 ,
+       220.21426 , 258.53976 , 200.79419 ,  82.36172 ,  36.002743,...
+
+
+

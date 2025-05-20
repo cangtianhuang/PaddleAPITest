@@ -1,0 +1,949 @@
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+
+2025-05-14 19:55:07.253168 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 122 / 256 (47.7%)
+Max absolute difference among violations: 0.9860522
+Max relative difference among violations: 13.149067
+ ACTUAL: array([[[[ 2.137082e-01, -1.423712e-01,  2.534548e-01, -2.946434e-02,
+           5.275179e-01,  5.695157e-02,  2.745874e-01,  6.487223e-01],
+         [ 3.292295e-01, -2.844057e-01,  4.819515e-01, -8.462737e-02,...
+ DESIRED: array([[[[ 2.137082e-01, -1.423712e-01,  2.534548e-01, -2.946434e-02,
+           2.822286e-01,  2.619540e-01,  1.667314e-01,  4.571283e-01],
+         [ 3.292295e-01, -2.844057e-01,  4.819514e-01, -8.462736e-02,...
+2025-05-14 19:55:07.349103 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 244 / 256 (95.3%)
+Max absolute difference among violations: 1.6728406
+Max relative difference among violations: 54.312157
+ ACTUAL: array([[[[-4.749709e-01,  5.504767e-01,  3.517934e-01,  1.983103e-01,
+          -1.854336e-02,  1.104532e+00,  7.455916e-02,  4.442927e-01],
+         [-2.606636e-01,  9.130004e-01,  1.659821e-01,  2.672490e-01,...
+ DESIRED: array([[[[-0.367257,  0.063521,  0.031926, -0.167066,  0.147254,
+           0.866364,  0.758619,  0.296275],
+         [-0.120322,  0.047867,  0.246201,  0.02962 ,  0.618406,...
+2025-05-14 19:55:07.454386 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), None, Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 247 / 256 (96.5%)
+Max absolute difference among violations: 1.4368721
+Max relative difference among violations: 267.46265
+ ACTUAL: array([[[[ 5.463182e-01,  7.908683e-01,  1.109848e-01,  3.597158e-01,
+          -1.360686e-01,  1.298282e-01, -2.717457e-01,  5.029032e-01],
+         [ 6.740589e-02,  6.574577e-01,  2.635775e-02,  5.275457e-01,...
+ DESIRED: array([[[[ 5.604734e-01, -3.567978e-01,  1.073452e-01, -5.544423e-01,
+           8.910377e-01,  1.753348e-01,  4.542285e-01,  1.901028e-01],
+         [-1.155288e-01, -6.561717e-02, -1.707476e-02, -2.336126e-01,...
+2025-05-14 19:55:07.536563 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 123 / 256 (48%)
+Max absolute difference among violations: 0.74485475
+Max relative difference among violations: 5.4451103
+ ACTUAL: array([[[[ 0.392772, -0.533698,  0.126505,  0.001596,  0.504742,
+           1.357034,  0.786794,  0.494576],
+         [ 0.074043,  0.033394, -0.150612,  0.184591,  0.606773,...
+ DESIRED: array([[[[ 0.392772, -0.533698,  0.126505,  0.001596,  0.173884,
+           1.04697 ,  0.250025,  1.1438  ],
+         [ 0.074043,  0.033394, -0.150612,  0.184591,  0.404834,...
+2025-05-14 19:55:07.616792 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 249 / 256 (97.3%)
+Max absolute difference among violations: 1.6657027
+Max relative difference among violations: 508.88727
+ ACTUAL: array([[[[-0.268418,  0.236036, -0.621581,  0.283658,  0.366139,
+           1.1538  ,  0.823828,  1.309235],
+         [-0.380039,  0.758095, -0.599059,  0.481867,  0.285431,...
+ DESIRED: array([[[[-3.184561e-01, -6.936211e-01, -7.603056e-01,  3.406467e-02,
+           1.565529e-01,  4.789200e-01,  2.059523e-01,  4.510677e-01],
+         [-1.974772e-01, -8.485005e-02, -7.313634e-01,  1.766401e-01,...
+2025-05-14 19:55:07.711106 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 234 / 256 (91.4%)
+Max absolute difference among violations: 1.4539895
+Max relative difference among violations: 151.07668
+ ACTUAL: array([[[[-0.157752,  0.307849, -0.243645,  0.738739, -0.003668,
+           0.725587,  0.290235,  0.366674],
+         [ 0.064903,  0.17666 , -0.489439,  0.605287,  0.060875,...
+ DESIRED: array([[[[-0.08749 , -0.118195, -0.018139,  0.41125 ,  0.343463,
+           0.687782,  0.724359,  0.453445],
+         [-0.023169, -0.268682, -0.263736,  0.541874,  0.406475,...
+2025-05-14 19:55:07.795297 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 124 / 256 (48.4%)
+Max absolute difference among violations: 0.85419595
+Max relative difference among violations: 8.079839
+ ACTUAL: array([[[[ 0.128718, -0.134948, -0.013223, -0.605084,  1.022165,
+           0.332797,  0.212153,  0.329142],
+         [-0.065114,  0.033072,  0.086592, -0.067442,  1.223369,...
+ DESIRED: array([[[[ 0.128718, -0.134948, -0.013223, -0.605084,  0.278487,
+           0.975628,  0.600531,  0.210531],
+         [-0.065114,  0.033072,  0.086592, -0.067442,  0.394042,...
+2025-05-14 19:55:07.893492 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 252 / 256 (98.4%)
+Max absolute difference among violations: 1.5122945
+Max relative difference among violations: 44.148975
+ ACTUAL: array([[[[-0.198807,  0.179448, -0.079462,  0.54446 , -0.362308,
+           0.45655 ,  0.200811,  0.767297],
+         [ 0.036909,  0.238936,  0.171483,  0.370573, -0.487948,...
+ DESIRED: array([[[[-0.339298, -0.293314, -0.092199, -0.240009,  0.432523,
+           0.391792,  0.61384 ,  0.656947],
+         [-0.155907, -0.35816 , -0.020424, -0.422089,  0.528129,...
+2025-05-14 19:55:08.002478 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([1, 8, 4, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 248 / 256 (96.9%)
+Max absolute difference among violations: 1.5240514
+Max relative difference among violations: 374.0153
+ ACTUAL: array([[[[ 5.045916e-01,  1.609201e-01, -3.157239e-02,  7.847676e-02,
+          -1.031865e-01,  5.272906e-01, -1.754604e-01,  4.050654e-01],
+         [-1.069266e-02,  3.670789e-02,  6.240558e-02,  2.627109e-01,...
+ DESIRED: array([[[[ 0.106559, -0.144337, -0.036045, -0.189032,  0.905737,
+           0.591506,  0.129639,  0.388063],
+         [-0.163763,  0.009444, -0.01427 , -0.405978,  0.225322,...
+2025-05-14 19:55:08.089604 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 244 / 512 (47.7%)
+Max absolute difference among violations: 1.4856329
+Max relative difference among violations: 84.59286
+ ACTUAL: array([[[[-2.397959e-01,  2.318071e-01,  4.696798e-02,  7.853948e-02,
+          -1.133936e-01,  2.726300e-04,  5.242964e-01,  1.634476e-02,
+           2.295839e-01,  1.208258e+00,  5.775621e-01,  1.501774e-01,...
+ DESIRED: array([[[[-2.397959e-01,  2.318071e-01,  4.696798e-02,  7.853948e-02,
+          -1.133936e-01,  2.726298e-04,  5.242964e-01,  1.634476e-02,
+           2.629151e-01,  4.659880e-01,  2.177612e-01,  1.210881e-01,...
+2025-05-14 19:55:08.179388 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 486 / 512 (94.9%)
+Max absolute difference among violations: 1.8746563
+Max relative difference among violations: 331.39764
+ ACTUAL: array([[[[ 0.884314,  0.176286, -0.060053,  0.26436 ,  0.037936,
+           0.420024, -0.812532,  0.702701, -0.262632,  0.538425,
+           0.01523 ,  0.219206,  0.0653  ,  0.444717,  0.268925,...
+ DESIRED: array([[[[ 8.922513e-01,  1.073734e-01,  4.412171e-02, -9.718384e-02,
+           2.034516e-02,  2.527280e-01, -7.843171e-01,  4.356436e-01,
+           4.257249e-01,  3.807822e-01,  6.897124e-02,  4.384392e-01,...
+2025-05-14 19:55:08.266969 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 492 / 512 (96.1%)
+Max absolute difference among violations: 1.6190279
+Max relative difference among violations: 100.2341
+ ACTUAL: array([[[[ 7.695616e-01,  9.035643e-01,  2.254083e-01,  7.094774e-01,
+           3.761780e-02,  1.004311e-01,  3.537072e-01,  6.590718e-01,
+           1.100099e-01,  5.860540e-01, -6.034655e-02,  6.511303e-01,...
+ DESIRED: array([[[[ 7.024350e-01, -4.123092e-01,  1.848555e-01, -2.438112e-01,
+          -3.063074e-02, -1.383120e-01,  4.629192e-01, -2.424756e-01,
+           7.807736e-01,  3.770043e-01,  8.374342e-01,  7.800756e-01,...
+2025-05-14 19:55:08.344501 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 243 / 512 (47.5%)
+Max absolute difference among violations: 1.2547889
+Max relative difference among violations: 15.7486
+ ACTUAL: array([[[[ 1.640393e-01, -1.522590e-02, -7.090766e-02, -3.548211e-01,
+           9.274139e-02, -1.505035e-01, -3.896609e-02,  2.490932e-02,
+           5.147639e-01,  2.049493e-01,  2.159656e-01,  1.039555e-01,...
+ DESIRED: array([[[[ 1.640393e-01, -1.522590e-02, -7.090766e-02, -3.548211e-01,
+           9.274140e-02, -1.505035e-01, -3.896609e-02,  2.490932e-02,
+           3.801632e-01,  3.839675e-01,  4.589310e-01,  2.550228e-01,...
+2025-05-14 19:55:08.422733 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 484 / 512 (94.5%)
+Max absolute difference among violations: 1.3359089
+Max relative difference among violations: 200.96162
+ ACTUAL: array([[[[ 5.721743e-01,  8.243899e-01, -2.799933e-01,  8.469518e-01,
+           4.370999e-01,  3.449367e-01, -2.496574e-01,  1.044618e+00,
+          -3.624267e-01,  1.264307e-01,  4.922129e-03,  3.925997e-01,...
+ DESIRED: array([[[[ 5.487944e-01, -3.221605e-01, -1.154893e-01,  7.079042e-01,
+           3.035651e-01, -2.870119e-01, -6.563741e-02,  1.192293e-01,
+           7.371346e-01,  4.097593e-01,  2.700187e-01,  7.149829e-01,...
+2025-05-14 19:55:08.507441 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), None, Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 480 / 512 (93.8%)
+Max absolute difference among violations: 1.4416513
+Max relative difference among violations: 293.975
+ ACTUAL: array([[[[ 7.492370e-01,  2.014225e-01, -7.170046e-02,  3.539895e-01,
+           2.475694e-01,  2.228041e-01,  4.475189e-01,  3.900394e-01,
+          -5.087466e-01,  6.913154e-01, -1.495613e-01,  9.174010e-01,...
+ DESIRED: array([[[[ 7.727028e-01, -8.691792e-02, -3.223650e-02,  1.979598e-01,
+          -2.333666e-01,  2.805757e-02,  4.409925e-01,  3.262907e-01,
+           5.667586e-01,  3.207569e-01,  2.741167e-01,  3.651654e-01,...
+2025-05-14 19:55:08.593728 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 252 / 512 (49.2%)
+Max absolute difference among violations: 1.1165367
+Max relative difference among violations: 14.80543
+ ACTUAL: array([[[[-3.297455e-01,  3.942279e-02,  3.759850e-01, -2.148706e-01,
+          -4.419526e-01,  1.203927e-02,  8.226064e-03, -1.542752e-01,
+           4.274963e-01,  6.448443e-01,  7.254344e-01,  5.941931e-01,...
+ DESIRED: array([[[[-3.297455e-01,  3.942279e-02,  3.759850e-01, -2.148706e-01,
+          -4.419526e-01,  1.203927e-02,  8.226063e-03, -1.542752e-01,
+           6.232037e-01,  3.957630e-01,  6.911159e-01,  3.759424e-02,...
+2025-05-14 19:55:08.672167 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 491 / 512 (95.9%)
+Max absolute difference among violations: 1.6329875
+Max relative difference among violations: 208.1437
+ ACTUAL: array([[[[-2.813187e-02,  5.773714e-01,  5.970535e-03,  1.452991e-01,
+           2.417550e-02,  3.839265e-01, -3.994788e-01,  1.311880e-01,
+           5.440891e-01,  1.445128e-01,  8.438091e-01,  7.762573e-01,...
+ DESIRED: array([[[[-9.286159e-02,  2.424729e-01, -2.029863e-01,  6.639923e-02,
+          -1.265142e-01,  3.327811e-01, -1.406996e-01, -3.253449e-01,
+           1.014356e+00,  3.852332e-01,  3.911171e-01,  8.777805e-02,...
+2025-05-14 19:55:08.755561 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 489 / 512 (95.5%)
+Max absolute difference among violations: 1.5998721
+Max relative difference among violations: 489.15332
+ ACTUAL: array([[[[ 1.268994e-01,  1.732506e-01, -3.724872e-01,  1.106168e+00,
+           2.933018e-02,  1.219558e-01, -9.610552e-01,  9.244315e-01,
+          -5.613748e-01,  8.035834e-01,  1.498724e-01,  3.092114e-02,...
+ DESIRED: array([[[[ 1.464410e-01, -4.166332e-01,  6.331274e-02,  8.413937e-01,
+           3.476229e-02,  5.640104e-02, -3.873059e-01,  7.109183e-01,
+           3.452392e-01,  1.930089e-01,  4.646991e-01,  6.658251e-01,...
+2025-05-14 19:55:08.902400 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 246 / 512 (48%)
+Max absolute difference among violations: 0.95576245
+Max relative difference among violations: 6.766623
+ ACTUAL: array([[[[ 0.611614, -0.015169, -0.520535,  0.218787, -0.413819,
+          -0.148931, -0.305816,  0.106607,  0.778313,  0.163855,
+           0.883978,  0.856664,  0.593359,  0.641632,  0.898147,...
+ DESIRED: array([[[[ 0.611614, -0.015169, -0.520535,  0.218787, -0.413819,
+          -0.148931, -0.305816,  0.106607,  0.219659,  0.197823,
+           0.52081 ,  0.354551,  0.76594 ,  1.479743,  1.4826  ,...
+2025-05-14 19:55:09.010797 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 474 / 512 (92.6%)
+Max absolute difference among violations: 1.7115235
+Max relative difference among violations: 208.32709
+ ACTUAL: array([[[[ 0.063108,  0.616538, -0.008141,  0.259354,  0.54305 ,
+           0.669259, -0.013245,  0.580732, -0.086277,  0.464277,
+           0.020504,  0.445156, -0.20007 ,  0.390897,  0.197991,...
+ DESIRED: array([[[[ 2.449063e-01, -4.190422e-01, -1.291343e-02, -2.491634e-01,
+           6.678659e-01, -2.959208e-01, -2.751210e-02,  3.463076e-01,
+           1.068803e+00,  4.648716e-01,  2.254708e-01,  3.571195e-01,...
+2025-05-14 19:55:09.116662 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([2, 8, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 501 / 512 (97.9%)
+Max absolute difference among violations: 1.8381917
+Max relative difference among violations: 343.2338
+ ACTUAL: array([[[[-1.559634e-01,  2.047793e-01,  8.065116e-02,  1.019998e+00,
+          -4.526932e-01,  1.160479e+00, -1.644853e-01,  7.562737e-01,
+          -1.841204e-01,  1.271555e-01, -2.666257e-01,  4.119851e-01,...
+ DESIRED: array([[[[ 0.198819,  0.174367,  0.259014, -0.040702, -0.007367,
+          -0.082787, -0.201626, -0.53563 ,  0.369904,  0.08207 ,
+           0.899668,  0.68805 ,  0.946104,  0.946979,  0.277753,...
+2025-05-14 19:55:09.195965 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 247 / 512 (48.2%)
+Max absolute difference among violations: 1.1852708
+Max relative difference among violations: 6.161574
+ ACTUAL: array([[[[ 0.138053, -0.009956,  0.096334,  0.46497 ,  0.668754,
+           0.127597,  0.344691,  0.713303],
+         [-0.002242,  0.180234, -0.283806,  0.356905,  0.028676,...
+ DESIRED: array([[[[ 0.138053, -0.009956,  0.096334,  0.46497 ,  0.117057,
+           0.179745,  0.442345,  0.385879],
+         [-0.002242,  0.180234, -0.283806,  0.356905,  0.008287,...
+2025-05-14 19:55:09.279941 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 490 / 512 (95.7%)
+Max absolute difference among violations: 1.6708949
+Max relative difference among violations: 130.58951
+ ACTUAL: array([[[[-0.031143,  0.281031, -0.050828,  0.219374, -0.024697,
+           0.620468, -0.053708,  1.032786],
+         [-0.015288,  0.528467,  0.48845 ,  0.598268,  0.181893,...
+ DESIRED: array([[[[-0.029074, -0.169728, -0.05958 , -0.48578 ,  0.074808,
+           0.868118,  0.437936,  0.543501],
+         [-0.04873 , -0.016   ,  0.357758, -0.447988,  0.191771,...
+2025-05-14 19:55:09.361962 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), None, Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 490 / 512 (95.7%)
+Max absolute difference among violations: 1.6130724
+Max relative difference among violations: 233.53035
+ ACTUAL: array([[[[-4.827610e-02,  2.335111e-01, -3.360744e-01,  4.681590e-01,
+           5.436229e-02,  3.905414e-01,  2.803984e-03,  2.823015e-01],
+         [-2.559084e-01,  4.071674e-01, -3.720222e-02,  3.464018e-01,...
+ DESIRED: array([[[[-0.068468,  0.05615 , -0.368298, -0.009898,  0.347235,
+           0.282228,  0.968745,  0.821073],
+         [-0.031292,  0.139876, -0.085849, -0.184339,  0.256378,...
+2025-05-14 19:55:09.456999 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 247 / 512 (48.2%)
+Max absolute difference among violations: 1.227834
+Max relative difference among violations: 15.609721
+ ACTUAL: array([[[[-3.390348e-01, -2.385043e-02, -2.266742e-02,  1.733352e-02,
+           1.893313e-01,  3.425094e-01,  7.183921e-01,  2.420582e-01],
+         [-1.169840e-01, -3.298976e-02, -2.300045e-01,  5.737988e-01,...
+ DESIRED: array([[[[-3.390348e-01, -2.385043e-02, -2.266742e-02,  1.733352e-02,
+           3.686106e-01,  1.704556e-01,  5.112343e-01,  4.713767e-01],
+         [-1.169840e-01, -3.298976e-02, -2.300045e-01,  5.737988e-01,...
+2025-05-14 19:55:09.545183 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 492 / 512 (96.1%)
+Max absolute difference among violations: 2.0704813
+Max relative difference among violations: 1313.2014
+ ACTUAL: array([[[[-3.821965e-01,  5.530149e-01, -6.530786e-01,  8.308660e-01,
+          -1.130830e-01,  2.306939e-02,  3.041812e-01,  3.490833e-01],
+         [-1.259046e-01,  2.140326e-01, -2.073690e-01,  3.732564e-01,...
+ DESIRED: array([[[[-1.188087e-02,  1.289297e-01, -2.574672e-01,  7.808196e-01,
+           9.594385e-02,  8.210126e-01,  2.138100e-01,  1.738816e-01],
+         [-4.733393e-01, -4.799281e-01, -1.109944e-01,  2.097144e-01,...
+2025-05-14 19:55:09.625720 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 489 / 512 (95.5%)
+Max absolute difference among violations: 2.037048
+Max relative difference among violations: 2292.7856
+ ACTUAL: array([[[[-1.090979e-01,  6.219167e-01,  6.705521e-01,  8.040600e-01,
+           7.831925e-02,  9.184379e-01, -2.672701e-01,  9.686746e-02],
+         [-7.038961e-01,  7.710534e-01,  2.769627e-01,  7.208639e-01,...
+ DESIRED: array([[[[-3.292177e-01, -7.179783e-01,  6.813518e-01,  2.054113e-02,
+           6.460794e-01,  4.949611e-01,  1.631163e-01,  5.443300e-01],
+         [-3.724735e-01,  1.205050e-01,  2.759937e-01, -2.136764e-02,...
+2025-05-14 19:55:09.717476 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 242 / 512 (47.3%)
+Max absolute difference among violations: 1.1477897
+Max relative difference among violations: 6.415857
+ ACTUAL: array([[[[ 0.132061,  0.27988 ,  0.221282, -0.179754,  0.34937 ,
+           0.360337,  0.185662,  0.192543],
+         [ 0.015442,  0.388534,  0.254993, -0.622561,  0.349146,...
+ DESIRED: array([[[[ 0.132061,  0.27988 ,  0.221282, -0.179754,  0.373774,
+           0.135879,  0.560723,  0.632441],
+         [ 0.015442,  0.388534,  0.254993, -0.622561,  0.346515,...
+2025-05-14 19:55:09.842486 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 482 / 512 (94.1%)
+Max absolute difference among violations: 1.6335576
+Max relative difference among violations: 144.61662
+ ACTUAL: array([[[[ 0.592831,  0.425765, -0.040232,  0.789275, -0.411074,
+           0.492383,  0.130746,  0.554372],
+         [ 0.707657,  0.469815, -0.094456,  0.6558  ,  0.039067,...
+ DESIRED: array([[[[ 0.596402, -0.458394, -0.095989, -0.07992 ,  0.046017,
+           0.426001,  0.340353,  0.796646],
+         [ 0.70292 , -0.158053, -0.187965, -0.323265,  0.753064,...
+2025-05-14 19:55:09.980351 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([2, 8, 4, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([2, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=False, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 495 / 512 (96.7%)
+Max absolute difference among violations: 1.685793
+Max relative difference among violations: 502.6049
+ ACTUAL: array([[[[ 8.121154e-03,  2.373391e-01,  1.109479e-02,  6.698541e-01,
+           3.002202e-01,  5.017341e-01,  2.888665e-02,  9.880880e-01],
+         [-1.183932e-01,  1.494082e-01, -1.127793e-02,  4.197064e-01,...
+ DESIRED: array([[[[-4.686354e-02, -1.437961e-02, -6.415224e-02, -1.919666e-01,
+           5.157062e-01,  1.479742e-01,  1.549676e-01,  8.756735e-01],
+         [-1.382394e-01, -9.641103e-02, -6.013587e-02,  6.370419e-02,...
+2025-05-14 19:55:10.065329 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 125 / 256 (48.8%)
+Max absolute difference among violations: 0.9596765
+Max relative difference among violations: 12.611916
+ ACTUAL: array([[[[-0.72414 ,  0.099677,  0.017394,  0.735928,  1.210826,
+           0.665921,  0.180315,  0.934298],
+         [-0.472719, -0.261967,  0.108112,  0.265473,  1.490998,...
+ DESIRED: array([[[[-0.72414 ,  0.099677,  0.017394,  0.735928,  0.345552,
+           0.429192,  0.022687,  0.295156],
+         [-0.472719, -0.261967,  0.108112,  0.265473,  0.806424,...
+2025-05-14 19:55:10.142433 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 246 / 256 (96.1%)
+Max absolute difference among violations: 1.6565075
+Max relative difference among violations: 170.3432
+ ACTUAL: array([[[[ 1.010659e-02,  1.097094e+00, -4.237691e-01,  5.206774e-01,
+           5.833903e-01,  9.786445e-01, -6.905708e-02,  9.581190e-01],
+         [ 1.313465e-01,  2.592725e-01, -9.338332e-02,  4.825470e-01,...
+ DESIRED: array([[[[ 0.010089,  0.186723, -0.124237, -0.495115,  0.698083,
+           0.778323,  0.72401 ,  0.483182],
+         [-0.059596, -0.695069, -0.663088, -0.405579,  0.322413,...
+2025-05-14 19:55:10.218776 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), None, Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 243 / 256 (94.9%)
+Max absolute difference among violations: 1.5035529
+Max relative difference among violations: 251.5533
+ ACTUAL: array([[[[ 7.285510e-01,  1.689698e-01, -8.270880e-03,  9.279563e-01,
+          -1.624859e-01,  5.628333e-01, -2.907648e-01,  8.394939e-01],
+         [ 1.807120e-01,  1.109248e-01,  2.997876e-01,  4.856405e-01,...
+ DESIRED: array([[[[ 6.821979e-01, -9.712812e-02,  2.617975e-01,  8.337307e-01,
+           4.487466e-01,  1.291061e-01,  6.350909e-01,  8.467318e-01],
+         [ 1.035184e-02,  1.846089e-02,  1.903916e-01,  4.333853e-01,...
+2025-05-14 19:55:10.294352 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 126 / 256 (49.2%)
+Max absolute difference among violations: 1.1754684
+Max relative difference among violations: 38.148243
+ ACTUAL: array([[[[-0.179629, -0.408072,  0.044008,  0.20196 ,  0.222528,
+           1.320263,  0.867297,  0.28235 ],
+         [ 0.007872,  0.204283, -0.01981 ,  0.202046,  0.420909,...
+ DESIRED: array([[[[-0.179629, -0.408072,  0.044008,  0.20196 ,  0.462825,
+           0.877963,  0.585605,  0.533094],
+         [ 0.007872,  0.204283, -0.01981 ,  0.202046,  0.543098,...
+2025-05-14 19:55:10.374150 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 246 / 256 (96.1%)
+Max absolute difference among violations: 1.452745
+Max relative difference among violations: 365.01282
+ ACTUAL: array([[[[-1.465036e-01,  2.426884e-01, -2.339524e-01,  8.320203e-02,
+          -6.362458e-01,  4.404486e-01,  4.096970e-02,  5.648040e-01],
+         [-1.307505e-01,  4.365276e-01, -4.429334e-02,  2.944149e-02,...
+ DESIRED: array([[[[-0.038441, -0.244438, -0.171684,  0.074723,  0.204642,
+           0.553355,  0.194235,  0.063036],
+         [-0.132542, -0.063134, -0.023094,  0.019515,  0.598597,...
+2025-05-14 19:55:10.449994 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 244 / 256 (95.3%)
+Max absolute difference among violations: 1.8153208
+Max relative difference among violations: 33.27276
+ ACTUAL: array([[[[ 0.379175,  0.735315, -0.041415,  0.4876  , -0.384855,
+           0.382513, -0.041488,  0.331052],
+         [-0.122215,  0.617429,  0.295969,  0.289129, -0.325355,...
+ DESIRED: array([[[[ 4.892411e-01,  5.749469e-01,  2.165365e-01,  1.931862e-01,
+           2.160923e-01,  5.504746e-01,  2.995664e-01,  4.859895e-01],
+         [-1.297098e-01,  5.430890e-01,  4.739636e-02, -2.180152e-01,...
+2025-05-14 19:55:10.597591 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 122 / 256 (47.7%)
+Max absolute difference among violations: 1.1383538
+Max relative difference among violations: 6.3169394
+ ACTUAL: array([[[[-0.097569,  0.201307,  0.005211,  0.511341,  0.392391,
+           0.145684,  0.182549,  0.702057],
+         [-0.014677, -0.124723, -0.105702, -0.149895,  0.32539 ,...
+ DESIRED: array([[[[-0.097569,  0.201307,  0.005211,  0.511341,  0.095993,
+           0.614251,  0.144855,  0.577062],
+         [-0.014677, -0.124723, -0.105702, -0.149895,  0.129241,...
+2025-05-14 19:55:10.721219 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 248 / 256 (96.9%)
+Max absolute difference among violations: 1.4204642
+Max relative difference among violations: 361.29785
+ ACTUAL: array([[[[-0.102519,  0.678832, -0.105868,  0.495804,  0.32952 ,
+           1.066137, -0.132197,  0.613404],
+         [-0.048263,  0.09203 ,  0.031751,  0.330209,  0.389944,...
+ DESIRED: array([[[[-2.716483e-01, -2.920050e-01, -6.425281e-02, -6.994921e-02,
+           9.782487e-01,  5.298645e-01,  2.553627e-01,  8.919350e-01],
+         [-5.958972e-01, -3.570305e-01,  5.238953e-02, -8.400522e-02,...
+2025-05-14 19:55:10.810099 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 1, 4, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([8, 1, 2, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([1, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 248 / 256 (96.9%)
+Max absolute difference among violations: 1.5054417
+Max relative difference among violations: 1736.6338
+ ACTUAL: array([[[[ 0.594176,  0.278647,  0.030357,  0.682632, -0.051302,
+           0.944375,  0.095053,  0.256463],
+         [ 0.060623,  0.256366,  0.079454,  0.449416,  0.043954,...
+ DESIRED: array([[[[ 5.888374e-01, -1.811162e-01,  6.297004e-02, -3.726622e-02,
+           3.909539e-01,  4.109656e-01,  6.072425e-01,  7.044941e-01],
+         [ 7.189264e-02,  7.663073e-02, -2.783583e-01, -4.100855e-01,...
+2025-05-14 19:55:10.893302 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 252 / 512 (49.2%)
+Max absolute difference among violations: 1.1530875
+Max relative difference among violations: 52.372124
+ ACTUAL: array([[[[-0.056587,  0.3615  ,  0.168975,  0.375676,  0.065307,
+          -0.018332,  0.299784, -0.057615,  0.707545,  1.368079,
+           0.75422 ,  1.04465 ,  0.783379,  0.645766,  0.274372,...
+ DESIRED: array([[[[-0.056587,  0.3615  ,  0.168975,  0.375676,  0.065307,
+          -0.018332,  0.299784, -0.057615,  0.488363,  0.796357,
+           0.798934,  1.312872,  0.155729,  0.388213,  1.211708,...
+2025-05-14 19:55:10.971453 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 480 / 512 (93.8%)
+Max absolute difference among violations: 1.5941962
+Max relative difference among violations: 207.81378
+ ACTUAL: array([[[[ 9.196187e-02,  3.282238e-01, -7.160586e-01,  3.689756e-01,
+          -5.892994e-01,  7.832748e-01,  5.346339e-02,  6.462933e-01,
+           2.072377e-01,  2.887978e-01, -2.116753e-01,  2.434340e-01,...
+ DESIRED: array([[[[ 2.389388e-01,  1.145984e-01, -2.309265e-01,  1.086243e-01,
+          -1.245150e-01,  5.949562e-01,  3.246037e-01,  5.697167e-01,
+           7.199658e-01,  1.520253e-01,  5.401663e-01,  3.369385e-01,...
+2025-05-14 19:55:11.050532 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 481 / 512 (93.9%)
+Max absolute difference among violations: 1.7220168
+Max relative difference among violations: 409.57788
+ ACTUAL: array([[[[-0.023612,  0.140162,  0.110712,  0.163178,  0.389759,
+           0.819742,  0.052121,  0.775344, -0.051935,  0.67647 ,
+          -0.038021,  0.735348,  0.036975,  0.653822,  0.750456,...
+ DESIRED: array([[[[-1.018216e-01, -3.310445e-01, -9.502545e-03, -3.158974e-02,
+           4.652226e-01,  1.742944e-01,  5.298328e-02,  1.771826e-01,
+           4.592043e-01,  2.676166e-01,  2.728339e-01,  3.326301e-01,...
+2025-05-14 19:55:11.134181 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 248 / 512 (48.4%)
+Max absolute difference among violations: 0.945817
+Max relative difference among violations: 6.3700223
+ ACTUAL: array([[[[ 0.003143,  0.255702,  0.46636 ,  0.120723, -0.004989,
+           0.378162, -0.485961, -0.241203,  0.688061,  1.066926,
+           0.230382,  1.076982,  0.776239,  0.279709,  0.348537,...
+ DESIRED: array([[[[ 0.003143,  0.255702,  0.46636 ,  0.120723, -0.004989,
+           0.378162, -0.485961, -0.241203,  0.399762,  0.736103,
+           1.176199,  0.691352,  0.992264,  0.76832 ,  0.316512,...
+2025-05-14 19:55:11.283658 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 477 / 512 (93.2%)
+Max absolute difference among violations: 1.4906697
+Max relative difference among violations: 1021.2975
+ ACTUAL: array([[[[ 1.515326e-01,  7.704402e-01,  2.078227e-01,  8.347585e-01,
+          -5.149750e-01,  8.648164e-01, -2.411090e-01,  8.474200e-01,
+          -5.163291e-02,  3.071102e-01,  4.243027e-01,  9.161886e-01,...
+ DESIRED: array([[[[ 4.912886e-01,  4.683959e-01,  1.786958e-01,  1.016718e-01,
+           1.995770e-01,  3.152949e-01, -3.062376e-01,  3.788551e-01,
+           7.164167e-01,  4.280943e-01,  5.121297e-01,  1.145109e+00,...
+2025-05-14 19:55:11.400103 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), None, Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 492 / 512 (96.1%)
+Max absolute difference among violations: 1.4068106
+Max relative difference among violations: 217.87585
+ ACTUAL: array([[[[ 1.006736e-02,  2.896312e-01, -7.053520e-01,  7.001148e-01,
+          -3.193372e-01,  7.084357e-01,  1.163522e-01,  8.879802e-01,
+          -5.578228e-01,  2.338486e-01, -3.254772e-01,  2.940863e-01,...
+ DESIRED: array([[[[ 5.378742e-02,  2.805873e-01, -2.439045e-01, -5.826336e-02,
+          -6.694121e-01, -8.297864e-02,  2.572282e-01,  1.792584e-01,
+           4.983033e-02,  2.686246e-01,  7.365389e-01,  8.421277e-01,...
+2025-05-14 19:55:11.561126 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 248 / 512 (48.4%)
+Max absolute difference among violations: 1.3566642
+Max relative difference among violations: 75.414825
+ ACTUAL: array([[[[-0.349584, -0.070242, -0.382375, -0.382591,  0.068258,
+          -0.347382, -0.371206,  0.348808,  0.776079,  0.163713,
+           0.57711 ,  0.186426,  0.17679 ,  0.632884,  0.633678,...
+ DESIRED: array([[[[-0.349584, -0.070242, -0.382375, -0.382591,  0.068258,
+          -0.347382, -0.371206,  0.348808,  0.534446,  0.019669,
+           0.294519,  0.29541 ,  0.065601,  0.971321,  0.6158  ,...
+2025-05-14 19:55:11.675114 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 493 / 512 (96.3%)
+Max absolute difference among violations: 1.6072602
+Max relative difference among violations: 2035.131
+ ACTUAL: array([[[[-3.907512e-01,  8.618943e-01,  4.062139e-01,  6.891639e-01,
+          -6.874223e-01,  5.993143e-01,  2.257369e-02,  3.412459e-01,
+           8.281284e-02,  8.337290e-01,  1.426112e-01,  8.990903e-02,...
+ DESIRED: array([[[[-5.873349e-01,  3.211518e-01,  4.004183e-01,  6.401739e-02,
+          -1.270303e-01,  5.665508e-01,  3.819163e-02, -1.323191e-01,
+           5.882457e-01,  4.398633e-01,  1.004441e+00,  7.739558e-01,...
+2025-05-14 19:55:11.782705 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), None, Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 499 / 512 (97.5%)
+Max absolute difference among violations: 1.637375
+Max relative difference among violations: 701.78723
+ ACTUAL: array([[[[ 1.557059e-01,  3.824260e-01,  5.687597e-01,  4.616348e-01,
+           7.873791e-01,  1.017819e+00, -4.153678e-01,  2.154632e-01,
+           1.485154e-01,  7.890364e-01,  1.184076e-01,  8.129306e-01,...
+ DESIRED: array([[[[ 6.882504e-02,  8.611725e-02,  3.178110e-01,  1.841177e-01,
+           4.623129e-01, -3.229325e-01, -3.740416e-01, -5.049750e-01,
+           5.656138e-01,  2.461112e-01,  1.285777e+00,  6.237664e-01,...
+2025-05-14 19:55:11.875802 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 241 / 512 (47.1%)
+Max absolute difference among violations: 1.2680595
+Max relative difference among violations: 13.746509
+ ACTUAL: array([[[[ 1.513073e-01,  3.281307e-01, -7.563584e-02,  8.853360e-02,
+          -8.594907e-02,  5.322851e-02,  4.621019e-01, -1.245653e-01,
+           1.002330e-01,  5.354113e-01,  1.089747e+00,  1.658007e-01,...
+ DESIRED: array([[[[ 1.513073e-01,  3.281307e-01, -7.563585e-02,  8.853360e-02,
+          -8.594908e-02,  5.322850e-02,  4.621019e-01, -1.245653e-01,
+           1.218313e+00,  5.872901e-01,  1.339379e+00,  1.867367e-02,...
+2025-05-14 19:55:11.959719 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 489 / 512 (95.5%)
+Max absolute difference among violations: 1.5598602
+Max relative difference among violations: 4729.6084
+ ACTUAL: array([[[[ 2.633214e-02,  6.460211e-01, -8.182899e-01,  5.732964e-01,
+          -3.676639e-01,  5.344707e-01,  6.340266e-01,  3.244343e-01,
+           1.968190e-01,  7.493019e-01,  4.923255e-01,  9.888632e-01,...
+ DESIRED: array([[[[-3.405025e-02,  2.756921e-01, -6.810102e-01, -1.326183e-01,
+           8.301020e-02,  4.478331e-01,  5.427762e-01, -3.479950e-03,
+           2.151436e-01,  6.621246e-01,  8.508310e-01,  5.195927e-01,...
+2025-05-14 19:55:12.053073 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([8, 2, 2, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), Tensor([1, 8, 1, 16],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 489 / 512 (95.5%)
+Max absolute difference among violations: 2.0389295
+Max relative difference among violations: 567883.1
+ ACTUAL: array([[[[-3.030022e-01,  5.354059e-01, -6.742878e-01,  1.993543e-01,
+           2.555130e-01,  4.659279e-01, -3.975142e-02,  5.749853e-01,
+           7.563654e-02,  8.711317e-01, -1.727219e-01,  5.806760e-01,...
+ DESIRED: array([[[[-1.248736e-01,  3.197730e-01, -3.065764e-01, -3.867276e-02,
+           2.338378e-01, -3.488803e-01,  1.247270e-01, -6.472698e-01,
+           5.345848e-01,  4.910449e-01,  5.394114e-01,  2.341471e-01,...
+2025-05-14 19:55:12.136898 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 246 / 512 (48%)
+Max absolute difference among violations: 1.0278438
+Max relative difference among violations: 18.42552
+ ACTUAL: array([[[[ 6.665060e-01, -4.191183e-02, -5.492295e-04, -1.225271e-01,
+           1.863493e-01,  1.199352e+00,  8.246578e-02,  5.842367e-01],
+         [-6.959458e-02, -1.660861e-02, -4.419644e-02,  3.328957e-01,...
+ DESIRED: array([[[[ 6.665059e-01, -4.191184e-02, -5.492296e-04, -1.225271e-01,
+           6.992120e-01,  1.470244e+00,  1.300932e-02,  7.695549e-01],
+         [-6.959458e-02, -1.660860e-02, -4.419644e-02,  3.328957e-01,...
+2025-05-14 19:55:12.295421 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 491 / 512 (95.9%)
+Max absolute difference among violations: 1.8022083
+Max relative difference among violations: 57.385345
+ ACTUAL: array([[[[ 0.061501,  0.030144,  0.004978,  0.152861,  0.097408,
+           0.928719, -0.080985,  0.540518],
+         [ 0.086769,  0.153439, -0.246897,  0.353783,  0.164303,...
+ DESIRED: array([[[[-0.012816, -0.054498, -0.029269, -0.314183,  0.165096,
+           0.114814,  0.085388,  0.206667],
+         [ 0.069553,  0.024607, -0.01912 , -0.113596,  0.282075,...
+2025-05-14 19:55:12.405382 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), None, Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 499 / 512 (97.5%)
+Max absolute difference among violations: 1.8095427
+Max relative difference among violations: 84.017105
+ ACTUAL: array([[[[-2.126556e-01,  1.110758e-01, -1.251322e-01,  6.280936e-01,
+          -3.246515e-01,  1.367641e-01, -2.159094e-01,  5.455033e-01],
+         [-3.219856e-01,  3.283421e-01,  2.341449e-01,  1.017581e+00,...
+ DESIRED: array([[[[ 0.039501, -0.536182, -0.09865 ,  0.101847,  0.164776,
+           0.348655,  0.597633,  0.751248],
+         [-0.199433, -0.517678,  0.33577 , -0.012257,  0.925811,...
+2025-05-14 19:55:12.485573 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 249 / 512 (48.6%)
+Max absolute difference among violations: 1.1577926
+Max relative difference among violations: 51.85014
+ ACTUAL: array([[[[ 1.317329e-01,  1.319996e-01, -1.044039e-01, -1.087251e-01,
+           3.035363e-01,  1.005608e+00,  3.921723e-01,  2.661109e-01],
+         [ 6.309732e-01,  1.254796e-01, -1.537504e-01, -8.860365e-02,...
+ DESIRED: array([[[[ 1.317329e-01,  1.319996e-01, -1.044039e-01, -1.087251e-01,
+           6.307057e-01,  8.189738e-01,  4.439049e-01,  1.223541e-01],
+         [ 6.309732e-01,  1.254796e-01, -1.537504e-01, -8.860365e-02,...
+2025-05-14 19:55:12.564839 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 493 / 512 (96.3%)
+Max absolute difference among violations: 1.4551742
+Max relative difference among violations: 157.65941
+ ACTUAL: array([[[[-3.469582e-02,  4.331012e-01, -5.078207e-01,  8.973556e-01,
+           2.742564e-01,  5.736668e-01,  2.432074e-01,  4.018569e-01],
+         [ 9.363396e-02,  6.551332e-01, -4.809835e-01,  1.020477e+00,...
+ DESIRED: array([[[[-0.143875,  0.27444 , -0.43735 ,  0.610245,  0.895636,
+           0.321518,  0.389453,  0.617696],
+         [ 0.288357,  0.463122, -0.198405,  0.583527,  1.136033,...
+2025-05-14 19:55:12.662474 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+outputs format not support
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), None, Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 483 / 512 (94.3%)
+Max absolute difference among violations: 1.5060768
+Max relative difference among violations: 526.6404
+ ACTUAL: array([[[[-2.583973e-01,  4.866662e-02, -2.294409e-01,  2.139735e-01,
+           2.509757e-01,  4.089066e-01, -5.251073e-02,  5.360963e-01],
+         [ 3.125782e-01,  3.329048e-01, -2.016910e-01,  3.821194e-01,...
+ DESIRED: array([[[[-4.309641e-01, -4.541047e-01, -4.084249e-01,  1.050910e-01,
+           6.507433e-01,  3.191001e-01,  4.815230e-01,  4.130806e-01],
+         [ 1.395004e-01, -1.410934e-01, -2.590469e-01,  2.115397e-01,...
+2025-05-14 19:55:12.757936 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=False, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 246 / 512 (48%)
+Max absolute difference among violations: 1.374444
+Max relative difference among violations: 5.1025286
+ ACTUAL: array([[[[-0.008451,  0.192929, -0.459007, -0.03123 ,  0.439674,
+           0.108322,  0.368778,  0.453088],
+         [ 0.050759,  0.893191,  0.249563,  0.17501 ,  0.201987,...
+ DESIRED: array([[[[-8.450635e-03,  1.929293e-01, -4.590069e-01, -3.123039e-02,
+           8.146525e-02,  2.842725e-01,  3.335529e-01,  5.321940e-01],
+         [ 5.075930e-02,  8.931909e-01,  2.495626e-01,  1.750102e-01,...
+2025-05-14 19:55:12.840453 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, )
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=None, use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 491 / 512 (95.9%)
+Max absolute difference among violations: 1.6887608
+Max relative difference among violations: 246.94781
+ ACTUAL: array([[[[ 2.067297e-01,  9.213206e-01, -7.254720e-01,  6.607522e-01,
+           1.926940e-01,  1.896028e-01,  8.104853e-01,  5.360597e-01],
+         [ 4.942008e-01,  6.642761e-01, -5.103042e-01,  3.148435e-01,...
+ DESIRED: array([[[[ 2.950291e-01,  4.051560e-01, -7.656140e-01,  1.326439e-01,
+           7.090034e-01,  3.664089e-01,  4.930812e-01,  8.965968e-01],
+         [ 8.535773e-02, -4.505387e-01, -9.342468e-01, -4.749468e-02,...
+2025-05-14 19:55:12.921161 GPU 0 53780 test begin: paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, )
+One of the differentiated Tensors does not require grad
+[accuracy error] paddle.incubate.nn.functional.fused_rotary_position_embedding(Tensor([8, 2, 4, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([8, 2, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), Tensor([1, 8, 1, 8],"float32"), position_ids=Tensor([2, 8],"int64"), use_neox_rotary_style=True, time_major=True, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 502 / 512 (98%)
+Max absolute difference among violations: 1.6323378
+Max relative difference among violations: 269.69257
+ ACTUAL: array([[[[-0.594041,  0.523527,  0.264112,  0.387309, -0.731018,
+           0.4054  ,  0.056892,  0.082836],
+         [ 0.396201,  0.272044,  0.169455,  0.233677, -0.648851,...
+ DESIRED: array([[[[-7.768039e-01,  3.247952e-01,  2.934505e-01, -1.105965e-02,
+           9.013196e-01,  7.278442e-01,  2.353629e-01,  3.754488e-01],
+         [ 4.696496e-01, -1.501897e-02,  1.405507e-01, -5.411945e-02,...

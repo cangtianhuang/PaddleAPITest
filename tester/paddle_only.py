@@ -1,6 +1,6 @@
 
 import paddle
-from func_timeout import func_set_timeout
+#from func_timeout import func_set_timeout
 
 from .api_config.log_writer import write_to_log
 from .base import APITestBase
@@ -11,7 +11,7 @@ class APITestPaddleOnly(APITestBase):
         super().__init__(api_config)
         self.test_amp = test_amp
     
-    @func_set_timeout(600)
+    #@func_set_timeout(600)
     def test(self, retry=False):
         
         if self.need_skip():

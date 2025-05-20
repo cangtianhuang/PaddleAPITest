@@ -1,0 +1,167 @@
+paddle.nn.functional.log_softmax(Tensor([2, 2, 1],"float32"), 0, )
+paddle.nn.functional.log_softmax(Tensor([2, 2, 1],"float64"), 0, )
+paddle.nn.functional.log_softmax(Tensor([2, 3, 4, 5],"float32"), 1, )
+paddle.nn.functional.log_softmax(Tensor([2, 3, 4, 5],"float32"), 1, None, )
+paddle.nn.functional.log_softmax(Tensor([2, 3, 4],"float64"), 0, )
+paddle.nn.functional.log_softmax(Tensor([2, 3, 4],"float64"), 1, )
+paddle.nn.functional.log_softmax(Tensor([5, 3, 2, 4],"float32"), 1, )
+paddle.nn.functional.log_softmax(x=Tensor([2, 2, 1],"float32"), axis=0, )
+paddle.nn.functional.log_softmax(x=Tensor([2, 2, 1],"float64"), axis=0, )
+paddle.nn.functional.log_softmax(x=Tensor([2, 3, 4],"float64"), axis=0, )
+paddle.nn.functional.log_softmax(x=Tensor([2, 3, 4],"float64"), axis=1, )
+
+
+2025-05-14 04:27:01.434064 test begin: paddle.nn.functional.log_softmax(Tensor([2, 2, 1],"float32"), 0, )
+[accuracy error] paddle.nn.functional.log_softmax(Tensor([2, 2, 1],"float32"), 0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 4 / 4 (100%)
+Max absolute difference: 0.8939805
+Max relative difference: inf
+ x: array([[[-0.609677],
+        [-0.893981]],
+...
+ y: array([[[0.],
+        [0.]],
+...
+2025-05-14 04:27:01.694552 test begin: paddle.nn.functional.log_softmax(Tensor([2, 2, 1],"float64"), 0, )
+[accuracy error] paddle.nn.functional.log_softmax(Tensor([2, 2, 1],"float64"), 0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 4 / 4 (100%)
+Max absolute difference: 1.11127988
+Max relative difference: inf
+ x: array([[[-0.66654 ],
+        [-0.399191]],
+...
+ y: array([[[0.],
+        [0.]],
+...
+2025-05-14 04:27:01.844710 test begin: paddle.nn.functional.log_softmax(Tensor([2, 3, 4, 5],"float32"), 1, )
+[accuracy error] paddle.nn.functional.log_softmax(Tensor([2, 3, 4, 5],"float32"), 1, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 120 / 120 (100%)
+Max absolute difference: 0.96887803
+Max relative difference: 0.51520735
+ x: array([[[[-1.31192 , -1.271619, -1.049001, -1.344965, -1.317255],
+         [-0.989155, -1.391227, -0.786317, -1.082405, -0.951923],
+         [-1.051428, -1.577246, -1.19586 , -1.054086, -0.758979],...
+ y: array([[[[-1.882055, -1.591429, -1.545117, -1.624998, -1.452905],
+         [-1.299495, -2.126889, -1.461024, -1.698565, -1.644141],
+         [-1.648945, -2.100084, -1.531812, -1.660264, -1.276297],...
+2025-05-14 04:27:01.994014 test begin: paddle.nn.functional.log_softmax(Tensor([2, 3, 4, 5],"float32"), 1, None, )
+[accuracy error] paddle.nn.functional.log_softmax(Tensor([2, 3, 4, 5],"float32"), 1, None, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 120 / 120 (100%)
+Max absolute difference: 1.0572026
+Max relative difference: 0.5470806
+ x: array([[[[-0.84433 , -1.465954, -1.04153 , -1.019293, -1.282538],
+         [-1.262047, -1.203469, -1.18047 , -0.957695, -0.849734],
+         [-0.875091, -0.701824, -0.972336, -1.333977, -1.185812],...
+ y: array([[[[-1.411961, -2.152906, -1.540004, -1.240237, -1.991483],
+         [-1.912409, -1.693105, -1.955105, -1.396631, -1.275291],
+         [-1.271302, -1.295087, -1.678266, -2.160735, -1.939875],...
+2025-05-14 04:27:02.143972 test begin: paddle.nn.functional.log_softmax(Tensor([2, 3, 4],"float64"), 0, )
+[accuracy error] paddle.nn.functional.log_softmax(Tensor([2, 3, 4],"float64"), 0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 24 / 24 (100%)
+Max absolute difference: 1.13054061
+Max relative difference: 0.64345948
+ x: array([[[-1.076364, -0.55042 , -1.066487, -0.614361],
+        [-0.909655, -0.894365, -0.534487, -0.394761],
+        [-0.431544, -0.942838, -0.766204, -0.697559]],...
+ y: array([[[-1.548768, -1.441048, -1.573461, -1.068614],
+        [-1.813734, -1.385861, -1.499092, -1.011936],
+        [-1.105997, -1.635941, -1.599585, -1.300594]],...
+2025-05-14 04:27:02.300833 test begin: paddle.nn.functional.log_softmax(Tensor([2, 3, 4],"float64"), 1, )
+[accuracy error] paddle.nn.functional.log_softmax(Tensor([2, 3, 4],"float64"), 1, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 23 / 24 (95.8%)
+Max absolute difference: 0.61428536
+Max relative difference: 0.43401588
+ x: array([[[-0.821025, -1.000163, -0.721437, -0.964115],
+        [-1.524872, -0.843167, -1.630837, -1.140766],
+        [-1.071861, -1.600304, -1.145134, -1.206959]],...
+ y: array([[[-1.340633, -1.561978, -1.27466 , -1.390009],
+        [-1.682281, -1.042783, -1.821861, -1.204461],
+        [-1.230589, -1.801239, -1.337477, -1.271973]],...
+2025-05-14 04:27:02.451456 test begin: paddle.nn.functional.log_softmax(Tensor([5, 3, 2, 4],"float32"), 1, )
+[accuracy error] paddle.nn.functional.log_softmax(Tensor([5, 3, 2, 4],"float32"), 1, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 116 / 120 (96.7%)
+Max absolute difference: 0.68282014
+Max relative difference: 0.4732243
+ x: array([[[[-1.673666, -1.032566, -1.090833, -1.049589],
+         [-0.844703, -0.639991, -1.249772, -0.898512]],
+...
+ y: array([[[[-1.81564 , -1.483602, -1.125497, -1.251918],
+         [-1.432781, -1.211537, -1.49007 , -1.434395]],
+...
+2025-05-14 04:27:02.615524 test begin: paddle.nn.functional.log_softmax(x=Tensor([2, 2, 1],"float32"), axis=0, )
+[accuracy error] paddle.nn.functional.log_softmax(x=Tensor([2, 2, 1],"float32"), axis=0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 4 / 4 (100%)
+Max absolute difference: 0.97864354
+Max relative difference: inf
+ x: array([[[-0.471317],
+        [-0.677286]],
+...
+ y: array([[[0.],
+        [0.]],
+...
+2025-05-14 04:27:02.762527 test begin: paddle.nn.functional.log_softmax(x=Tensor([2, 2, 1],"float64"), axis=0, )
+[accuracy error] paddle.nn.functional.log_softmax(x=Tensor([2, 2, 1],"float64"), axis=0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 4 / 4 (100%)
+Max absolute difference: 0.92000501
+Max relative difference: inf
+ x: array([[[-0.920005],
+        [-0.510738]],
+...
+ y: array([[[0.],
+        [0.]],
+...
+2025-05-14 04:27:02.898440 test begin: paddle.nn.functional.log_softmax(x=Tensor([2, 3, 4],"float64"), axis=0, )
+[accuracy error] paddle.nn.functional.log_softmax(x=Tensor([2, 3, 4],"float64"), axis=0, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 24 / 24 (100%)
+Max absolute difference: 1.23473159
+Max relative difference: 0.71507005
+ x: array([[[-0.945216, -0.757564, -1.026584, -0.710205],
+        [-0.686799, -0.770013, -0.968529, -0.93095 ],
+        [-0.692028, -0.862618, -0.539191, -0.971508]],...
+ y: array([[[-1.927476, -1.234215, -1.648296, -0.991433],
+        [-1.3445  , -1.443775, -1.240185, -1.541947],
+        [-1.315301, -1.377358, -1.3182  , -1.55237 ]],...
+2025-05-14 04:27:03.058786 test begin: paddle.nn.functional.log_softmax(x=Tensor([2, 3, 4],"float64"), axis=1, )
+[accuracy error] paddle.nn.functional.log_softmax(x=Tensor([2, 3, 4],"float64"), axis=1, ) 
+ 
+Not equal to tolerance rtol=0.01, atol=0.01
+
+Mismatched elements: 23 / 24 (95.8%)
+Max absolute difference: 0.56660033
+Max relative difference: 0.45136706
+ x: array([[[-1.124289, -1.204476, -1.019675, -1.284686],
+        [-0.732571, -1.047854, -1.364017, -0.688698],
+        [-1.637606, -1.051362, -0.958009, -1.509443]],...
+ y: array([[[-1.362297, -1.295388, -1.294775, -1.628739],
+        [-1.193127, -1.361313, -1.861664, -1.255298],
+        [-1.792697, -1.059357, -1.150191, -1.770578]],...
