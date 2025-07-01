@@ -694,44 +694,29 @@ if input2.dim() == 1:
 
 class CrossEntropyRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
+        defaults_code, map_code = self.apply_generic()
         pre = """
-_kwargs = {}
-for paddle_param, torch_param in {
-    "input": "input",
-    "label": "target",
-    "weight": "weight",
-    "ignore_index": "ignore_index",
-    "reduction": "reduction",
-    "label_smoothing": "label_smoothing"
-}.items():
-    if paddle_param in locals() and locals()[paddle_param] is not None:
-        _kwargs[torch_param] = locals()[paddle_param]
-shp = _kwargs['target'].shape
-if len(_kwargs["input"].shape) > 2:
-    perm = [0] + [len(_kwargs["input"].shape)-1]+ [i for i in range(1,len(_kwargs["input"].shape)-1)]
-    _kwargs['input'] = _kwargs['input'].permute(*perm)
-soft_label = locals().get('soft_label',False)
-axis = locals().get('axis',-1)
-use_softmax = locals().get('use_softmax',True)
-_kwargs['target'] = _kwargs['target'].squeeze(-1)
-if "weight" in _kwargs:
-    _kwargs['weight'].requires_grad = False
-if _kwargs['target'].dtype == torch.int32:
-    _kwargs['target'] = _kwargs['target'].long()
+label_shape = label.shape
+if len(input.shape) > 2:
+    perm = [0] + [input.shape - 1] + [i for i in range(1, len(input.shape) - 1)]
+    input = input.permute(*perm)
+label = label.squeeze(-1)
+if isinstance(weight, torch.Tensor):
+    weight.requires_grad = False
+if label.dtype == torch.int32:
+    label = label.to(torch.int64)
 """
-        core = """
-result = torch.nn.functional.cross_entropy(**_kwargs)
-"""
+        core = f"result = {self.torch_api}(**_kwargs)"
         post = """
-if "reduction" in _kwargs and _kwargs['reduction'] == "none":
+if reduction == "none":
     if soft_label:
         result = result.unsqueeze(-1)
     else:
-        result = result.reshape(shp)
+        result = result.reshape(label_shape)
 """
         code = Code(
-            preprocess=pre.splitlines(),
-            core=core.splitlines(),
+            preprocess=defaults_code + pre.splitlines() + map_code,
+            core=[core],
             postprocess=post.splitlines(),
         )
         return ConvertResult.success(paddle_api, code)
@@ -753,9 +738,8 @@ class CovRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
         defaults_code, map_code = self.apply_generic()
         pre = """
-if 'rowvar' in locals() and rowvar is False:
-    if torch.is_tensor(x) and x.dim() > 1:
-        x = torch.transpose(x, 0, 1)
+if not rowvar and torch.is_tensor(x) and x.dim() > 1:
+    x = torch.transpose(x, 0, 1)
 """
         core = f"result = {self.torch_api}(**_kwargs)"
         code = Code(
@@ -820,31 +804,15 @@ result = x[slices]
 
 class CtcLossRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
-        pre = """
-_kwargs = {}
-for paddle_param, torch_param in {
-    "log_probs": "log_probs",
-    "labels": "targets",
-    "input_lengths": "input_lengths",
-    "label_lengths":"target_lengths",
-    "blank": "blank",
-    "reduction": "reduction",
-}.items():
-    if paddle_param in locals() and not locals()[paddle_param] is None:
-        _kwargs[torch_param] = locals()[paddle_param]
-_kwargs['log_probs'] = torch.nn.functional.log_softmax(_kwargs['log_probs'], dim=-1)
-_kwargs['zero_infinity'] = True
-"""
-        core = """
-result = torch.nn.functional.ctc_loss(**_kwargs)
-"""
-        code = Code(preprocess=pre.splitlines(), core=core.splitlines())
+        defaults_code, map_code = self.apply_generic()
+        pre = "log_probs = torch.nn.functional.log_softmax(log_probs, dim=-1)"
+        core = f"result = {self.torch_api}(**_kwargs)"
+        code = Code(preprocess=defaults_code + [pre] + map_code, core=[core])
         return ConvertResult.success(paddle_api, code)
 
 
 class CumRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
-        torch_api = paddle_api.replace("paddle.", "torch.")
         pre = """
 axis = locals().get('axis')
 if axis is None:
@@ -852,7 +820,7 @@ if axis is None:
     axis = 0
 dtype = locals().get('dtype', torch.int64)
 """
-        core = f"result = {torch_api}(input=x, dim=axis)"
+        core = f"result = {self.torch_api}(input=x, dim=axis)"
         post = "result.values.to(dtype)"
         code = Code(
             preprocess=pre.splitlines(), core=[core], postprocess=post.splitlines()
@@ -922,7 +890,6 @@ elif dx is not None:
 else:
     result = torch.cumulative_trapezoid(y, dim=axis)
 """
-
         code = Code(
             preprocess=defaults_code + pre.splitlines() + map_code,
             core=core.splitlines(),
@@ -978,7 +945,7 @@ else:
     result = torch.clamp(**_kwargs)
 """
         elif paddle_api == "paddle.Tensor.clip":
-                core = """
+            core = """
 if min is None and max is None:
     result = x
 else:
@@ -988,7 +955,10 @@ else:
             return ConvertResult.error(
                 paddle_api, f"Unsupported clip api: {paddle_api}"
             )
-        code = Code(preprocess=defaults_code + pre.splitlines() + map_code, core=core.splitlines())
+        code = Code(
+            preprocess=defaults_code + pre.splitlines() + map_code,
+            core=core.splitlines(),
+        )
         return ConvertResult.success(paddle_api, code)
 
 
@@ -1308,15 +1278,13 @@ class CountNonzeroRule(BaseRule):
         defaults_code, map_code = self.apply_generic()
         core = f"result = {self.torch_api}(**_kwargs)"
         post = """
-keepdim = locals().get('keepdim', False)
 if keepdim:
-    axis = locals().get('axis', None)
     shape = list(x.shape)
     if axis is None:
         for i in range(len(shape)):
             shape[i] = 1
     else:
-        if not isinstance(axis,(list,tuple)):
+        if not isinstance(axis, (list, tuple)):
             axis = [axis]
         for i in range(len(axis)):
             shape[axis[i]] = 1
@@ -1521,6 +1489,7 @@ if x.ndim == 1 and padding_value != 0:
 
 class DropoutRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
+        defaults_code, _ = self.apply_generic()
         pre = """
 def axis_dropout(x, p, axis, training=True, mode='upscale_in_train'):
     if isinstance(axis, int):
@@ -1544,60 +1513,15 @@ def axis_dropout(x, p, axis, training=True, mode='upscale_in_train'):
             return x * (1.0 - p)
     else:
         raise ValueError(f"Invalid mode: {mode}")
-        
-x = locals().get('x')
-p = locals().get('p')
-axis = locals().get('axis')
-training = locals().get('training')
-mode = locals().get('mode')
 """
-        core = "result = axis_dropout(x, p, axis, training, mode) if axis is not None else torch.nn.functional.dropout(input=x, p=float(p), training=training)"
-        code = Code(preprocess=pre.splitlines(), core=[core])
+        core = """
+if axis is not None:
+    result = axis_dropout(x, p, axis, training, mode)
+else:
+    result = torch.nn.functional.dropout(input=x, p=float(p), training=training)
+"""
+        code = Code(preprocess=defaults_code + pre.splitlines(), core=core.splitlines())
         return ConvertResult.success(paddle_api, code, is_torch_corresponding=False)
-
-
-class Dropout2dRule(BaseRule):
-    def apply(self, paddle_api: str) -> ConvertResult:
-        pre = """
-x = locals().get('x')
-p = locals().get('p')
-training = locals().get('training')
-data_format = locals().get('data_format')
-
-if data_format == "NHWC":
-    x = x.permute(0, 3, 1, 2)
-"""
-        core = "result = torch.nn.functional.dropout2d(input=x, p=float(p), training=training)"
-        post = """
-if data_format == "NHWC":
-    result = result.permute(0, 2, 3, 1)
-"""
-        code = Code(
-            preprocess=pre.splitlines(), core=[core], postprocess=post.splitlines()
-        )
-        return ConvertResult.success(paddle_api, code)
-
-
-class Dropout3dRule(BaseRule):
-    def apply(self, paddle_api: str) -> ConvertResult:
-        pre = """
-x = locals().get('x')
-p = locals().get('p')
-training = locals().get('training')
-data_format = locals().get('data_format')
-
-if data_format == "NDHWC":
-    x = x.permute(0, 4, 1, 2, 3)
-"""
-        core = "result = torch.nn.functional.dropout3d(input=x, p=float(p), training=training)"
-        post = """
-if data_format == "NDHWC":
-    result = result.permute(0, 2, 3, 4, 1)
-"""
-        code = Code(
-            preprocess=pre.splitlines(), core=[core], postprocess=post.splitlines()
-        )
-        return ConvertResult.success(paddle_api, code)
 
 
 # e
@@ -1628,31 +1552,21 @@ else:
 
 class EembeddingRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
+        defaults_code, map_code = self.apply_generic()
         pre = """
-_kwargs = {}
-for paddle_param, torch_param in{
-    "x": "input",
-    "weight": "weight",
-    "padding_idx": "padding_idx",
-    "max_norm": "max_norm",
-    "norm_type": "norm_type",
-    "scale_grad_by_freq": "scale_grad_by_freq",
-    "sparse": "sparse"
-}.items():
-    if paddle_param in kwargs and kwargs[paddle_param] is not None:
-        _kwargs[torch_param] = kwargs[paddle_param]
-if torch.is_complex(_kwargs["weight"]):
-    weight1 = _kwargs["weight"].real
-    weight2 = _kwargs["weight"].imag
-    del _kwargs["weight"]
+if torch.is_complex(weight):
+    weight_real = weight.real
+    weight_imag = weight.imag
+    del weight
 """
-        core = """
-if not "weight" in _kwargs:
-    result = torch.nn.functional.embedding(**_kwargs,weight = weight1) + 1j * torch.nn.functional.embedding(**_kwargs,weight = weight2)
+        core = f"""
+if "weight" not in locals():
+    result = {self.torch_api}(**_kwargs, weight = weight_real) + \
+        1j * {self.torch_api}(**_kwargs, weight = weight_imag)
 else:
-    result = torch.nn.functional.embedding(**_kwargs)
+    result = {self.torch_api}(**_kwargs)
 """
-        code = Code(preprocess=pre.splitlines(), core=core.splitlines())
+        code = Code(preprocess=defaults_code + pre.splitlines() + map_code, core=core.splitlines())
         return ConvertResult.success(paddle_api, code)
 
 

@@ -558,6 +558,10 @@
     "paddle.count_nonzero": {
         "Rule": "CountNonzeroRule",
         "torch_api": "torch.count_nonzero",
+        "set_defaults": {
+            "axis": "None",
+            "keepdim": false
+        },
         "paddle_torch_args_map": {
             "x": "input",
             "axis": "dim"
@@ -2680,22 +2684,84 @@
         }
     },
     "paddle.nn.functional.cross_entropy": {
-        "Rule": "CrossEntropyRule"
+        "Rule": "CrossEntropyRule",
+        "torch_api": "torch.nn.functional.cross_entropy",
+        "set_defaults": {
+            "weight": "None",
+            "ignore_index": -100,
+            "reduction": "mean",
+            "soft_label": false,
+            "label_smoothing": 0.0,
+            "axis": -1,
+            "use_softmax": true
+        },
+        "paddle_torch_args_map": {
+            "input": "input",
+            "label": "target",
+            "weight": "weight",
+            "ignore_index": "ignore_index",
+            "reduction": "reduction",
+            "label_smoothing": "label_smoothing"
+        }
     },
     "paddle.nn.functional.ctc_loss": {
-        "Rule": "CtcLossRule"
+        "Rule": "CtcLossRule",
+        "torch_api": "torch.nn.functional.ctc_loss",
+        "set_defaults": {
+            "blank": 0,
+            "reduction": "mean"
+        },
+        "paddle_torch_args_map": {
+            "log_probs": "log_probs",
+            "labels": "targets",
+            "input_lengths": "input_lengths",
+            "label_lengths": "target_lengths",
+            "blank": "blank",
+            "reduction": "reduction"
+        },
+        "torch_kwargs": {
+            "zero_infinity": true
+        }
     },
     "paddle.nn.functional.dice_loss": {
         "Rule": "DiceLossRule"
     },
     "paddle.nn.functional.dropout": {
-        "Rule": "DropoutRule"
+        "Rule": "DropoutRule",
+        "set_defaults": {
+            "p": 0.5,
+            "axis": "None",
+            "training": true,
+            "mode": "upscale_in_train"
+        }
     },
     "paddle.nn.functional.dropout2d": {
-        "Rule": "Dropout2dRule"
+        "Rule": "DataFormatRule",
+        "torch_api": "torch.nn.functional.dropout2d",
+        "set_defaults": {
+            "p": 0.5,
+            "training": true,
+            "data_format": "NCHW"
+        },
+        "paddle_torch_args_map": {
+            "x": "input",
+            "p": "p",
+            "training": "training"
+        }
     },
     "paddle.nn.functional.dropout3d": {
-        "Rule": "Dropout3dRule"
+        "Rule": "DataFormatRule",
+        "torch_api": "torch.nn.functional.dropout3d",
+        "set_defaults": {
+            "p": 0.5,
+            "training": true,
+            "data_format": "NCDHW"
+        },
+        "paddle_torch_args_map": {
+            "x": "input",
+            "p": "p",
+            "training": "training"
+        }
     },
     "paddle.nn.functional.elu": {
         "torch_api": "torch.nn.functional.elu",
@@ -2706,7 +2772,17 @@
         }
     },
     "paddle.nn.functional.embedding": {
-        "Rule": "EembeddingRule"
+        "Rule": "EembeddingRule",
+        "torch_api": "torch.nn.functional.embedding",
+        "paddle_torch_args_map": {
+            "x": "input",
+            "weight": "weight",
+            "padding_idx": "padding_idx",
+            "max_norm": "max_norm",
+            "norm_type": "norm_type",
+            "sparse": "sparse",
+            "scale_grad_by_freq": "scale_grad_by_freq"
+        }
     },
     "paddle.nn.functional.feature_alpha_dropout": {
         "torch_api": "torch.nn.functional.feature_alpha_dropout",
