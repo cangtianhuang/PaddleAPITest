@@ -88,7 +88,6 @@ paddle.broadcast_to
 paddle.dot
 paddle.linalg.norm
 paddle.linalg.pinv
-paddle.linalg.svd_lowrank
 paddle.logit
 paddle.maximum
 paddle.minimum

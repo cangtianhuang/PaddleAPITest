@@ -45,26 +45,41 @@ mkdir -p "$LOG_DIR" || {
 
 # 执行程序
 LOG_FILE="$LOG_DIR/log_$(date +%Y%m%d_%H%M%S).log"
-nohup python engineV2.py \
-        "${TEST_MODE_ARGS[@]}" \
-        "${IN_OUT_ARGS[@]}" \
-        "${PARALLEL_ARGS[@]}" \
-        >> "$LOG_FILE" 2>&1 &
+if [ "$backprocess" -eq 1 ]; then
+    nohup python engineV2.py \
+            "${TEST_MODE_ARGS[@]}" \
+            "${IN_OUT_ARGS[@]}" \
+            "${PARALLEL_ARGS[@]}" \
+            >> "$LOG_FILE" 2>&1 &
+    PYTHON_PID=$!
 
-PYTHON_PID=$!
+    sleep 1
+    if ! ps -p "$PYTHON_PID" > /dev/null; then
+        echo "错误：engineV2 启动失败，请检查 $LOG_FILE"
+        exit 1
+    fi
 
-sleep 1
-if ! ps -p "$PYTHON_PID" > /dev/null; then
-    echo "错误：engineV2 启动失败，请检查 $LOG_FILE"
-    exit 1
+    echo -e "\n\033[32m执行中... 另开终端运行监控:\033[0m"
+    echo -e "1. GPU使用:   watch -n 1 nvidia-smi"
+    echo -e "2. 日志目录:  ls -lh $LOG_DIR"
+    echo -e "3. 详细日志:  tail -f $LOG_FILE"
+    echo -e "4. 终止任务:  kill $PYTHON_PID"
+    echo -e "\n进程已在后台运行，关闭终端不会影响进程执行"
+else
+    python engineV2.py \
+            "${TEST_MODE_ARGS[@]}" \
+            "${IN_OUT_ARGS[@]}" \
+            "${PARALLEL_ARGS[@]}" \
+            2>&1 | tee -a "$LOG_FILE"
+
+    PYTHON_PID=$!
+
+    sleep 1
+    if ! ps -p "$PYTHON_PID" > /dev/null; then
+        echo "错误：engineV2 执行失败，请检查 $LOG_FILE"
+        exit 1
+    fi
 fi
-
-echo -e "\n\033[32m执行中... 另开终端运行监控:\033[0m"
-echo -e "1. GPU使用:   watch -n 1 nvidia-smi"
-echo -e "2. 日志目录:  ls -lh $LOG_DIR"
-echo -e "3. 详细日志:  tail -f $LOG_FILE"
-echo -e "4. 终止任务:  kill $PYTHON_PID"
-echo -e "\n进程已在后台运行，关闭终端不会影响进程执行"
 
 exit 0
 

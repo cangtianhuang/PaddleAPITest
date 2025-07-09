@@ -223,7 +223,6 @@ paddle.nn.functional.max_unpool2d
 paddle.nn.functional.max_unpool3d
 paddle.nn.functional.maxout
 paddle.nn.functional.mse_loss
-paddle.nn.functional.nll_loss
 paddle.nn.functional.normalize
 paddle.nn.functional.one_hot
 paddle.nn.functional.pad

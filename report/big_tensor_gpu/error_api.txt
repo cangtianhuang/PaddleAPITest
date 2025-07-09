@@ -12,7 +12,6 @@ paddle.Tensor.all
 paddle.Tensor.any
 paddle.Tensor.argmax
 paddle.Tensor.astype
-paddle.Tensor.chunk
 paddle.Tensor.clip
 paddle.Tensor.cumsum
 paddle.Tensor.diff
@@ -57,7 +56,6 @@ paddle.atan2
 paddle.bincount
 paddle.bmm
 paddle.broadcast_tensors
-paddle.chunk
 paddle.clip
 paddle.combinations
 paddle.complex

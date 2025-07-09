@@ -43,7 +43,6 @@ paddle.linalg.lstsq
 paddle.linalg.matrix_rank
 paddle.linalg.norm
 paddle.linalg.pinv
-paddle.linalg.svd_lowrank
 paddle.logit
 paddle.max
 paddle.maximum

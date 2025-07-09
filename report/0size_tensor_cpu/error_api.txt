@@ -148,7 +148,6 @@ paddle.nn.functional.margin_cross_entropy
 paddle.nn.functional.max_pool1d
 paddle.nn.functional.max_pool3d
 paddle.nn.functional.max_unpool2d
-paddle.nn.functional.nll_loss
 paddle.nn.functional.pad
 paddle.nn.functional.pixel_shuffle
 paddle.nn.functional.pixel_unshuffle
