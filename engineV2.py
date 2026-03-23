@@ -17,12 +17,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
+import paddle
 import pynvml
 import yaml
 from pebble import ProcessExpired, ProcessPool
 
 if TYPE_CHECKING:
-    import paddle
     import torch
     from tester import (
         APIConfig,
@@ -818,6 +818,8 @@ def main():
             APITestAccuracy,  # default fallback
         )
 
+        if options.test_cpu:
+            paddle.device.set_device("cpu")
         if options.custom_device_vs_gpu:
             # custom_device_vs_gpu 模式需要传递额外参数
             case = test_class(
