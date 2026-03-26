@@ -942,3 +942,6 @@ apis:
  - paddle.zeros
  - paddle.zeros_like
  - paddle._C_ops._run_custom_op
+ - paddle.nn.functional.*
+ - paddle.incubate.nn.functional.*
+# - paddle._C_ops.*  # 默认关闭（上层接口已覆盖大多数场景）；若担心遗漏底层算子可取消注释
