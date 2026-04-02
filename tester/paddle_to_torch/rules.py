@@ -729,7 +729,7 @@ if weight is not None:
     weight.requires_grad = False
 if label.dtype == torch.int32:
     label = label.long()
-_manual_weight = soft_label and weight is not None
+_manual_weight = soft_label and weight is not None and torch.is_floating_point(label)
 if _manual_weight:
     _saved_reduction = reduction
     _saved_weight = weight
@@ -737,9 +737,18 @@ if _manual_weight:
     weight = None
 """
         core = f"""
-if not use_softmax:
-    _kwargs["input"] = torch.log(_kwargs["input"])
-result = {self.torch_api}(**_kwargs)
+if not use_softmax and not soft_label and label_smoothing == 0.0:
+    result = torch.nn.functional.nll_loss(
+        input=torch.log(_kwargs["input"]),
+        target=_kwargs["target"],
+        weight=_kwargs.get("weight"),
+        ignore_index=_kwargs.get("ignore_index", -100),
+        reduction=_kwargs.get("reduction", "mean"),
+    )
+else:
+    if not use_softmax:
+        _kwargs["input"] = torch.log(_kwargs["input"])
+    result = {self.torch_api}(**_kwargs)
 """
         post = """
 if _manual_weight:
