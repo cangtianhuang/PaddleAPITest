@@ -370,6 +370,7 @@
         }
     },
     "paddle.bmm": {
+        "Rule": "BmmRule",
         "torch_api": "torch.bmm",
         "paddle_torch_args_map": {
             "x": "input",
@@ -377,6 +378,7 @@
         }
     },
     "paddle.Tensor.bmm": {
+        "Rule": "BmmRule",
         "torch_api": "torch.Tensor.bmm",
         "paddle_torch_args_map": {
             "y": "mat2"
@@ -3352,6 +3354,18 @@
             "inplace": "inplace"
         }
     },
+    "paddle.nn.functional.rms_norm": {
+        "torch_api": "torch.nn.functional.rms_norm",
+        "set_defaults": {
+            "eps": 1e-05
+        },
+        "paddle_torch_args_map": {
+            "input": "input",
+            "normalized_shape": "normalized_shape",
+            "weight": "weight",
+            "eps": "eps"
+        }
+    },
     "paddle.nn.functional.scaled_dot_product_attention": {
         "Rule": "ScaledDotProductAttentionRule",
         "torch_api": "torch.nn.functional.scaled_dot_product_attention",
@@ -3455,6 +3469,9 @@
     },
     "paddle.nn.functional.swish": {
         "Rule": "SwishRule"
+    },
+    "paddle.nn.functional.swiglu": {
+        "Rule": "SwigluRule"
     },
     "paddle.nn.functional.tanh": {
         "torch_api": "torch.nn.functional.tanh",
@@ -4471,6 +4488,9 @@
         "Rule": "VecdotRule"
     },
     "paddle.view": {
+        "Rule": "ViewRule"
+    },
+    "paddle.Tensor.view": {
         "Rule": "ViewRule"
     },
     "paddle.view_as": {
