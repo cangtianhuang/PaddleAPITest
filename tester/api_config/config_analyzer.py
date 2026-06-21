@@ -2935,8 +2935,9 @@ class TensorConfig:
             intermediate_dtype = (
                 "float16" if self.dtype in ["float8_e5m2", "float8_e4m3fn"] else self.dtype
             )
-            flat_tensor = paddle.empty(
-                [self._strided_storage_size()],
+            storage_size = self._strided_storage_size()
+            flat_tensor = paddle.zeros(
+                [storage_size],
                 dtype=intermediate_dtype,
                 device=self.place,
             )
