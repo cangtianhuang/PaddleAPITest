@@ -57,6 +57,7 @@ VALID_TEST_ARGS = {
     "generate_failed_tests",
     "bitwise_alignment",
     "exit_on_error",
+    "use_gpu_cache_mode",
 }
 
 DEVICE_TYPE = None
@@ -531,6 +532,8 @@ def run_test_case(api_config_str, options):
         )
         time.sleep(60)
 
+    api_config = None
+    case = None
     try:
         api_config = APIConfig(api_config_str)
     except Exception as err:
@@ -578,7 +581,7 @@ def run_test_case(api_config_str, options):
                 "torch_gpu_performance",
                 "paddle_torch_gpu_performance",
             )
-        ):
+        ) and not getattr(options, "use_gpu_cache_mode", False):
             torch.cuda.empty_cache()
             paddle.device.cuda.empty_cache()
 
@@ -704,6 +707,12 @@ def main():
         type=parse_bool,
         default=False,
         help="Reuse cached NumPy inputs when available.",
+    )
+    parser.add_argument(
+        "--use_gpu_cache_mode",
+        type=parse_bool,
+        default=False,
+        help="Enable GPU-first tensor cache, GPU compare, and CUDA allocator reuse for speed.",
     )
     parser.add_argument(
         "--log_dir",
@@ -855,7 +864,21 @@ def main():
         _print_argument(
             ARGUMENT_WARNING_PREFIX, "--test_backward takes effect only when --paddle_cinn=True"
         )
+    if options.use_gpu_cache_mode and options.use_cached_numpy:
+        print(
+            "[gpu_cache_mode] --use_cached_numpy=True is ignored because "
+            "--use_gpu_cache_mode=True uses GPU tensor cache.",
+            flush=True,
+        )
+        options.use_cached_numpy = False
     os.environ["USE_CACHED_NUMPY"] = str(options.use_cached_numpy)
+    os.environ["USE_GPU_CACHE_MODE"] = str(options.use_gpu_cache_mode)
+    os.environ["SKIP_GPU_CLEANUP"] = str(options.use_gpu_cache_mode)
+    if options.use_gpu_cache_mode:
+        print(
+            "[gpu_cache_mode] enabled: GPU tensor cache, GPU compare, and allocator reuse are active.",
+            flush=True,
+        )
     if options.bitwise_alignment:
         options.atol = 0.0
         options.rtol = 0.0
@@ -950,6 +973,7 @@ def main():
                 test_tol=options.test_tol,
                 bitwise_alignment=options.bitwise_alignment,
                 exit_on_error=options.exit_on_error,
+                use_gpu_cache_mode=options.use_gpu_cache_mode,
             )
         else:
             case = test_class(api_config, test_amp=options.test_amp)
