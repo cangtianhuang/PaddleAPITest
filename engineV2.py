@@ -457,7 +457,6 @@ def run_test_case(api_config_str, options):
     cuda_visible = os.environ.get("CUDA_VISIBLE_DEVICES", "0")
     gpu_id = int(cuda_visible.split(",")[0])
 
-    write_to_log("checkpoint", api_config_str)
     print(
         f"{datetime.now()} GPU {gpu_id} {os.getpid()} [paddle {options.paddle_version}] test begin: {api_config_str}",
         flush=True,
@@ -932,6 +931,12 @@ def main():
 
         # when engineV2 was interrupted, resume from .tmp dir
         aggregate_logs(cleanup=True)
+        removed_stale_logs = cleanup_uncheckpointed_result_logs()
+        if removed_stale_logs:
+            print(
+                f"{removed_stale_logs} stale result log entries without checkpoint were removed.",
+                flush=True,
+            )
 
         # read checkpoint
         finish_configs = read_log("checkpoint")
@@ -1030,13 +1035,8 @@ def main():
 
                 for future in as_completed(futures):
                     config = futures[future]
+                    checkpoint_ready = True
                     try:
-                        tested_case += 1
-                        if options.show_runtime_status or tested_case % 10000 == 0:
-                            print(
-                                f"[{tested_case}/{all_case}] Testing {config}",
-                                flush=True,
-                            )
                         future.result()
                         if options.show_runtime_status or tested_case % 10000 == 0:
                             print(f"[info] Test case succeeded for {config}", flush=True)
@@ -1051,15 +1051,20 @@ def main():
                         # when any cuda error and oom happen, subprocess will crash too,
                         # these case has been classified to oom and cuda_error and won't be classified to crash
                         if err.exitcode == 99:
-                            # write_to_log("cuda_error", config)
                             print(
                                 f"[error] CUDA error for {config}: {err}",
                                 flush=True,
                             )
                         elif err.exitcode == 98:
-                            # write_to_log("oom", config)
                             print(
                                 f"[error] CUDA out of memory for {config}",
+                                flush=True,
+                            )
+                        elif err.exitcode in (-signal.SIGKILL, -signal.SIGTERM):
+                            checkpoint_ready = False
+                            print(
+                                f"[warn] Worker was externally killed for {config} "
+                                f"(exit={err.exitcode}); case will be retried on next run.",
                                 flush=True,
                             )
                         else:
@@ -1073,6 +1078,14 @@ def main():
                             f"[warn] Test case failed for {config}: {err}",
                             flush=True,
                         )
+                    if checkpoint_ready:
+                        tested_case += 1
+                        if options.show_runtime_status or tested_case % 10000 == 0:
+                            print(
+                                f"[{tested_case}/{all_case}] Testing {config}",
+                                flush=True,
+                            )
+                        write_to_log("checkpoint", config)
                 aggregate_logs()
             pool.close()
             pool.join()
