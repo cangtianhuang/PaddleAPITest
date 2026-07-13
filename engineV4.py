@@ -1273,7 +1273,8 @@ def run_test_case(api_config_str, options):
     try:
         api_config = APIConfig(api_config_str)
     except Exception as err:
-        print(f"[config parse error] {api_config_str} {err!s}", flush=True)
+        print(f"[config_parse] {api_config_str} {err!s}", flush=True)
+        write_to_log("config_parse", api_config_str)
         return
 
     test_class = _select_test_class(options)
@@ -1684,7 +1685,7 @@ def main():
         try:
             api_config = APIConfig(options.api_config)
         except Exception as err:
-            print(f"[config parse error] {options.api_config} {err!s}", flush=True)
+            print(f"[config_parse] {options.api_config} {err!s}", flush=True)
             return
 
         test_class = _select_test_class(options)
@@ -1778,16 +1779,25 @@ def main():
         print(len(finish_configs), "cases in checkpoint.", flush=True)
 
         api_config_count = 0
+        skipped_non_config = 0
         api_configs = set()
         for config_file in config_files:
             try:
                 with open(config_file) as f:
-                    lines = [line.strip() for line in f if line.strip()]
-                    api_config_count += len(lines)
-                    api_configs.update(lines)
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if not line.startswith("paddle."):
+                            skipped_non_config += 1
+                            continue
+                        api_config_count += 1
+                        api_configs.add(line)
             except Exception as e:
                 print(f"Failed to read config file {config_file}: {e}", flush=True)
                 return
+        if skipped_non_config:
+            print(f"{skipped_non_config} non-config lines skipped.", flush=True)
         print(api_config_count, "cases in total.", flush=True)
         dup_case = api_config_count - len(api_configs)
         if dup_case > 0:
@@ -1950,7 +1960,7 @@ def main():
                     )
                 elif msg_type == "crashed":
                     if exitcode == 99:
-                        write_to_log("cuda_error", config)
+                        write_to_log("paddle_cuda", config)
                         print(
                             f"[error] CUDA error for {config}",
                             flush=True,
@@ -1965,21 +1975,22 @@ def main():
                         options.use_compute_sanitizer
                         and exitcode == options.sanitizer_error_exitcode
                     ):
-                        write_to_log("cuda_error", config)
+                        write_to_log("paddle_cuda", config)
                         print(
                             f"[error] compute-sanitizer reported errors for {config} (exit={exitcode})",
                             flush=True,
                         )
                     else:
-                        write_to_log("crash", config)
+                        write_to_log("paddle_crash", config)
                         print(
                             f"[fatal] Worker crashed for {config} (exit={exitcode})",
                             flush=True,
                         )
                 elif msg_type == "error":
                     error_msg = msg[3] if len(msg) > 3 else ""
+                    write_to_log("config_parse", config)
                     print(
-                        f"[warn] Test case failed for {config}: {error_msg}",
+                        f"[config_parse] {config}: {error_msg}",
                         flush=True,
                     )
 
