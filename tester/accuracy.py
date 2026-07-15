@@ -24,7 +24,7 @@ class APITestAccuracy(APITestBase):
         self.test_tol = kwargs.get("test_tol", False)
         self.exit_on_error = kwargs.get("exit_on_error", False)
         self.bitwise_alignment = kwargs.get("bitwise_alignment", False)
-        self.use_gpu_cache_mode = kwargs.get("use_gpu_cache_mode", False)
+        self.use_gpu_mode = kwargs.get("use_gpu_mode", False)
         self.manual_threshold_config_file = kwargs.get("manual_threshold_config_file", "")
         self.manual_threshold_config = self._load_manual_threshold_config(
             self.manual_threshold_config_file
@@ -128,9 +128,9 @@ class APITestAccuracy(APITestBase):
                 write_to_log("config_input", self.api_config.config)
                 return
         except Exception as err:
-            print(f"[config_input] {self.api_config.config}\n{err!s}")
-            traceback.print_exc()
-            write_to_log("config_input", self.api_config.config)
+            log_type, fatal = self.report_runtime_error(err, "config_input", "gen_numpy_input")
+            if fatal:
+                raise
             return
 
         try:
@@ -243,7 +243,7 @@ class APITestAccuracy(APITestBase):
         else:
             del self.torch_args, self.torch_kwargs
 
-        keep_torch_outputs_on_device = self.use_gpu_cache_mode
+        keep_torch_outputs_on_device = self.use_gpu_mode
 
         def process_torch_outputs(obj):
             if isinstance(obj, (torch.return_types.max, torch.return_types.min)):
@@ -266,7 +266,7 @@ class APITestAccuracy(APITestBase):
             torch_out_grads = process_torch_outputs(torch_out_grads)
 
         gc.collect()
-        if not self.use_gpu_cache_mode:
+        if not self.use_gpu_mode:
             torch.cuda.empty_cache()
 
         try:
@@ -334,12 +334,20 @@ class APITestAccuracy(APITestBase):
                     paddle_tensor, torch_tensor, atol=self.get_atol(), rtol=self.get_rtol()
                 )
             except Exception as err:
+                err_str = str(err)
                 phase = "backward" if self.is_backward else "forward"
-                print(
-                    f"[paddle_accuracy] phase={phase} idx={idx} {self.api_config.config}\n{err!s}",
-                    flush=True,
-                )
-                write_to_log("paddle_accuracy", self.api_config.config)
+                if err_str.startswith("[torch_assert_OOM]"):
+                    print(
+                        f"[oom] phase={phase} idx={idx} {self.api_config.config}\n{err_str}",
+                        flush=True,
+                    )
+                    write_to_log("oom", self.api_config.config)
+                else:
+                    print(
+                        f"[paddle_accuracy] phase={phase} idx={idx} {self.api_config.config}\n{err_str}",
+                        flush=True,
+                    )
+                    write_to_log("paddle_accuracy", self.api_config.config)
                 if self.exit_on_error:
                     raise
                 return False
