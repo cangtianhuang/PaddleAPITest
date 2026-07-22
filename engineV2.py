@@ -37,6 +37,12 @@ if TYPE_CHECKING:
         APITestTorchGPUPerformance,
     )
 
+from tester.api_config.dump_writer import (
+    dump_enabled,
+    parse_strict_bool,
+    record_dump_terminal_status,
+    resolve_dump_options,
+)
 from tester.api_config.log_writer import *
 from tester.runtime_config import TestRuntimeConfig, runtime_config_for_gpu
 
@@ -445,6 +451,17 @@ def validate_gpu_options(options) -> tuple:
     return tuple(gpu_ids)
 
 
+def _resolve_dump_options(parser, options):
+    try:
+        options.use_dump, options.dump_dir = resolve_dump_options(
+            options.use_dump, options.dump_dir
+        )
+    except ValueError as err:
+        parser.error(str(err))
+    os.environ["USE_DUMP"] = str(options.use_dump)
+    os.environ["DUMP_DIR"] = options.dump_dir
+
+
 def parse_bool(value):
     if isinstance(value, str):
         value = value.lower()
@@ -596,7 +613,10 @@ def run_test_case(api_config_str, options):
         kwargs["runtime_config"] = runtime_config
         case = test_class(api_config, **kwargs)
         try:
-            case.test()
+            if dump_enabled():
+                case.run_with_dump()
+            else:
+                case.test()
             if has_terminal_log(api_config_str):
                 write_checkpoint(api_config_str)
         except Exception as err:
@@ -631,6 +651,8 @@ def run_test_case(api_config_str, options):
             elif any(marker in err_msg for marker in cuda_markers):
                 exit_code = FATAL_CUDA_EXIT_CODE
             if exit_code is not None:
+                if dump_enabled():
+                    record_dump_terminal_status("engine_fatal", exit_code=exit_code, error=str(err))
                 if has_terminal_log(api_config_str):
                     write_checkpoint(api_config_str)
                 try:
@@ -700,7 +722,7 @@ def main():
     except Exception:
         paddle_version = "unknown"
 
-    parser = argparse.ArgumentParser(description="Run Paddle API test cases")
+    parser = argparse.ArgumentParser(description="Run Paddle API test cases", allow_abbrev=False)
     parser.add_argument(
         "--api_config_file",
         default="",
@@ -915,6 +937,15 @@ def main():
     if len([m for m in mode if m is True]) != 1:
         _print_argument(ARGUMENT_ERROR_PREFIX, TEST_MODE_ERROR)
         return
+    if options.use_dump:
+        if not options.api_config or options.api_config_file or options.api_config_file_pattern:
+            _print_argument(ARGUMENT_ERROR_PREFIX, "dump only supports single --api_config runs")
+            return
+        if not (options.accuracy or options.paddle_only):
+            _print_argument(
+                ARGUMENT_ERROR_PREFIX, "dump currently supports only --accuracy or --paddle_only"
+            )
+            return
 
     # 处理 custom_device_vs_gpu 模式的配置
     bos_config_data = None
@@ -1006,6 +1037,8 @@ def main():
             api_config = APIConfig(options.api_config)
         except Exception as err:
             print(f"[config_parse] {options.api_config} {err!s}", flush=True)
+            if dump_enabled():
+                record_dump_terminal_status("config_parse", error=str(err))
             return
 
         test_class = _select_test_class(options)
@@ -1042,7 +1075,10 @@ def main():
         else:
             case = test_class(api_config, test_amp=options.test_amp)
         try:
-            case.test()
+            if dump_enabled():
+                case.run_with_dump()
+            else:
+                case.test()
         except Exception as err:
             if (
                 "Tensor-likes are not equal" in str(err)
