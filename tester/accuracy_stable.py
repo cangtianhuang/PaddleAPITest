@@ -8,18 +8,9 @@ import paddle
 import torch
 
 from .accuracy import process_grad_output, process_output
-from .api_config.log_writer import (
-    ALL_DIMENSIONS,
-    COMP_TO_DIMENSION,
-    has_comp_terminal_log,
-    has_terminal_log,
-    log_accuracy_stable,
-    print_comp_issue,
-    write_to_comp_log,
-    write_to_log,
-)
+from .api_config.logging import log_comparison, log_worker
 from .base import CUDA_ERROR, CUDA_OOM, APITestBase, gpu_mode_maybe_empty_cache
-from .paddle_to_torch import get_converter
+from .paddle_to_torch import adaptive_workspace_bytes, get_converter
 
 
 class APITestAccuracyStable(APITestBase):
@@ -50,17 +41,17 @@ class APITestAccuracyStable(APITestBase):
     def _broadcast_to_comp_dimensions(self, log_type, affected_comps):
         """将执行阶段错误广播到所有受影响的 comp 维度"""
         for comp in affected_comps:
-            write_to_comp_log(comp, log_type, self.api_config.config)
+            log_worker.write_to_comp_log(comp, log_type, self.api_config.config)
 
     def test(self):
         if self.need_skip():
             print(f"[skip] {self.api_config.config}", flush=True)
-            write_to_log("skip", self.api_config.config)
+            log_worker.write_to_log("skip", self.api_config.config)
             return
 
         if not self.ana_api_info():
             print("ana_api_info failed", flush=True)
-            write_to_log("config_parse", self.api_config.config)
+            log_worker.write_to_log("config_parse", self.api_config.config)
             return
 
         try:
@@ -70,27 +61,27 @@ class APITestAccuracyStable(APITestBase):
                 f"[config_convert] Conversion failed for {self.api_config.config}: {e!s}",
                 flush=True,
             )
-            write_to_log("config_convert", self.api_config.config)
+            log_worker.write_to_log("config_convert", self.api_config.config)
             return
         if not convert_result.is_supported:
             print(
                 f"[config_convert] Unsupported API {self.api_config.api_name}: {convert_result.error_message}",
                 flush=True,
             )
-            write_to_log("config_convert", self.api_config.config)
+            log_worker.write_to_log("config_convert", self.api_config.config)
             return
         if not convert_result.code or not convert_result.code.is_valid():
             print(
                 f"[config_convert] No code generated for {self.api_config.api_name}",
                 flush=True,
             )
-            write_to_log("config_convert", self.api_config.config)
+            log_worker.write_to_log("config_convert", self.api_config.config)
             return
 
         try:
             if not self.gen_numpy_input():
                 print("gen_numpy_input failed")
-                write_to_log("config_input", self.api_config.config)
+                log_worker.write_to_log("config_input", self.api_config.config)
                 return
         except Exception as err:
             log_type, fatal = self.report_runtime_error(err, "config_input", "input")
@@ -105,6 +96,8 @@ class APITestAccuracyStable(APITestBase):
             if fatal:
                 raise
             return
+
+        probe_bytes = self.estimate_input_bytes()
 
         torch_output_pair = []
         torch_grad_pair = []
@@ -123,6 +116,13 @@ class APITestAccuracyStable(APITestBase):
             torch_output = self.detach_tensor_tree(torch_output)
             torch_out_grads = self.detach_tensor_tree(torch_out_grads)
             self.clear_runtime_inputs("torch")
+            if self.use_gpu_mode:
+                # Release idle Torch blocks before the next Paddle execution;
+                # the two frameworks do not share caching allocators.
+                gpu_mode_maybe_empty_cache(
+                    self.gpu_mode_config,
+                    probe_bytes=probe_bytes,
+                )
 
             # ======== paddle ========
             self.reset_random_state()
@@ -132,6 +132,11 @@ class APITestAccuracyStable(APITestBase):
             paddle_output = self.detach_tensor_tree(paddle_output)
             paddle_out_grads = self.detach_tensor_tree(paddle_out_grads)
             self.clear_runtime_inputs("paddle")
+            if self.use_gpu_mode:
+                gpu_mode_maybe_empty_cache(
+                    self.gpu_mode_config,
+                    probe_bytes=probe_bytes,
+                )
 
             # ======== format ========
             paddle_output, torch_output = process_output(
@@ -158,8 +163,8 @@ class APITestAccuracyStable(APITestBase):
                     # summary comparisons through CPU for very large outputs.
                     should_spill = gpu_mode_maybe_empty_cache(
                         self.gpu_mode_config,
-                        "accuracy_stable_after_first_compare",
                         request_spill=True,
+                        probe_bytes=probe_bytes,
                     )
                     if should_spill:
                         torch_output_pair[0] = self.move_tensor_tree_to_cpu(torch_output_pair[0])
@@ -173,7 +178,6 @@ class APITestAccuracyStable(APITestBase):
                         gc.collect()
                         gpu_mode_maybe_empty_cache(
                             self.gpu_mode_config,
-                            "accuracy_stable_after_first_compare_spill",
                             force=True,
                         )
 
@@ -195,16 +199,7 @@ class APITestAccuracyStable(APITestBase):
         self.compare(paddle_grad_pair[0], paddle_grad_pair[1], "P1P2B")
         paddle_grad_pair.clear()
 
-        # 逐维度写 pass
-        for dimension in ALL_DIMENSIONS:
-            if not has_comp_terminal_log(dimension, self.api_config.config):
-                # 取该维度的任一 comp 代表写 pass
-                rep_comp = next(c for c, d in COMP_TO_DIMENSION.items() if d == dimension)
-                write_to_comp_log(rep_comp, "pass", self.api_config.config)
-        # 主日志 pass（让 engine 的 has_terminal_log 能正确判断）
-        if not has_terminal_log(self.api_config.config):
-            print(f"[pass] {self.api_config.config}", flush=True)
-            write_to_log("pass", self.api_config.config)
+        log_worker.write_stable_passes(self.api_config.config)
 
     def get_torch_output(self, convert_result, iter_idx=0):
         # ======== run torch forward ========:
@@ -214,7 +209,7 @@ class APITestAccuracyStable(APITestBase):
                 print("gen_torch_input failed", flush=True)
                 return None, None, None
 
-            exec_globals = {"torch": torch}
+            exec_globals = {"torch": torch, "_adaptive_workspace_bytes": adaptive_workspace_bytes}
             exec_locals = {
                 "args": self.torch_args,
                 "kwargs": self.torch_kwargs,
@@ -482,41 +477,41 @@ class APITestAccuracyStable(APITestBase):
                     )
                     return
             else:
-                print_comp_issue(
+                log_comparison.log_comp_issue(
                     comp,
                     "paddle_accuracy",
+                    self.api_config.config,
                     tensor_index=None,
                     tensor_count=None,
                     reason="type_mismatch",
                     actual_type=type(input1).__name__,
                     expected_type=type(input2).__name__,
                 )
-                write_to_comp_log(comp, "paddle_accuracy", self.api_config.config)
                 return
         elif isinstance(input1, (list, tuple)):
             if not isinstance(input2, (list, tuple)):
-                print_comp_issue(
+                log_comparison.log_comp_issue(
                     comp,
                     "paddle_accuracy",
+                    self.api_config.config,
                     tensor_index=None,
                     tensor_count=None,
                     reason="type_mismatch",
                     actual_type=type(input1).__name__,
                     expected_type=type(input2).__name__,
                 )
-                write_to_comp_log(comp, "paddle_accuracy", self.api_config.config)
                 return
             if len(input1) != len(input2):
-                print_comp_issue(
+                log_comparison.log_comp_issue(
                     comp,
                     "paddle_accuracy",
+                    self.api_config.config,
                     tensor_index=None,
                     tensor_count=None,
                     reason="count_mismatch",
                     actual_count=len(input1),
                     expected_count=len(input2),
                 )
-                write_to_comp_log(comp, "paddle_accuracy", self.api_config.config)
                 return
             tensor_count = len(input1)
             for idx, (item1, item2) in enumerate(zip(input1, input2, strict=False)):
@@ -557,16 +552,16 @@ class APITestAccuracyStable(APITestBase):
                         )
                         return
                 else:
-                    print_comp_issue(
+                    log_comparison.log_comp_issue(
                         comp,
                         "paddle_accuracy",
+                        self.api_config.config,
                         tensor_index=idx,
                         tensor_count=tensor_count,
                         reason="type_mismatch",
                         actual_type=type(item1).__name__,
                         expected_type=type(item2).__name__,
                     )
-                    write_to_comp_log(comp, "paddle_accuracy", self.api_config.config)
                     return
         else:
             try:
@@ -612,7 +607,7 @@ class APITestAccuracyStable(APITestBase):
                 expected_name=expected_source,
                 apply_special_tolerance=False,
             )
-            log_accuracy_stable(
+            log_comparison.log_accuracy_stable(
                 "Identical",
                 api_name,
                 config,
@@ -630,7 +625,7 @@ class APITestAccuracyStable(APITestBase):
             ):
                 is_acc_err = True
             if is_acc_err:
-                log_accuracy_stable(
+                log_comparison.log_accuracy_stable(
                     err_str,
                     api_name,
                     config,
@@ -639,6 +634,5 @@ class APITestAccuracyStable(APITestBase):
                     tensor_index=tensor_index,
                     tensor_count=tensor_count,
                 )
-                write_to_comp_log(comp, "paddle_bitwise", config)
             else:
                 raise
