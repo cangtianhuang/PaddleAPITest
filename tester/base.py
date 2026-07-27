@@ -5,6 +5,7 @@ import contextlib
 import gc
 import inspect
 import os
+from dataclasses import dataclass
 
 import numpy
 import paddle
@@ -71,6 +72,159 @@ CUDA_OOM = frozenset(
 
 
 GPU_MEMORY_PROBE_MIN_BYTES = 256 << 20
+_GIB = 1024**3
+_TENSOR_DTYPE_BYTES = {
+    "bool": 1,
+    "uint8": 1,
+    "int8": 1,
+    "float8_e4m3fn": 1,
+    "float8_e5m2": 1,
+    "uint16": 2,
+    "int16": 2,
+    "float16": 2,
+    "bfloat16": 2,
+    "uint32": 4,
+    "int32": 4,
+    "float32": 4,
+    "uint64": 8,
+    "int64": 8,
+    "float64": 8,
+    "complex64": 8,
+    "complex128": 16,
+}
+
+
+def _dtype_element_size(dtype):
+    dtype_name = str(dtype).split(".")[-1]
+    return _TENSOR_DTYPE_BYTES.get(dtype_name, 4)
+
+
+def _tensor_element_size(value):
+    try:
+        return int(value.element_size())
+    except (AttributeError, TypeError, ValueError):
+        return _dtype_element_size(value.dtype)
+
+
+@dataclass(frozen=True)
+class GpuMemoryDecision:
+    cleanup_performed: bool = False
+    should_spill: bool = False
+    free_before_bytes: int | None = None
+    free_after_bytes: int | None = None
+    required_headroom_bytes: int = 0
+    pressure_before: bool = False
+    pressure_after: bool = False
+
+
+def _gpu_memory_is_under_pressure(gpu_config, free_bytes, total_bytes, required_headroom_bytes):
+    workers_on_gpu = max(1, int(gpu_config.workers_on_gpu or 1))
+    memory_budget_bytes = max(0, int(float(gpu_config.memory_budget or 0.0) * _GIB))
+    device_budget_bytes = (
+        memory_budget_bytes * workers_on_gpu if memory_budget_bytes > 0 else total_bytes
+    )
+    device_used_bytes = max(0, total_bytes - free_bytes)
+    over_budget = bool(
+        device_budget_bytes > 0
+        and device_used_bytes >= int(device_budget_bytes * float(gpu_config.cleanup_used_ratio))
+    )
+    low_free = bool(
+        device_budget_bytes > 0
+        and free_bytes <= int(device_budget_bytes * float(gpu_config.cleanup_pressure_ratio))
+    )
+    insufficient_headroom = bool(
+        required_headroom_bytes > 0 and free_bytes < required_headroom_bytes
+    )
+    return over_budget or low_free or insufficient_headroom
+
+
+def _release_gpu_allocator_caches(torch_module):
+    gc.collect()
+    try:
+        torch_module.cuda.empty_cache()
+    except Exception:
+        pass
+    try:
+        paddle.device.cuda.empty_cache()
+    except Exception:
+        pass
+
+
+def _query_gpu_memory(torch_module):
+    try:
+        free_bytes, total_bytes = torch_module.cuda.mem_get_info()
+        return int(free_bytes), int(total_bytes)
+    except Exception:
+        return None
+
+
+def gpu_mode_memory_decision(
+    gpu_config,
+    force=False,
+    request_spill=False,
+    probe_bytes=None,
+    retained_tree_bytes=0,
+    required_headroom_bytes=None,
+):
+    """Release idle allocator blocks and decide whether live result trees must spill."""
+    if not gpu_config.enabled:
+        return GpuMemoryDecision()
+
+    probe_bytes = max(0, int(probe_bytes or 0))
+    retained_tree_bytes = max(0, int(retained_tree_bytes or 0))
+    if required_headroom_bytes is None:
+        required_headroom_bytes = probe_bytes
+    required_headroom_bytes = max(0, int(required_headroom_bytes or 0))
+    decision_probe_bytes = max(probe_bytes, retained_tree_bytes, required_headroom_bytes)
+    if not force and decision_probe_bytes < GPU_MEMORY_PROBE_MIN_BYTES:
+        return GpuMemoryDecision(required_headroom_bytes=required_headroom_bytes)
+
+    try:
+        import torch as torch_module
+    except (ImportError, OSError):
+        if force:
+            gc.collect()
+            try:
+                paddle.device.cuda.empty_cache()
+            except Exception:
+                pass
+            return GpuMemoryDecision(
+                cleanup_performed=True,
+                required_headroom_bytes=required_headroom_bytes,
+            )
+        return GpuMemoryDecision(required_headroom_bytes=required_headroom_bytes)
+
+    if force:
+        _release_gpu_allocator_caches(torch_module)
+        return GpuMemoryDecision(
+            cleanup_performed=True,
+            required_headroom_bytes=required_headroom_bytes,
+        )
+
+    before = _query_gpu_memory(torch_module)
+    pressure_before = before is None or _gpu_memory_is_under_pressure(
+        gpu_config, *before, required_headroom_bytes
+    )
+    cleanup_performed = pressure_before
+    after = before
+    if cleanup_performed:
+        _release_gpu_allocator_caches(torch_module)
+        after = _query_gpu_memory(torch_module)
+
+    # Unknown whole-device headroom is treated as pressure after cleanup.
+    pressure_after = after is None or _gpu_memory_is_under_pressure(
+        gpu_config, *after, required_headroom_bytes
+    )
+    should_spill = bool(request_spill and retained_tree_bytes > 0 and pressure_after)
+    return GpuMemoryDecision(
+        cleanup_performed=cleanup_performed,
+        should_spill=should_spill,
+        free_before_bytes=before[0] if before is not None else None,
+        free_after_bytes=after[0] if after is not None else None,
+        required_headroom_bytes=required_headroom_bytes,
+        pressure_before=pressure_before,
+        pressure_after=pressure_after,
+    )
 
 
 def gpu_mode_maybe_empty_cache(
@@ -78,76 +232,18 @@ def gpu_mode_maybe_empty_cache(
     force=False,
     request_spill=False,
     probe_bytes=None,
+    retained_tree_bytes=0,
+    required_headroom_bytes=None,
 ):
-    if not gpu_config.enabled:
-        return False
-    if not force and probe_bytes is not None and probe_bytes < GPU_MEMORY_PROBE_MIN_BYTES:
-        return False
-
-    try:
-        import torch as torch_module
-    except (ImportError, OSError):
-        # Paddle-only installations do not need Torch allocator management.
-        # Keep forced Paddle cleanup available without importing an optional
-        # dependency, while reporting no Torch spill decision.
-        if force:
-            gc.collect()
-            try:
-                paddle.device.cuda.empty_cache()
-            except Exception:
-                pass
-        return False
-
-    memory_budget = gpu_config.memory_budget
-    pressure_ratio = gpu_config.cleanup_pressure_ratio
-    used_ratio = gpu_config.cleanup_used_ratio
-    try:
-        free_bytes, total_bytes = torch_module.cuda.mem_get_info()
-        free_bytes = float(free_bytes) / (1024**3)
-        total_bytes = float(total_bytes) / (1024**3)
-    except Exception:
-        if not force:
-            return False
-        free_bytes = total_bytes = 0.0
-
-    # mem_get_info observes both framework allocators and avoids a second
-    # allocator-specific query that can contend when several workers share GPU.
-    device_used = max(0.0, total_bytes - free_bytes)
-    workers_on_gpu = gpu_config.workers_on_gpu
-    device_budget = memory_budget * workers_on_gpu if memory_budget > 0 else total_bytes
-    over_budget = device_budget > 0 and device_used >= device_budget * used_ratio
-    process_over_budget = True
-    if request_spill and workers_on_gpu > 1 and memory_budget > 0:
-        try:
-            process_reserved = torch_module.cuda.memory_reserved() / (1024**3)
-            process_over_budget = process_reserved >= memory_budget * used_ratio
-        except Exception:
-            # If the process-local query is unavailable, prefer spilling under
-            # a confirmed global pressure condition over risking another OOM.
-            process_over_budget = True
-    should_spill = bool(request_spill and over_budget and process_over_budget)
-    pressure_budget = device_budget
-    global_pressure = free_bytes > 0 and free_bytes <= pressure_budget * pressure_ratio
-
-    # A spill probe remains side-effect free while the device has headroom. At
-    # global pressure we do release both allocator caches, but keep live result
-    # tensors on device unless the separate spill budget is exceeded.
-    should_cleanup = bool(
-        force or should_spill or global_pressure or (over_budget and not request_spill)
+    decision = gpu_mode_memory_decision(
+        gpu_config,
+        force=force,
+        request_spill=request_spill,
+        probe_bytes=probe_bytes,
+        retained_tree_bytes=retained_tree_bytes,
+        required_headroom_bytes=required_headroom_bytes,
     )
-
-    if should_cleanup:
-        gc.collect()
-        try:
-            torch_module.cuda.empty_cache()
-        except Exception:
-            pass
-        try:
-            paddle.device.cuda.empty_cache()
-        except Exception:
-            pass
-
-    return should_spill if request_spill else should_cleanup
+    return decision.should_spill if request_spill else decision.cleanup_performed
 
 
 def classify_runtime_error(error_msg):
@@ -1562,29 +1658,66 @@ class APITestBase:
         actual_flat = actual.reshape(-1)
         expected_flat = expected.reshape(-1)
         actual_numel = actual_flat.numel()
-        actual_dtype = actual.dtype
-        expected_dtype = expected.dtype
-        actual_is_complex = actual_dtype.is_complex
-        expected_is_complex = expected_dtype.is_complex
-        actual_is_float64 = actual_dtype == torch.float64
-        expected_is_float64 = expected_dtype == torch.float64
+
+        def chunks():
+            for start in range(0, actual_numel, chunk_numel):
+                end = min(actual_numel, start + chunk_numel)
+                yield start, actual_flat[start:end], expected_flat[start:end]
+
+        self._torch_assert_accuracy_from_chunks(
+            chunks(),
+            actual_numel,
+            tuple(actual.shape),
+            actual.dtype,
+            expected.dtype,
+            atol,
+            rtol,
+            error_msg,
+        )
+
+    def _torch_assert_accuracy_from_chunks(
+        self,
+        chunks,
+        actual_numel,
+        actual_shape,
+        actual_dtype,
+        expected_dtype,
+        atol,
+        rtol,
+        error_msg,
+    ):
         actual_is_float8 = "float8" in str(actual_dtype)
         expected_is_float8 = "float8" in str(expected_dtype)
-        actual_is_integer = not actual_dtype.is_floating_point and not actual_is_complex
-        actual_supports_nan = actual_dtype.is_floating_point or actual_is_complex
         mismatch_count = 0
         max_abs_diff = -1.0
         max_abs_index = 0
         max_rel_diff = -1.0
         max_rel_index = 0
         exact_compare = atol == 0.0 and rtol == 0.0
-        for start in range(0, actual_numel, chunk_numel):
-            end = min(actual_numel, start + chunk_numel)
-            actual_chunk = actual_flat[start:end]
-            expected_chunk = expected_flat[start:end]
+        for start, actual_chunk, expected_chunk in chunks:
+            if actual_chunk.dtype != expected_chunk.dtype:
+                # Match TensorLikePair._equalize_attributes without promoting
+                # either complete tensor. PyTorch does not define mixed FP8
+                # promotion, while the existing small-tensor path promotes FP8
+                # to float32 before assert_close.
+                if "float8" in str(actual_chunk.dtype):
+                    actual_chunk = actual_chunk.float()
+                if "float8" in str(expected_chunk.dtype):
+                    expected_chunk = expected_chunk.float()
+                actual_promote_dtype = actual_chunk.dtype
+                expected_promote_dtype = expected_chunk.dtype
+                unsigned_dtypes = (torch.uint16, torch.uint32, torch.uint64)
+                if actual_promote_dtype in unsigned_dtypes:
+                    actual_promote_dtype = torch.int64
+                if expected_promote_dtype in unsigned_dtypes:
+                    expected_promote_dtype = torch.int64
+                compare_dtype = torch.promote_types(actual_promote_dtype, expected_promote_dtype)
+                actual_chunk = actual_chunk.to(compare_dtype)
+                expected_chunk = expected_chunk.to(compare_dtype)
+
             if exact_compare:
                 equal = actual_chunk == expected_chunk
-                if actual_supports_nan:
+                if actual_chunk.dtype.is_floating_point or actual_chunk.dtype.is_complex:
                     equal |= torch.isnan(actual_chunk) & torch.isnan(expected_chunk)
                 mismatch = equal.logical_not_()
             else:
@@ -1605,16 +1738,23 @@ class APITestBase:
             if chunk_mismatch_count == 0:
                 continue
 
-            if actual_is_complex or expected_is_complex:
+            chunk_actual_is_complex = actual_chunk.dtype.is_complex
+            chunk_expected_is_complex = expected_chunk.dtype.is_complex
+            if chunk_actual_is_complex or chunk_expected_is_complex:
                 actual_for_diff = actual_chunk
                 expected_for_diff = expected_chunk
-            elif actual_is_float64 or expected_is_float64:
+            elif actual_chunk.dtype == torch.float64 or expected_chunk.dtype == torch.float64:
                 actual_for_diff = actual_chunk.to(torch.float64)
                 expected_for_diff = expected_chunk.to(torch.float64)
-            elif actual_is_float8 or expected_is_float8:
+            elif "float8" in str(actual_chunk.dtype) or "float8" in str(expected_chunk.dtype):
                 actual_for_diff = actual_chunk.float()
                 expected_for_diff = expected_chunk.float()
-            elif actual_is_integer:
+            elif (
+                not actual_chunk.dtype.is_floating_point
+                and not chunk_actual_is_complex
+                and not expected_chunk.dtype.is_floating_point
+                and not chunk_expected_is_complex
+            ):
                 actual_for_diff = actual_chunk.to(torch.int64)
                 expected_for_diff = expected_chunk.to(torch.int64)
             else:
@@ -1657,17 +1797,131 @@ class APITestBase:
         if mismatch_count == 0:
             return
 
-        abs_index = tuple(int(value) for value in numpy.unravel_index(max_abs_index, actual.shape))
-        rel_index = tuple(int(value) for value in numpy.unravel_index(max_rel_index, actual.shape))
-        mismatch_percent = 100.0 * mismatch_count / actual.numel()
+        abs_index = tuple(int(value) for value in numpy.unravel_index(max_abs_index, actual_shape))
+        rel_index = tuple(int(value) for value in numpy.unravel_index(max_rel_index, actual_shape))
+        mismatch_percent = 100.0 * mismatch_count / actual_numel
         raise AssertionError(
             error_msg(
                 "Tensor-likes are not equal!\n\n"
-                f"Mismatched elements: {mismatch_count} / {actual.numel()} "
+                f"Mismatched elements: {mismatch_count} / {actual_numel} "
                 f"({mismatch_percent:.1f}%)\n"
                 f"Greatest absolute difference: {max_abs_diff} at index {abs_index}\n"
                 f"Greatest relative difference: {max_rel_diff} at index {rel_index}"
             )
+        )
+
+    @staticmethod
+    def _logical_slab_indices(shape, max_numel):
+        shape = tuple(int(dim) for dim in shape)
+        if not shape:
+            yield ()
+            return
+        total_numel = 1
+        for dim in shape:
+            total_numel *= dim
+        if total_numel == 0:
+            return
+
+        max_numel = max(1, int(max_numel))
+        for axis in range(len(shape)):
+            suffix_numel = 1
+            for dim in shape[axis + 1 :]:
+                suffix_numel *= dim
+            if suffix_numel <= max_numel:
+                break
+        block_size = max(1, max_numel // suffix_numel)
+        suffix = (slice(None),) * (len(shape) - axis - 1)
+        for prefix in numpy.ndindex(shape[:axis]):
+            for start in range(0, shape[axis], block_size):
+                end = min(start + block_size, shape[axis])
+                yield (*prefix, slice(start, end), *suffix)
+
+    @staticmethod
+    def _framework_tensor_torch_dtype(value):
+        if isinstance(value, torch.Tensor):
+            return value.dtype
+        dtype_name = str(value.dtype).split(".")[-1]
+        return getattr(torch, dtype_name)
+
+    @staticmethod
+    def _logical_slab_to_torch(value, index, compare_on_cpu):
+        slab = value[index].detach()
+        if not slab.is_contiguous():
+            slab = slab.contiguous()
+        if compare_on_cpu:
+            slab = slab.cpu()
+        if isinstance(slab, paddle.Tensor):
+            return torch.utils.dlpack.from_dlpack(
+                paddle.utils.dlpack.to_dlpack(slab)  # type: ignore[reportGeneralTypeIssues]
+            )
+        return slab
+
+    def _torch_assert_accuracy_in_logical_slabs(
+        self,
+        actual,
+        expected,
+        atol,
+        rtol,
+        error_msg,
+        working_bytes,
+        compare_on_cpu,
+        check_dtype,
+    ):
+        actual_dtype = self._framework_tensor_torch_dtype(actual)
+        expected_dtype = self._framework_tensor_torch_dtype(expected)
+        temp_bytes_per_element = max(
+            32,
+            4 * max(_tensor_element_size(actual), _tensor_element_size(expected)) + 16,
+        )
+        max_numel = max(1, working_bytes // temp_bytes_per_element)
+        shape = tuple(actual.shape)
+        actual_numel = int(actual.numel())
+
+        if not check_dtype and actual_dtype != expected_dtype:
+            for index in self._logical_slab_indices(shape, max_numel):
+                actual_chunk = self._logical_slab_to_torch(actual, index, compare_on_cpu)
+                expected_chunk = self._logical_slab_to_torch(expected, index, compare_on_cpu)
+                if actual_chunk.device != expected_chunk.device:
+                    expected_chunk = expected_chunk.to(device=actual_chunk.device)
+
+                def slab_error_msg(msg, *, slab_index=index):
+                    return error_msg(f"logical slab {slab_index}: {msg}")
+
+                torch.testing.assert_close(
+                    actual_chunk,
+                    expected_chunk,
+                    rtol=rtol,
+                    atol=atol,
+                    equal_nan=True,
+                    check_device=False,
+                    check_dtype=False,
+                    msg=slab_error_msg,
+                )
+            return
+
+        def chunks():
+            offset = 0
+            for index in self._logical_slab_indices(shape, max_numel):
+                actual_chunk = self._logical_slab_to_torch(actual, index, compare_on_cpu).reshape(
+                    -1
+                )
+                expected_chunk = self._logical_slab_to_torch(
+                    expected, index, compare_on_cpu
+                ).reshape(-1)
+                if actual_chunk.device != expected_chunk.device:
+                    expected_chunk = expected_chunk.to(device=actual_chunk.device)
+                yield offset, actual_chunk, expected_chunk
+                offset += actual_chunk.numel()
+
+        self._torch_assert_accuracy_from_chunks(
+            chunks(),
+            actual_numel,
+            shape,
+            actual_dtype,
+            expected_dtype,
+            atol,
+            rtol,
+            error_msg,
         )
 
     def torch_assert_accuracy(
@@ -1704,12 +1958,87 @@ class APITestBase:
                 return value.place.is_cpu_place()
             return False
 
-        compare_on_cpu = (
+        dual_gpu = bool(getattr(self.gpu_mode_config, "dual_gpu", False))
+        compare_on_cpu = not dual_gpu and (
             test_tol
             or not self.gpu_mode_config.enabled
             or is_cpu_tensor(actual)
             or is_cpu_tensor(expected)
         )
+        tensor_types = (paddle.Tensor, torch.Tensor)
+        if not isinstance(actual, tensor_types):
+            raise TypeError(f"Expected Paddle or Torch tensor, but got {type(actual)}")
+        if not isinstance(expected, tensor_types):
+            raise TypeError(f"Expected Paddle or Torch tensor, but got {type(expected)}")
+
+        if not dual_gpu and (not actual.is_contiguous() or not expected.is_contiguous()):
+            actual_shape = tuple(actual.shape)
+            expected_shape = tuple(expected.shape)
+            actual_dtype = self._framework_tensor_torch_dtype(actual)
+            expected_dtype = self._framework_tensor_torch_dtype(expected)
+            if actual_shape != expected_shape:
+                raise AssertionError(
+                    f"shape mismatch: {actual_name} {actual_shape}, "
+                    f"{expected_name} {expected_shape}"
+                )
+            if is_check_dtype and actual_dtype != expected_dtype:
+                raise AssertionError(
+                    f"dtype mismatch: {actual_name} {actual_dtype}, "
+                    f"{expected_name} {expected_dtype}"
+                )
+
+            def slab_error_msg(msg):
+                return (
+                    f"Not equal to tolerance rtol={rtol}, atol={atol}\n"
+                    f"{msg}\n"
+                    f"{actual_name}: (shape={actual_shape}, dtype={actual_dtype})\n"
+                    f"{actual}\n"
+                    f"{expected_name}: (shape={expected_shape}, dtype={expected_dtype})\n"
+                    f"{expected}"
+                )
+
+            try:
+                working_bytes = int(getattr(self, "comparison_working_bytes", 1024**3))
+                self._torch_assert_accuracy_in_logical_slabs(
+                    actual,
+                    expected,
+                    atol,
+                    rtol,
+                    slab_error_msg,
+                    working_bytes,
+                    compare_on_cpu,
+                    is_check_dtype,
+                )
+                if test_tol:
+                    log_accuracy_tolerance(
+                        "Identical",
+                        self.api_config.api_name,
+                        self.api_config.config[:MAX_CSV_CONFIG_LENGTH],
+                        str(actual.dtype),
+                        is_backward,
+                        tensor_index=tensor_index,
+                        tensor_count=tensor_count,
+                    )
+                return
+            except Exception as err:
+                error_str = str(err)
+                if test_tol:
+                    error_info = error_str.split("\n", maxsplit=2)[1] if "\n" in error_str else None
+                    if error_info and (
+                        error_info.startswith("Tensor-likes") or error_info.startswith("Scalars")
+                    ):
+                        log_accuracy_tolerance(
+                            error_str,
+                            self.api_config.api_name,
+                            self.api_config.config[:MAX_CSV_CONFIG_LENGTH],
+                            str(actual.dtype),
+                            is_backward,
+                            tensor_index=tensor_index,
+                            tensor_count=tensor_count,
+                        )
+                        return
+                raise
+
         if isinstance(actual, paddle.Tensor):
             if not actual.is_contiguous():
                 actual = actual.contiguous()
@@ -1780,17 +2109,43 @@ class APITestBase:
             # querying the CUDA driver for a working budget on that hot path.
             needs_chunk_budget = estimated_temp_bytes > working_bytes
             if actual_tensor.is_cuda and needs_chunk_budget:
+                insufficient_dual_headroom = False
                 try:
-                    free_bytes, _ = torch.cuda.mem_get_info(actual_tensor.device)
-                    max_working_bytes = 32 * 1024**3
+                    free_bytes, total_bytes = torch.cuda.mem_get_info(actual_tensor.device)
                     min_working_bytes = 256 * 1024**2
-                    working_bytes = min(max_working_bytes, max(min_working_bytes, free_bytes // 5))
-
                     memory_budget = float(
                         getattr(self.gpu_mode_config, "memory_budget", 0.0) or 0.0
                     )
-                    if memory_budget > 0:
+                    comparison_device_id = getattr(
+                        self.gpu_mode_config, "comparison_device_id", None
+                    )
+                    if actual_tensor.device.index == comparison_device_id:
+                        memory_budget = float(
+                            getattr(
+                                self.gpu_mode_config,
+                                "comparison_memory_budget",
+                                memory_budget,
+                            )
+                            or memory_budget
+                        )
+
+                    if dual_gpu:
+                        budget_bytes = int(memory_budget * (1024**3)) if memory_budget > 0 else 0
+                        reserve_bytes = self._dual_comparison_safety_reserve_bytes(
+                            total_bytes, budget_bytes
+                        )
+                        working_bytes = self._dual_comparison_workspace_bytes(
+                            free_bytes, reserve_bytes
+                        )
+                        insufficient_dual_headroom = working_bytes == 0
+                    else:
                         reserved_bytes = torch.cuda.memory_reserved(actual_tensor.device)
+                        max_working_bytes = 32 * 1024**3
+                        # Physical headroom is a hard limit. The configured minimum
+                        # below is only a performance target when free memory permits.
+                        working_bytes = max(1, min(max_working_bytes, free_bytes // 5))
+
+                    if memory_budget > 0 and not dual_gpu:
                         budget_headroom = max(
                             0,
                             int(memory_budget * (1024**3)) - reserved_bytes,
@@ -1801,7 +2156,12 @@ class APITestBase:
                         )
                 except Exception:
                     pass
-            if estimated_temp_bytes > working_bytes:
+                if insufficient_dual_headroom:
+                    raise RuntimeError(
+                        "[torch_assert_OOM] comparison card lacks the reserved headroom "
+                        "for a bounded GPU comparison"
+                    )
+            if self._should_chunk_accuracy_compare(estimated_temp_bytes, working_bytes):
                 self._torch_assert_accuracy_in_chunks(
                     actual_tensor,
                     expected_tensor,
@@ -1851,7 +2211,7 @@ class APITestBase:
         except Exception as err:
             error_str = str(err)
             if error_str.startswith("Comparing"):
-                if os.environ.get("PADDLEAPITEST_NP_FALLBACK", "0") != "1":
+                if dual_gpu or os.environ.get("PADDLEAPITEST_NP_FALLBACK", "0") != "1":
                     raise RuntimeError(
                         "[torch_assert_OOM] torch.testing.assert_close OOM on large tensor comparison"
                     ) from err
@@ -1885,6 +2245,33 @@ class APITestBase:
                     )
                     return
             raise
+
+    def _should_chunk_accuracy_compare(self, estimated_temp_bytes, working_bytes):
+        """Use bounded GPU workspaces when a full comparison would exceed the budget."""
+        return bool(estimated_temp_bytes > working_bytes)
+
+    @staticmethod
+    def _dual_comparison_workspace_bytes(free_bytes, reserve_bytes):
+        """Choose a bounded comparison workspace from physical card headroom."""
+        max_workspace = 64 * 1024**3
+        min_workspace = 256 * 1024**2
+        available_bytes = max(0, int(free_bytes) - int(reserve_bytes))
+        half_available = available_bytes // 2
+        if half_available <= 0:
+            return 0
+        if half_available < min_workspace:
+            return half_available
+        return min(max_workspace, max(min_workspace, half_available))
+
+    @staticmethod
+    def _dual_comparison_safety_reserve_bytes(total_bytes, budget_bytes):
+        """Keep a small physical reserve without double-counting allocator state."""
+        minimum_reserve = 1 * 1024**3
+        total_bytes = max(0, int(total_bytes))
+        budget_bytes = max(0, int(budget_bytes))
+        if budget_bytes > 0 and budget_bytes < total_bytes:
+            return max(minimum_reserve, total_bytes - budget_bytes)
+        return max(minimum_reserve, total_bytes // 20)
 
     def test(self):
         pass
@@ -1939,6 +2326,51 @@ class APITestBase:
             )
         return value
 
+    def move_tensor_tree_to_gpu(self, value, device_id):
+        """Recursively move framework tensors to one logical GPU."""
+        if isinstance(value, torch.Tensor):
+            return value.to(
+                device=torch.device("cuda", device_id),
+                non_blocking=False,
+            )
+        if isinstance(value, paddle.Tensor):
+            return value.cuda(device_id=device_id, blocking=True)
+        if isinstance(value, list):
+            return [self.move_tensor_tree_to_gpu(item, device_id) for item in value]
+        if isinstance(value, tuple):
+            return tuple(self.move_tensor_tree_to_gpu(item, device_id) for item in value)
+        if isinstance(value, dict):
+            return type(value)(
+                (key, self.move_tensor_tree_to_gpu(item, device_id)) for key, item in value.items()
+            )
+        return value
+
+    def tensor_tree_nbytes(self, value):
+        """Estimate logical bytes held by unique tensor leaves in a result tree."""
+        seen = set()
+
+        def visit(item):
+            if isinstance(item, (torch.Tensor, paddle.Tensor)):
+                if id(item) in seen:
+                    return 0
+                seen.add(id(item))
+                return int(item.numel()) * _tensor_element_size(item)
+            if isinstance(item, (list, tuple)):
+                return sum(visit(child) for child in item)
+            if isinstance(item, dict):
+                return sum(visit(child) for child in item.values())
+            return 0
+
+        return visit(value)
+
+    def spill_tensor_tree_slot_to_cpu(self, values, index=0):
+        """Replace one result-tree slot with a CPU copy, then release its GPU source."""
+        source = values[index]
+        values[index] = self.move_tensor_tree_to_cpu(source)
+        del source
+        if self.gpu_mode_config.enabled:
+            gpu_mode_memory_decision(self.gpu_mode_config, force=True)
+
     def detach_tensor_tree(self, value):
         """Detach every framework tensor while preserving the argument tree."""
         if isinstance(value, (torch.Tensor, paddle.Tensor)):
@@ -1966,22 +2398,8 @@ class APITestBase:
 
         def visit(config):
             nonlocal total_bytes
-            dtype = str(getattr(config, "dtype", "float32")).split(".")[-1]
-            element_size = {
-                "float8_e4m3fn": 1,
-                "float8_e5m2": 1,
-                "bfloat16": 2,
-                "float16": 2,
-                "int8": 1,
-                "uint8": 1,
-                "bool": 1,
-                "int16": 2,
-                "int32": 4,
-                "int64": 8,
-                "float32": 4,
-                "float64": 8,
-            }.get(dtype, 4)
-            total_bytes += int(config.numel()) * element_size
+            dtype = getattr(config, "dtype", "float32")
+            total_bytes += int(config.numel()) * _dtype_element_size(dtype)
 
         self._for_each_tensor_config(visit)
         return total_bytes
