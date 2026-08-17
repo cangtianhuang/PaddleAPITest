@@ -32,12 +32,12 @@ from tester import (
     APITestPaddleTorchGPUPerformance,
     APITestTorchGPUPerformance,
 )
-from tester.log_writer.log_runtime import (
+from tester.reporting.log_runtime import (
     close_process_files,
     configure_direct_results,
     read_log,
 )
-from tester.log_writer.log_worker import write_to_log
+from tester.reporting.log_worker import write_to_log
 
 
 def parse_bool(value):
@@ -121,16 +121,10 @@ def main():
         help="Relative tolerance for accuracy tests",
     )
     parser.add_argument(
-        "--manual_threshold_config_file",
+        "--accuracy_manual_threshold_config",
         type=str,
         default="",
-        help="YAML file with per-API manual accuracy thresholds",
-    )
-    parser.add_argument(
-        "--exit_on_error",
-        type=parse_bool,
-        default=False,
-        help="Whether to exit the process when a paddle_error occurs.",
+        help="YAML file with per-API thresholds for strict accuracy fallback",
     )
     options = parser.parse_args()
     configure_direct_results(options.id)
@@ -175,8 +169,7 @@ def main():
                 test_amp=options.test_amp,
                 atol=options.atol,
                 rtol=options.rtol,
-                manual_threshold_config_file=options.manual_threshold_config_file,
-                exit_on_error=options.exit_on_error,
+                accuracy_manual_threshold_config=options.accuracy_manual_threshold_config,
             )
         else:
             case = test_class(api_config, test_amp=options.test_amp)
@@ -213,7 +206,7 @@ def main():
                     test_amp=options.test_amp,
                     atol=options.atol,
                     rtol=options.rtol,
-                    manual_threshold_config_file=options.manual_threshold_config_file,
+                    accuracy_manual_threshold_config=options.accuracy_manual_threshold_config,
                 )
             else:
                 case = test_class(api_config, test_amp=options.test_amp)

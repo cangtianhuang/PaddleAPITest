@@ -10,7 +10,7 @@ import re
 import shutil
 from pathlib import Path
 
-from tester.log_writer.log_schema import (
+from tester.reporting.log_schema import (
     CASE_BEGIN_TAG,
     CASE_END_TAG,
     LOG_PREFIXES,
@@ -24,6 +24,7 @@ RESULT_DIR_NAME = "error_stat_result"
 #   retest        — 资源/超时，主要用于重测筛选
 #   test_issue    — 测试侧问题，不直接代表 Paddle bug
 SUMMARY_GROUPS = {
+    # known 只表示已知不完全对齐，不计入 Paddle issue。
     "paddle_issue": (
         "paddle_error",
         "paddle_accuracy",

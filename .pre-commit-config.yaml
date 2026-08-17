@@ -1,6 +1,8 @@
+exclude: (?i)\.txt$
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: v4.6.0
     hooks:
       - id: check-case-conflict
       - id: check-yaml
@@ -22,3 +24,12 @@ repos:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: check-added-comment-ratio
+        name: check added source comment ratio
+        entry: python tools/check_comment_ratio.py
+        language: system
+        pass_filenames: false
+        always_run: true

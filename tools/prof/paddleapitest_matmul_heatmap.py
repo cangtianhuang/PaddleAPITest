@@ -159,7 +159,7 @@ def restore_patches() -> None:
 
 def init_logging(output_dir: Path) -> None:
     try:
-        from tester.log_writer import init_log
+        from tester.reporting import init_log
     except Exception as err:
         print(f"[warn] failed to import log_writer: {err}")
         return
@@ -174,8 +174,9 @@ def init_logging(output_dir: Path) -> None:
 
 
 def install_stage_hooks(recorder: StageRecorder, mode: str) -> None:
-    from tester.api_config.config_analyzer import APIConfig, TensorConfig
+    from tester.api_config.parser import APIConfig
     from tester.base import APITestBase
+    from tester.input_generation.tensor_config import TensorConfig
 
     patch_public_methods(APIConfig, recorder)
     patch_public_methods(TensorConfig, recorder)
@@ -197,7 +198,7 @@ def install_stage_hooks(recorder: StageRecorder, mode: str) -> None:
 
 
 def build_case(config: str, mode: str, recorder: StageRecorder, args: argparse.Namespace) -> Any:
-    from tester.api_config.config_analyzer import APIConfig
+    from tester.api_config.parser import APIConfig
 
     if mode == "accuracy":
         from tester.accuracy import APITestAccuracy
@@ -313,10 +314,10 @@ def write_summary_csv(path: Path, values: dict[tuple[int, str], float], stages: 
 
 
 def write_cache_events_csv(path: Path) -> None:
-    from tester.api_config import config_analyzer
+    from tester.input_generation import tensor_config
 
-    cached_numpy_events = getattr(config_analyzer, "cached_numpy_events", [])
-    cached_gpu_input_events = getattr(config_analyzer, "cached_gpu_input_events", [])
+    cached_numpy_events = getattr(tensor_config, "cached_numpy_events", [])
+    cached_gpu_input_events = getattr(tensor_config, "cached_gpu_input_events", [])
 
     with path.open("w", newline="") as f:
         writer = csv.writer(f)
@@ -491,7 +492,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--use-cached-numpy",
         action="store_true",
-        help="set USE_CACHED_NUMPY=True before importing PaddleAPITest modules",
+        help="reuse cached NumPy generated inputs when available",
     )
     parser.add_argument(
         "--use-gpu-cache-mode",

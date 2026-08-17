@@ -1,14 +1,23 @@
 from __future__ import annotations
 
 import copy
-import inspect
 from collections import OrderedDict
 from collections.abc import Callable, Iterable
 from typing import Any
 
 import paddle
 import torch
-from tester.api_config.config_analyzer import APIConfig, TensorConfig
+
+# operator_compare 复用 V4 的 parser 和 TensorConfig。
+from tester.api_config.parser import APIConfig
+from tester.input_generation.materialization import (
+    copy_generated_input_values,
+    iter_unique_tensor_configs,
+    materialize_config_tree,
+    reset_tensor_configs,
+)
+from tester.paddle_to_torch import ConversionKind
+from tester.paddle_to_torch.arguments import bind_paddle_arguments
 from tester.paddle_to_torch.converter import Paddle2TorchConverter, get_converter
 
 from .config_loader import cases_from_config_lines
@@ -17,17 +26,6 @@ from .spec import CompareCase, CompareSuite, ImplementationSpec
 CustomRunner = Callable[[CompareCase, ImplementationSpec], torch.Tensor]
 
 CUSTOM_IMPLEMENTATIONS: dict[str, CustomRunner] = {}
-MANUAL_ARGUMENT_NAMES: dict[str, tuple[str, ...]] = {
-    "paddle._C_ops.fused_linear_param_grad_add": (
-        "x",
-        "dout",
-        "dweight",
-        "dbias",
-        "multi_precision",
-        "has_bias",
-    ),
-}
-SIGNATURE_ARGUMENT_NAMES: dict[str, tuple[str, ...]] = {}
 
 
 def register_custom_implementation(name: str, runner: CustomRunner) -> None:
@@ -147,10 +145,9 @@ def build_compare_suite(
 def clone_api_config(api_config: APIConfig, dtype: str | None) -> APIConfig:
     seeded = seeded_api_config(api_config, dtype)
     cloned = copy.deepcopy(seeded)
+    copy_generated_input_values(seeded, cloned)
     prepare_tensor_configs(cloned.args, dtype)
     prepare_tensor_configs(cloned.kwargs.values(), dtype)
-    copy_numpy_tensors(seeded.args, cloned.args)
-    copy_numpy_tensors(seeded.kwargs.values(), cloned.kwargs.values())
     return cloned
 
 
@@ -162,6 +159,7 @@ def seeded_api_config(api_config: APIConfig, dtype: str | None) -> APIConfig:
     cache_key = dtype or "config"
     if cache_key not in cache:
         seeded = copy.deepcopy(api_config)
+        copy_generated_input_values(api_config, seeded)
         prepare_tensor_configs(seeded.args, dtype)
         prepare_tensor_configs(seeded.kwargs.values(), dtype)
         materialize_numpy_tensors(seeded.args, seeded)
@@ -171,39 +169,19 @@ def seeded_api_config(api_config: APIConfig, dtype: str | None) -> APIConfig:
 
 
 def prepare_tensor_configs(values: Iterable[Any], dtype: str | None) -> None:
-    for value in values:
-        if isinstance(value, TensorConfig):
-            if dtype is not None:
-                value.dtype = dtype
-            value.numpy_tensor = None
-            value.paddle_tensor = None
-            value.torch_tensor = None
-            if not hasattr(value, "shuffle_dims"):
-                value.shuffle_dims = None
-        elif isinstance(value, (list, tuple)):
-            prepare_tensor_configs(value, dtype)
+    # 复制配置时只重置框架缓存，逻辑输入仍由 materialization owning module 读取。
+    values = tuple(values)
+    for value in iter_unique_tensor_configs(*values):
+        if dtype is not None:
+            value.dtype = dtype
+    reset_tensor_configs(*values)
 
 
 def materialize_numpy_tensors(values: Iterable[Any], api_config: APIConfig) -> None:
-    for value in values:
-        if isinstance(value, TensorConfig):
-            value.get_numpy_tensor(api_config)
-        elif isinstance(value, (list, tuple)):
-            materialize_numpy_tensors(value, api_config)
-
-
-def copy_numpy_tensors(source_values: Iterable[Any], target_values: Iterable[Any]) -> None:
-    for source, target in zip(source_values, target_values):
-        if isinstance(source, TensorConfig) and isinstance(target, TensorConfig):
-            target.numpy_tensor = copy_tensor_value(source.numpy_tensor)
-        elif isinstance(source, (list, tuple)) and isinstance(target, (list, tuple)):
-            copy_numpy_tensors(source, target)
-
-
-def copy_tensor_value(value: Any) -> Any:
-    if hasattr(value, "copy"):
-        return value.copy()
-    return copy.deepcopy(value)
+    # NumPy 是生成值的读取路径，不再伪造 TensorConfig 的叶子缓存属性。
+    # 这里保留旧入口的无返回值契约，实际遍历委托给 materialization.py。
+    for value in tuple(values):
+        materialize_config_tree(value, api_config, "numpy", clear_tensor=False)
 
 
 def run_paddle_case(case: CompareCase) -> torch.Tensor:
@@ -222,13 +200,21 @@ def run_torch_case(case: CompareCase) -> torch.Tensor:
     spec = current_spec(case)
     api_config = clone_api_config(case.tensors["api_config"], spec.dtype)
     convert_result = get_converter().convert(api_config.api_name)
-    if not convert_result.is_supported:
+    if convert_result.kind is ConversionKind.UNSUPPORTED:
         raise RuntimeError(
             convert_result.error_message or f"unsupported torch mapping: {api_config.api_name}"
         )
     torch_args = materialize_torch_args(api_config.args, api_config)
-    torch_kwargs = bind_torch_kwargs(api_config, torch_args)
-    output = Paddle2TorchConverter.execute(convert_result, torch_args, torch_kwargs)
+    torch_keyword = OrderedDict(
+        (key, materialize_torch_value(value, api_config, convert_dtype=key == "dtype"))
+        for key, value in api_config.kwargs.items()
+    )
+    bound_arguments = bind_paddle_arguments(
+        api_config.api_name,
+        torch_args,
+        torch_keyword,
+    )
+    output = Paddle2TorchConverter.execute(convert_result, torch_args, bound_arguments)
     return to_torch_tensor(output)
 
 
@@ -239,74 +225,30 @@ def current_spec(case: CompareCase) -> ImplementationSpec:
         raise RuntimeError("operator compare runner missing current implementation spec") from err
 
 
-def bind_torch_kwargs(api_config: APIConfig, torch_args: list[Any]) -> OrderedDict[str, Any]:
-    named_values = bind_api_arguments(api_config, torch_args)
-    named_values.update(
-        (key, materialize_torch_value(value, api_config))
-        for key, value in api_config.kwargs.items()
-    )
-    return OrderedDict((key, value) for key, value in named_values.items() if value is not None)
-
-
-def bind_api_arguments(api_config: APIConfig, torch_args: list[Any]) -> OrderedDict[str, Any]:
-    argument_names = argument_names_for_api(api_config.api_name)
-    return OrderedDict(
-        (name, torch_args[index])
-        for index, name in enumerate(argument_names)
-        if index < len(torch_args)
-    )
-
-
-def argument_names_for_api(api_name: str) -> tuple[str, ...]:
-    if api_name in MANUAL_ARGUMENT_NAMES:
-        return MANUAL_ARGUMENT_NAMES[api_name]
-    if api_name not in SIGNATURE_ARGUMENT_NAMES:
-        SIGNATURE_ARGUMENT_NAMES[api_name] = signature_argument_names(api_name)
-    return SIGNATURE_ARGUMENT_NAMES[api_name]
-
-
-def signature_argument_names(api_name: str) -> tuple[str, ...]:
-    try:
-        signature = inspect.signature(eval(api_name))
-    except (TypeError, ValueError):
-        return ()
-    return tuple(
-        name
-        for name, parameter in signature.parameters.items()
-        if parameter.kind in (parameter.POSITIONAL_ONLY, parameter.POSITIONAL_OR_KEYWORD)
-    )
-
-
 def materialize_paddle_args(values: Iterable[Any], api_config: APIConfig) -> list[Any]:
-    return [materialize_paddle_value(value, api_config) for value in values]
+    return materialize_config_tree(list(values), api_config, "paddle")
 
 
 def materialize_paddle_value(value: Any, api_config: APIConfig) -> Any:
-    if isinstance(value, TensorConfig):
-        tensor = value.get_paddle_tensor(api_config)
-        value.clear_paddle_tensor()
-        return tensor
-    if isinstance(value, list):
-        return [materialize_paddle_value(item, api_config) for item in value]
-    if isinstance(value, tuple):
-        return tuple(materialize_paddle_value(item, api_config) for item in value)
-    return value
+    return materialize_config_tree(value, api_config, "paddle")
 
 
 def materialize_torch_args(values: Iterable[Any], api_config: APIConfig) -> list[Any]:
-    return [materialize_torch_value(value, api_config) for value in values]
+    return materialize_config_tree(list(values), api_config, "torch")
 
 
-def materialize_torch_value(value: Any, api_config: APIConfig) -> Any:
-    if isinstance(value, TensorConfig):
-        tensor = value.get_torch_tensor(api_config)
-        value.clear_torch_tensor()
-        return tensor
-    if isinstance(value, list):
-        return [materialize_torch_value(item, api_config) for item in value]
-    if isinstance(value, tuple):
-        return tuple(materialize_torch_value(item, api_config) for item in value)
-    return value
+def materialize_torch_value(
+    value: Any,
+    api_config: APIConfig,
+    *,
+    convert_dtype=False,
+) -> Any:
+    return materialize_config_tree(
+        value,
+        api_config,
+        "torch",
+        convert_dtype=convert_dtype,
+    )
 
 
 def to_torch_tensor(output: Any) -> torch.Tensor:

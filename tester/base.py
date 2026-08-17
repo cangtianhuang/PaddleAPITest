@@ -1,44 +1,55 @@
 from __future__ import annotations
 
 import collections
-import contextlib
 import gc
-import inspect
-import math
 import os
-import re
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy
 import paddle
 import yaml
 
-from .api_config.config_analyzer import (
-    USE_CACHED_NUMPY,
-    TensorConfig,
-    get_cached_numpy_array,
+from .api_config.dtype_utils import to_torch_dtype
+from .api_config.parameter_binding import bind_input_parameters, split_tensor_method_arguments
+from .input_generation.generation_rules import input_rules
+from .input_generation.materialization import (
+    clear_tensor_configs,
+    materialize_config_tree,
+    tensor_config_tree_nbytes,
 )
-from .api_config.dump_writer import DEFAULT_DUMP_DIR, DumpContext, dump_enabled
-from .log_writer.log_comparison import log_accuracy_tolerance
-from .log_writer.log_schema import MAX_CSV_CONFIG_LENGTH
-from .log_writer.log_worker import write_to_log
-from .runtime_config import TestRuntimeConfig
+from .input_generation.tensor_config import (
+    AUTOGRAD_DTYPES,
+    TensorConfig,
+    dtype_element_size,
+    dtype_name,
+)
+from .reporting import log_worker
+from .reporting.dump_writer import DEFAULT_DUMP_DIR, DumpContext, dump_enabled
+from .reporting.log_comparison import log_accuracy_tolerance
+from .reporting.log_schema import MAX_CSV_CONFIG_LENGTH
+from .runtime.gpu_memory_preflight import (
+    GpuMemoryDeferred,
+    decide_gpu_memory_preflight,
+    requires_inplace_input_copy,
+    should_check_grad,
+)
 
-with open("tester/base_config.yaml", encoding="utf-8") as f:
+_TESTER_DIR = Path(__file__).resolve().parent
+
+with (_TESTER_DIR / "base_config.yaml").open(encoding="utf-8") as f:
     config = yaml.safe_load(f)
 
 forward_only_apis = frozenset(config.get("forward_only_apis", []))
-handle_axes_api = frozenset(config.get("handle_axes_api", []))
 not_check_dtype = frozenset(config.get("not_check_dtype", []))
 rand_apis = frozenset(config.get("rand_apis", []))
 stochastic_behavior_apis = frozenset(config.get("stochastic_behavior_apis", []))
-single_op_no_signature_apis = frozenset(config.get("single_op_no_signature_apis", []))
 
 paddle_error_dismiss = {}  # disabled: covered by the unified runtime error reporter
 # paddle_error_dismiss = config.get("paddle_error_dismiss", {})
 special_accuracy_atol_rtol = config.get("special_accuracy_atol_rtol", {})
 
-with open("tester/api_config/torch_error_skip.txt") as f:
+with (_TESTER_DIR / "api_config" / "torch_error_skip.txt").open(encoding="utf-8") as f:
     torch_error_skip = frozenset(line.strip() for line in f if line.strip())
 
 del config
@@ -53,8 +64,6 @@ class _LazyTorch:
 
 
 torch = _LazyTorch()
-
-_GPU_DEVICE_PATTERN = re.compile(r"^(cuda|gpu):(\d+)$", re.IGNORECASE)
 
 
 CUDA_ERROR = frozenset(
@@ -76,31 +85,13 @@ CUDA_OOM = frozenset(
 
 
 GPU_MEMORY_PROBE_MIN_BYTES = 256 << 20
+COMPARISON_WORKSPACE_FAST_PATH_BYTES = 256 << 20
+DEFAULT_COMPARISON_WORKSPACE_BYTES = 1 << 30
 _GIB = 1024**3
-_TENSOR_DTYPE_BYTES = {
-    "bool": 1,
-    "uint8": 1,
-    "int8": 1,
-    "float8_e4m3fn": 1,
-    "float8_e5m2": 1,
-    "uint16": 2,
-    "int16": 2,
-    "float16": 2,
-    "bfloat16": 2,
-    "uint32": 4,
-    "int32": 4,
-    "float32": 4,
-    "uint64": 8,
-    "int64": 8,
-    "float64": 8,
-    "complex64": 8,
-    "complex128": 16,
-}
 
 
 def _dtype_element_size(dtype):
-    dtype_name = str(dtype).split(".")[-1]
-    return _TENSOR_DTYPE_BYTES.get(dtype_name, 4)
+    return dtype_element_size(dtype, default=4)
 
 
 def _tensor_element_size(value):
@@ -108,6 +99,10 @@ def _tensor_element_size(value):
         return int(value.element_size())
     except (AttributeError, TypeError, ValueError):
         return _dtype_element_size(value.dtype)
+
+
+def _dtype_name(value):
+    return dtype_name(value)
 
 
 @dataclass(frozen=True)
@@ -119,6 +114,27 @@ class GpuMemoryDecision:
     required_headroom_bytes: int = 0
     pressure_before: bool = False
     pressure_after: bool = False
+
+
+@dataclass(frozen=True)
+class GpuMemoryState:
+    device_id: int
+    free_bytes: int
+    total_bytes: int
+    budget_bytes: int
+    reserve_bytes: int
+    live_budget_bytes: int
+
+
+class GpuMemoryGuardSkip(RuntimeError):
+    """运行时已知驻留集合无法安全放入目标 GPU。"""
+
+
+@dataclass(frozen=True)
+class OutputGradSlot:
+    seed_numpy: object | None = None
+    paddle_grad: object | None = None
+    torch_grad: object | None = None
 
 
 def _gpu_memory_is_under_pressure(gpu_config, free_bytes, total_bytes, required_headroom_bytes):
@@ -142,21 +158,29 @@ def _gpu_memory_is_under_pressure(gpu_config, free_bytes, total_bytes, required_
     return over_budget or low_free or insufficient_headroom
 
 
-def _release_gpu_allocator_caches(torch_module):
+def _release_gpu_allocator_caches(torch_module=None):
+    # torch_module=None 是 Paddle-only 协议值，不表示 Torch 查询失败后的隐式降级。
     gc.collect()
-    try:
-        torch_module.cuda.empty_cache()
-    except Exception:
-        pass
+    if torch_module is not None:
+        try:
+            torch_module.cuda.empty_cache()
+        except Exception:
+            pass
     try:
         paddle.device.cuda.empty_cache()
     except Exception:
         pass
 
 
-def _query_gpu_memory(torch_module):
+def _query_gpu_memory(torch_module=None):
     try:
-        free_bytes, total_bytes = torch_module.cuda.mem_get_info()
+        if torch_module is not None:
+            # Accuracy 需要查询 Tensor 实际所在的 CUDA runtime，仍由 Torch 提供快照。
+            free_bytes, total_bytes = torch_module.cuda.mem_get_info()
+        else:
+            # Paddle-only 不能借显存探测间接加载 Torch，统一使用当前 Paddle 设备。
+            free_bytes = paddle.base.core.gpu_memory_available()
+            total_bytes = paddle.device.cuda.get_device_properties().total_memory
         return int(free_bytes), int(total_bytes)
     except Exception:
         return None
@@ -169,7 +193,9 @@ def gpu_mode_memory_decision(
     probe_bytes=None,
     retained_tree_bytes=0,
     required_headroom_bytes=None,
+    use_torch=True,
 ):
+    # 该入口统一承载 Paddle-only 与 Accuracy 两种显存治理协议。
     """Release idle allocator blocks and decide whether live result trees must spill."""
     if not gpu_config.enabled:
         return GpuMemoryDecision()
@@ -183,9 +209,14 @@ def gpu_mode_memory_decision(
     if not force and decision_probe_bytes < GPU_MEMORY_PROBE_MIN_BYTES:
         return GpuMemoryDecision(required_headroom_bytes=required_headroom_bytes)
 
-    try:
-        import torch as torch_module
-    except (ImportError, OSError):
+    torch_module = None
+    if use_torch:
+        # 只有声明使用 Torch 的模式才允许触发依赖加载。
+        try:
+            import torch as torch_module
+        except (ImportError, OSError):
+            torch_module = None
+    if use_torch and torch_module is None:
         if force:
             gc.collect()
             try:
@@ -231,25 +262,6 @@ def gpu_mode_memory_decision(
     )
 
 
-def gpu_mode_maybe_empty_cache(
-    gpu_config,
-    force=False,
-    request_spill=False,
-    probe_bytes=None,
-    retained_tree_bytes=0,
-    required_headroom_bytes=None,
-):
-    decision = gpu_mode_memory_decision(
-        gpu_config,
-        force=force,
-        request_spill=request_spill,
-        probe_bytes=probe_bytes,
-        retained_tree_bytes=retained_tree_bytes,
-        required_headroom_bytes=required_headroom_bytes,
-    )
-    return decision.should_spill if request_spill else decision.cleanup_performed
-
-
 def classify_runtime_error(error_msg):
     """Classify runtime errors without printing or mutating log state."""
     error_msg_lower = error_msg.lower()
@@ -271,7 +283,7 @@ def classify_runtime_error(error_msg):
     )
     if any(marker in error_msg_lower for marker in cuda_markers):
         return "paddle_cuda", True
-    # (Unimplemented): Paddle 已知不支持的功能，当前 case 无法有效验证
+    # (Unimplemented): Paddle 当前功能无法由该 config 有效验证
     if "(unimplemented)" in error_msg_lower:
         return "skip", False
     # Paddle 输出数值检查失败
@@ -296,233 +308,58 @@ def classify_runtime_error(error_msg):
     return None, False
 
 
-def _contains_non_finite_scalar(value):
-    if isinstance(value, bool) or isinstance(value, int):
-        return False
-    if isinstance(value, float):
-        return not math.isfinite(value)
-    if isinstance(value, numpy.generic):
-        try:
-            return not numpy.isfinite(value).item()
-        except Exception:
-            return False
-    if isinstance(value, complex):
-        return not math.isfinite(value.real) or not math.isfinite(value.imag)
-    if isinstance(value, TensorConfig):
-        return False
-    if isinstance(value, (list, tuple)):
-        return any(_contains_non_finite_scalar(item) for item in value)
-    if isinstance(value, (dict, collections.OrderedDict)):
-        return any(_contains_non_finite_scalar(item) for item in value.values())
-    return False
-
-
-def _normalize_visible_gpu_device(value):
-    if not isinstance(value, str):
-        return value
-    match = _GPU_DEVICE_PATTERN.match(value)
-    if match is None:
-        return value
-    try:
-        gpu_count = paddle.device.cuda.device_count()
-    except Exception:
-        return value
-    if gpu_count <= 0:
-        return value
-    return f"cuda:{int(match.group(2)) % gpu_count}"
-
-
-def _normalize_runtime_value_tree(value):
-    if isinstance(value, TensorConfig):
-        return value
-    if isinstance(value, list):
-        return [_normalize_runtime_value_tree(item) for item in value]
-    if isinstance(value, tuple):
-        return tuple(_normalize_runtime_value_tree(item) for item in value)
-    if isinstance(value, collections.OrderedDict):
-        return collections.OrderedDict(
-            (key, _normalize_runtime_value_tree(item)) for key, item in value.items()
-        )
-    if isinstance(value, dict):
-        return {key: _normalize_runtime_value_tree(item) for key, item in value.items()}
-    return _normalize_visible_gpu_device(value)
-
-
-def _normalize_shape_like_api_arguments(api_name, args):
-    if api_name in {"paddle.zeros", "paddle.ones", "paddle.empty"}:
-        if len(args) > 1 and not isinstance(args[0], (list, tuple, TensorConfig)):
-            return [list(args)]
-    if api_name == "paddle.full":
-        if len(args) > 1 and not isinstance(args[0], (list, tuple, TensorConfig)):
-            return [list(args[:-1]), args[-1]]
-    return list(args)
-
-
-def normalize_api_arguments(api_name, args, kwargs):
-    normalized_args = _normalize_shape_like_api_arguments(api_name, args)
-    normalized_args = _normalize_runtime_value_tree(normalized_args)
-    normalized_kwargs = _normalize_runtime_value_tree(kwargs)
-    return normalized_args, normalized_kwargs
-
-
-def get_arg(api_config, arg_pos, arg_name, default=None):
-    if 0 <= arg_pos < len(api_config.args):
-        return api_config.args[arg_pos]
-    if arg_name in api_config.kwargs:
-        return api_config.kwargs[arg_name]
-    return default
-
-
-no_signature_api_mappings = {
-    f"paddle.Tensor.{method}": {
-        "self": lambda cfg: get_arg(cfg, 0, "self"),
-        "y": lambda cfg: get_arg(cfg, 1, "y"),
-    }
-    for method in single_op_no_signature_apis
-}
-
-# For _C_ops builtins that share the same parameter names as a public Paddle API,
-# we reuse the public API's signature for argument binding instead of a manual mapping.
-# Positional args beyond the public API's parameter count (e.g. a trailing `place`)
-# are silently dropped.
-_COPS_API_PUBLIC_ALIAS: dict[str, str] = {
-    "paddle._C_ops.add_": "paddle.add",
-    "paddle._C_ops.bitwise_not": "paddle.bitwise_not",
-    "paddle._C_ops.clip": "paddle.clip",
-    "paddle._C_ops.concat": "paddle.concat",
-    "paddle._C_ops.flatten_": "paddle.flatten",
-    "paddle._C_ops.matmul": "paddle.matmul",
-    "paddle._C_ops.multiply_": "paddle.multiply",
-    "paddle._C_ops.numel": "paddle.numel",
-    "paddle._C_ops.put_along_axis_": "paddle.put_along_axis",
-    "paddle._C_ops.reshape_": "paddle.reshape",
-    "paddle._C_ops.scale_": "paddle.scale",
-    "paddle._C_ops.subtract_": "paddle.subtract",
-    "paddle._C_ops.transpose": "paddle.transpose",
-    "paddle._C_ops.uniform": "paddle.uniform",
-}
-
-# Manual mappings for _C_ops that have no public API counterpart or whose signature
-# differs materially from any public API.
-no_signature_api_mappings.update(
-    {
-        # copy_ 是内建方法，无法通过 inspect 获取签名。
-        "paddle.Tensor.copy_": {
-            "self": lambda cfg: get_arg(cfg, 0, "self"),
-            "other": lambda cfg: get_arg(cfg, 1, "other"),
-            "blocking": lambda cfg: get_arg(cfg, 2, "blocking", True),
-        },
-        # adamw_(param, grad, lr, moment1, moment2, moment2_max,
-        #        beta1_pow, beta2_pow, master_param, skip_update,
-        #        beta1, beta2, epsilon, lr_ratio, coeff, with_decay,
-        #        lazy_mode, min_row_size, multi_precision, use_global_beta_pow, amsgrad)
-        "paddle._C_ops.adamw_": {
-            "param": lambda cfg: get_arg(cfg, 0, "param"),
-            "grad": lambda cfg: get_arg(cfg, 1, "grad"),
-            "learning_rate": lambda cfg: get_arg(cfg, 2, "learning_rate"),
-            "moment1": lambda cfg: get_arg(cfg, 3, "moment1"),
-            "moment2": lambda cfg: get_arg(cfg, 4, "moment2"),
-            "moment2_max": lambda cfg: get_arg(cfg, 5, "moment2_max"),
-            "beta1_pow": lambda cfg: get_arg(cfg, 6, "beta1_pow"),
-            "beta2_pow": lambda cfg: get_arg(cfg, 7, "beta2_pow"),
-            "master_param": lambda cfg: get_arg(cfg, 8, "master_param"),
-            "skip_update": lambda cfg: get_arg(cfg, 9, "skip_update"),
-            "beta1": lambda cfg: get_arg(cfg, 10, "beta1"),
-            "beta2": lambda cfg: get_arg(cfg, 11, "beta2"),
-            "epsilon": lambda cfg: get_arg(cfg, 12, "epsilon"),
-            "lr_ratio": lambda cfg: get_arg(cfg, 13, "lr_ratio"),
-            "coeff": lambda cfg: get_arg(cfg, 14, "coeff"),
-            "with_decay": lambda cfg: get_arg(cfg, 15, "with_decay"),
-            "lazy_mode": lambda cfg: get_arg(cfg, 16, "lazy_mode"),
-            "min_row_size_to_use_multithread": lambda cfg: get_arg(
-                cfg, 17, "min_row_size_to_use_multithread"
-            ),
-            "multi_precision": lambda cfg: get_arg(cfg, 18, "multi_precision"),
-            "use_global_beta_pow": lambda cfg: get_arg(cfg, 19, "use_global_beta_pow"),
-            "amsgrad": lambda cfg: get_arg(cfg, 20, "amsgrad"),
-        },
-        # full_(x, shape, value, dtype, place) — fills x in-place; no public API equivalent
-        "paddle._C_ops.full_": {
-            "x": lambda cfg: get_arg(cfg, 0, "x"),
-            "shape": lambda cfg: get_arg(cfg, 1, "shape"),
-            "value": lambda cfg: get_arg(cfg, 2, "value"),
-            "dtype": lambda cfg: get_arg(cfg, 3, "dtype"),
-        },
-        # fused_linear_param_grad_add(x, dout, dweight, dbias, multi_precision, has_bias)
-        "paddle._C_ops.fused_linear_param_grad_add": {
-            "x": lambda cfg: get_arg(cfg, 0, "x"),
-            "dout": lambda cfg: get_arg(cfg, 1, "dout"),
-            "dweight": lambda cfg: get_arg(cfg, 2, "dweight"),
-            "dbias": lambda cfg: get_arg(cfg, 3, "dbias"),
-            "multi_precision": lambda cfg: get_arg(cfg, 4, "multi_precision"),
-            "has_bias": lambda cfg: get_arg(cfg, 5, "has_bias"),
-        },
-        # gaussian(shape, mean, std, seed, dtype, place) — no paddle.gaussian public API
-        "paddle._C_ops.gaussian": {
-            "shape": lambda cfg: get_arg(cfg, 0, "shape"),
-            "mean": lambda cfg: get_arg(cfg, 1, "mean"),
-            "std": lambda cfg: get_arg(cfg, 2, "std"),
-            "seed": lambda cfg: get_arg(cfg, 3, "seed"),
-            "dtype": lambda cfg: get_arg(cfg, 4, "dtype"),
-        },
-        # matmul_grad(x, y, dout, transpose_x, transpose_y) -> (dx, dy)
-        "paddle._C_ops.matmul_grad": {
-            "x": lambda cfg: get_arg(cfg, 0, "x"),
-            "y": lambda cfg: get_arg(cfg, 1, "y"),
-            "dout": lambda cfg: get_arg(cfg, 2, "dout"),
-            "transpose_x": lambda cfg: get_arg(cfg, 3, "transpose_x"),
-            "transpose_y": lambda cfg: get_arg(cfg, 4, "transpose_y"),
-        },
-        # squared_l2_norm(x)
-        "paddle._C_ops.squared_l2_norm": {
-            "x": lambda cfg: get_arg(cfg, 0, "x"),
-        },
-        # swiglu_grad(x, y, dout) -> (dx, dy); y may be None (then x is split along last dim)
-        "paddle._C_ops.swiglu_grad": {
-            "x": lambda cfg: get_arg(cfg, 0, "x"),
-            "y": lambda cfg: get_arg(cfg, 1, "y"),
-            "dout": lambda cfg: get_arg(cfg, 2, "dout"),
-        },
-        # _run_custom_op(op_name, *args) — op_name dispatches to per-op sub-rules
-        "paddle._C_ops._run_custom_op": {
-            "op_name": lambda cfg: get_arg(cfg, 0, "op_name"),
-            "arg1": lambda cfg: get_arg(cfg, 1, "arg1"),
-            "arg2": lambda cfg: get_arg(cfg, 2, "arg2"),
-            "arg3": lambda cfg: get_arg(cfg, 3, "arg3"),
-            "arg4": lambda cfg: get_arg(cfg, 4, "arg4"),
-        },
-    }
-)
-
-
 class APITestBase:
     def __init__(self, api_config, use_torch=True, runtime_config=None):
+        # case 只能消费主进程冻结后的策略，不能在 worker 内根据环境重新选择 backend。
+        if runtime_config is None:
+            raise ValueError("runtime_config is required")
         self.api_config = api_config
         self.api_config.use_torch = use_torch
         self.use_torch = bool(use_torch)
-        self.runtime_config = runtime_config or TestRuntimeConfig()
+        self.runtime_config = runtime_config
         self.gpu_mode_config = self.runtime_config.gpu_mode
-        # TensorConfig 需要知道 kernel place，不能从 GPU mode 反推。
+        # TensorConfig 通过 case 配置读取算子设备，避免把 GPU mode 当成执行设备开关。
         self.api_config.test_cpu = self.runtime_config.test_cpu
+        self.memory_governance_metrics = collections.Counter()
         self.dump_context = (
             DumpContext(
-                os.environ.get("DUMP_DIR") or DEFAULT_DUMP_DIR, api_config=api_config.config
+                os.environ.get("DUMP_DIR") or DEFAULT_DUMP_DIR,
+                api_config=api_config.config,
             )
             if dump_enabled()
             else None
         )
-        self.outputs_grad_numpy = []
-        self.outputs_grad_paddleonly = []
+        self.output_grad_slots = []
+        self.output_grad_slots_signature = None
+        from .input_generation.backend_runtime import reset_output_grad_streams
+
+        reset_output_grad_streams()
+        # 同一 case 的结果树共享设备快照，避免每个叶子重复查询 CUDA allocator。
+        self.comparison_workspace_cache = {}
         if use_torch:
             torch.set_num_threads(8)
             torch.set_printoptions(threshold=100, linewidth=120)
 
     def torch_operator_device(self):
-        """返回当前 worker 的 Torch reference 设备。"""
+        """Torch reference 始终在 worker 绑定的计算卡执行。"""
         return torch.device(f"{self.runtime_config.torch_operator_device_type}:0")
+
+    def check_paddle_kernel_cuda_error(self):
+        """只为 Paddle GPU kernel 查询异步 CUDA 错误状态。"""
+        if not self.runtime_config.test_cpu:
+            paddle.base.core.eager._for_test_check_cuda_error()
+
+    def check_torch_operator_cuda_error(self):
+        """同步 Torch reference 的计算流，使异步 CUDA 错误在所属阶段上报。"""
+        torch.cuda.synchronize(self.torch_operator_device())
+
+    def check_operator_cuda_error(self):
+        """仅执行 Paddle 算子的 tester。"""
+        self.check_paddle_kernel_cuda_error()
 
     def requires_gpu_runtime(self):
         """算子执行或 GPU mode 任一需要 GPU 时返回 True。"""
+        # use_torch 表示 tester 会执行 Torch reference，而不是仅用 Torch 做 CPU 结果表示。
         return self.use_torch or not self.runtime_config.test_cpu or self.gpu_mode_config.enabled
 
     def run_with_dump(self):
@@ -532,6 +369,9 @@ class APITestBase:
         with self.dump_context.tee_output():
             try:
                 return self.test()
+            except GpuMemoryDeferred:
+                # deferred 属于 worker 重试协议，不能固化为本次 case 的错误终态。
+                raise
             except Exception as err:
                 if self.dump_context._data.get("status") is None:
                     self.dump_finalize("engine_error", error=str(err))
@@ -551,7 +391,18 @@ class APITestBase:
 
     def dump_finalize(self, status, **data):
         if self.dump_context:
+            memory_governance_metrics = getattr(self, "memory_governance_metrics", None)
+            if memory_governance_metrics:
+                data.setdefault(
+                    "memory_governance_metrics",
+                    dict(memory_governance_metrics),
+                )
             self.dump_context.finalize(status, **data)
+
+    def record_memory_governance_metric(self, name, amount=1):
+        if not hasattr(self, "memory_governance_metrics"):
+            self.memory_governance_metrics = collections.Counter()
+        self.memory_governance_metrics[name] += int(amount)
 
     def report_runtime_error(
         self,
@@ -561,67 +412,204 @@ class APITestBase:
         allow_ignore_paddle=False,
         *,
         tensor_position=None,
+        force_log_type=None,
+        affected_comps=None,
     ):
+        """Report one runtime error and optionally mirror its log type to stable comp logs.
+
+        force_log_type changes the emitted log bucket only; fatal/nonfatal still comes
+        from classify_runtime_error().
+        """
         err_msg = str(err)
         if phase:
             self.dump_error(f"{phase}_error", err)
         log_type, fatal = classify_runtime_error(err_msg)
         if log_type is None and allow_ignore_paddle and self.should_ignore_paddle_error(err_msg):
-            print(f"[pass] {self.api_config.config}", flush=True)
-            write_to_log("pass", self.api_config.config)
-            return "pass", False
+            log_type = "pass"
+            self.report_case_result(log_type, affected_comps=affected_comps)
+            return log_type, False
+        if force_log_type is not None:
+            log_type = force_log_type
         if log_type is None:
             log_type = default_log_type
-        head = f"[{log_type}]"
-        if phase:
-            head += f" {phase}"
-        fields = []
-        if tensor_position:
-            fields.append(f"tensor {tensor_position}")
-        prefix = " | ".join([head, *fields])
-        print(
-            (
-                f"{prefix} | {self.api_config.config}\n{err_msg}"
-                if phase or fields
-                else f"{prefix} {self.api_config.config}\n{err_msg}"
-            ),
-            flush=True,
+        self.report_case_result(
+            log_type,
+            phase=phase,
+            error=err_msg,
+            tensor_position=tensor_position,
+            affected_comps=affected_comps,
         )
-        write_to_log(log_type, self.api_config.config)
         return log_type, fatal
 
-    def reset_random_state(self, seed=42):
+    def report_case_result(
+        self,
+        log_type,
+        message=None,
+        *,
+        phase=None,
+        error=None,
+        tensor_position=None,
+        affected_comps=None,
+        write_main_log=True,
+    ):
+        """Emit one standardized config-level result and write the matching logs."""
+        log_worker.emit_case_result(
+            log_type,
+            self.api_config.config,
+            phase=phase,
+            message=message,
+            error=error,
+            tensor_position=tensor_position,
+            affected_comps=affected_comps,
+            write_main_log=write_main_log,
+        )
+        return log_type
+
+    def run_gpu_memory_preflight(self, mode):
+        """在输入生成前统一执行 GPU 容量准入，并记录可审计终态。"""
+        input_backend = getattr(self.runtime_config, "input_backend_resolved", None)
+        # 预检和实际生成必须共享同一个 resolved 名称，缺失时不能用默认值低估显存。
+        if input_backend is None:
+            raise ValueError("runtime config has no resolved input backend")
+        if not self.gpu_mode_config.enabled:
+            return True
+        precomputed = getattr(self.runtime_config, "gpu_memory_estimate", None)
+        if precomputed is None:
+            # 单 case 入口或主进程估算失败时保留完整静态预检语义。
+            decision = decide_gpu_memory_preflight(
+                self.api_config,
+                mode,
+                self.gpu_mode_config,
+                check_grad=self.need_check_grad(),
+                paddle_kernel_on_gpu=not self.runtime_config.test_cpu,
+                torch_operator_on_gpu=self.use_torch,
+                input_backend=input_backend,
+                input_source_on_gpu=(
+                    input_backend != "numpy" and self.runtime_config.input_logical_device != "cpu"
+                ),
+            )
+            if decision.should_skip:
+                message = decision.message()
+                self.record_memory_governance_metric("memory_preflight_oom")
+                self.report_case_result("oom", phase="preflight", message=message)
+                self.dump_finalize("oom", memory_preflight=message)
+                return False
+            compute_stages = tuple(
+                stage
+                for stage in getattr(decision.estimate, "stages", ())
+                if stage.device == "compute" and stage.plan is None
+            )
+            required_headroom_bytes = max(
+                (stage.total_bytes for stage in compute_stages),
+                default=0,
+            )
+        else:
+            # admission budget 已由相同估算派生，worker 只需确认当前物理 headroom。
+            required_headroom_bytes = max(
+                0,
+                int(getattr(precomputed, "compute_headroom_bytes", 0)),
+            )
+        if required_headroom_bytes <= 0:
+            return True
+        runtime_decision = gpu_mode_memory_decision(
+            self.gpu_mode_config,
+            required_headroom_bytes=required_headroom_bytes,
+            use_torch=self.use_torch,
+        )
+        if runtime_decision.cleanup_performed:
+            self.record_memory_governance_metric("preflight_cache_release")
+        physical_free_bytes = runtime_decision.free_after_bytes
+        if physical_free_bytes is None or required_headroom_bytes <= physical_free_bytes:
+            return True
+        message = (
+            f"mode={mode}, stage=runtime_headroom, device=compute, "
+            f"estimated_peak={required_headroom_bytes / _GIB:.2f} GiB, "
+            f"physical_free={physical_free_bytes / _GIB:.2f} GiB, "
+            "basis=post_cleanup_physical_headroom"
+        )
+        # 动态物理显存竞争仍走 worker 重试协议，不能固化为本次 case 的 OOM 终态。
+        self.record_memory_governance_metric("memory_preflight_defer")
+        raise GpuMemoryDeferred(message)
+
+    def reset_random_state(self, seed=None):
         """Reset NumPy and framework RNGs for reproducible executions."""
+        if seed is None:
+            seed = getattr(self.runtime_config, "random_seed", 42)
+        seed = int(seed)
         numpy.random.seed(seed)
-        try:
+        if self.requires_gpu_runtime():
             paddle.seed(seed)
-            if paddle.device.is_compiled_with_cuda():
-                try:
-                    for device_id in range(paddle.device.cuda.device_count()):
-                        paddle.framework.core.default_cuda_generator(device_id).manual_seed(seed)
-                except Exception:
-                    pass
-        except Exception:
-            pass
-        try:
-            torch.manual_seed(seed)
-            if torch.cuda.is_available():
+        else:
+            # paddle.seed 会遍历所有 CUDA generator；纯 CPU 路径只播种 CPU generator。
+            paddle.framework.core.default_cpu_generator().manual_seed(seed)
+        if self.requires_gpu_runtime() and paddle.device.is_compiled_with_cuda():
+            for device_id in range(paddle.device.cuda.device_count()):
+                # 框架 generator 播种失败必须上抛，静默继续会破坏可复现性。
+                paddle.framework.core.default_cuda_generator(device_id).manual_seed(seed)
+        if self.use_torch:
+            if self.requires_gpu_runtime():
+                torch.manual_seed(seed)
+            else:
+                # torch.manual_seed 覆盖全部设备，纯 CPU 路径只更新默认 CPU generator。
+                torch.random.default_generator.manual_seed(seed)
+            if self.requires_gpu_runtime() and torch.cuda.is_available():
                 torch.cuda.manual_seed_all(seed)
-        except Exception:
-            pass
 
     def clear_runtime_inputs(self, framework):
         """Release one framework's generated inputs after an execution."""
         attr_names = [f"{framework}_args", f"{framework}_kwargs"]
-        if framework == "paddle":
-            attr_names.append("paddle_merged_kwargs")
         for attr_name in attr_names:
             if hasattr(self, attr_name):
                 delattr(self, attr_name)
-        if not self.gpu_mode_config.enabled and framework == "torch":
-            torch.cuda.empty_cache()
-        elif not self.gpu_mode_config.enabled:
-            paddle.device.cuda.empty_cache()
+        if not self.gpu_mode_config.enabled:
+            self.release_framework_gpu_cache(framework)
+
+    def gpu_memory_state(self, device_id, *, budget_gib=0.0):
+        """Return physical headroom and configured live budget for one CUDA device."""
+        device_id = int(device_id)
+        free_bytes, total_bytes = torch.cuda.mem_get_info(device_id)
+        budget_bytes = max(0, int(float(budget_gib or 0.0) * _GIB))
+        reserve_bytes = self._gpu_safety_reserve_bytes(total_bytes, budget_bytes)
+        return GpuMemoryState(
+            device_id=device_id,
+            free_bytes=int(free_bytes),
+            total_bytes=int(total_bytes),
+            budget_bytes=budget_bytes,
+            reserve_bytes=reserve_bytes,
+            live_budget_bytes=max(0, int(total_bytes) - reserve_bytes),
+        )
+
+    def release_framework_gpu_cache(
+        self,
+        framework=None,
+        *,
+        device_id=None,
+        collect_cycles=False,
+    ):
+        """Release idle allocator blocks for one or both framework runtimes."""
+        if framework not in (None, "torch", "paddle"):
+            raise ValueError(f"Unsupported framework for GPU cache release: {framework!r}")
+        if not self.requires_gpu_runtime():
+            return
+        self.record_memory_governance_metric("cache_release")
+        if collect_cycles:
+            gc.collect()
+        if framework in (None, "torch"):
+            if device_id is None:
+                torch.cuda.empty_cache()
+            else:
+                with torch.cuda.device(int(device_id)):
+                    torch.cuda.empty_cache()
+        if framework in (None, "paddle"):
+            if device_id is None:
+                paddle.device.cuda.empty_cache()
+                return
+            current_device = paddle.device.get_device()
+            try:
+                paddle.device.set_device(f"gpu:{int(device_id)}")
+                paddle.device.cuda.empty_cache()
+            finally:
+                paddle.device.set_device(current_device)
 
     def report_compare_error(
         self,
@@ -641,124 +629,34 @@ class APITestBase:
             raise err
         return log_type, fatal
 
-    @contextlib.contextmanager
-    def disable_paddle_nan_inf_check_if_needed(self):
-        if not _contains_non_finite_scalar(
-            self.api_config.args
-        ) and not _contains_non_finite_scalar(self.api_config.kwargs):
-            yield
-            return
-
-        flag_name = "FLAGS_check_nan_inf"
-        original_flags = None
-        try:
-            original_flags = paddle.get_flags([flag_name])
-        except Exception:
-            original_flags = None
-
-        if original_flags and flag_name in original_flags:
-            try:
-                paddle.set_flags({flag_name: False})
-            except Exception:
-                original_flags = None
-
-        try:
-            yield
-        finally:
-            if original_flags and flag_name in original_flags:
-                try:
-                    paddle.set_flags({flag_name: original_flags[flag_name]})
-                except Exception:
-                    pass
-
     def need_skip(self, paddle_only=False):
-        # not support
         if "sparse" in self.api_config.api_name:
             return True
 
-        # if self.api_config.api_name in not_support_api:
-        #     return True
-        # if not paddle_only and self.api_config.api_name in rand_apis:
-        #     return True
-        # if not paddle_only and self.api_config.api_name in stochastic_behavior_apis:
-        #     return True
         if not paddle_only and self.api_config.config in torch_error_skip:
+            return True
+        api_name = self.api_config.api_name
+        if not paddle_only and (api_name in rand_apis or api_name in stochastic_behavior_apis):
             return True
         # float8 dtypes are handled by TensorConfig / paddle_to_torch Rules;
         # do not skip accuracy-mode comparison solely because of float8 inputs.
 
         return False
 
-    def _has_float8_tensor_config(self):
-        """True if any TensorConfig arg/kwarg uses float8 dtype."""
-        float8 = ("float8_e5m2", "float8_e4m3fn")
-
-        def _check(obj):
-            if isinstance(obj, TensorConfig):
-                return obj.dtype in float8
-            if isinstance(obj, (list, tuple)):
-                return any(_check(x) for x in obj)
-            return False
-
-        if any(_check(a) for a in self.api_config.args):
-            return True
-        return any(_check(v) for v in self.api_config.kwargs.values())
-
     def need_check_grad(self):
-        if self.is_forward_only():
-            return False
-        # float8 autograd / numpy grad path is unsupported in current torch tooling
-        if self._has_float8_tensor_config():
-            return False
-
-        if self.api_config.api_name == "paddle.assign":
-            has_list_arg = len(self.paddle_args_config) and isinstance(
-                self.paddle_args_config[0], list
-            )
-            has_second_arg = (
-                len(self.paddle_args_config) > 1 and self.paddle_args_config[1] is not None
-            )
-            has_output_kwarg = self.paddle_kwargs_config.get("output") is not None
-            if has_list_arg or has_second_arg or has_output_kwarg:
-                return False
-
-        return True
-
-        # This part seems unused in any case:
-        #
-        # valid_dtypes = {'float32', 'float64', 'float16', 'complex64', 'complex128', 'bfloat16'}
-        # if len(self.api_config.args) > 0 and isinstance(self.api_config.args[0], TensorConfig):
-        #     dtype = self.api_config.args[0].dtype
-        #     if dtype in valid_dtypes:
-        #         return True
-        # return True
-
-        # Original implementation:
-        #
-        # if not self.is_forward_only() and not (self.api_config.api_name == "paddle.assign" and len(self.paddle_args_config) and isinstance(self.paddle_args_config[0], list)) and not (self.api_config.api_name == "paddle.assign" and len(self.paddle_args_config) > 1 and self.paddle_args_config[1] is not None):
-        #     if len(self.api_config.args) > 0 and isinstance(self.api_config.args[0], TensorConfig):
-        #         dtype = self.api_config.args[0].dtype
-        #         if dtype in ['float32', 'float64', 'float16', 'complex64', 'complex128', 'bfloat16']:
-        #             return True
-        #     return True
-        # return False
+        # 主调度与 worker 共用纯配置判定，不能在两个生命周期各维护一份规则。
+        return should_check_grad(self.api_config)
 
     def ana_api_info(self):
         return self.ana_paddle_api_info() and self.ana_torch_api_info()
 
     def ana_paddle_api_info(self):
-        self.api_config.args, self.api_config.kwargs = normalize_api_arguments(
-            self.api_config.api_name, self.api_config.args, self.api_config.kwargs
-        )
         self.paddle_api = eval(self.api_config.api_name)
         self.paddle_args_config = self.api_config.args
         self.paddle_kwargs_config = self.api_config.kwargs
         return True
 
     def ana_torch_api_info(self):
-        self.api_config.args, self.api_config.kwargs = normalize_api_arguments(
-            self.api_config.api_name, self.api_config.args, self.api_config.kwargs
-        )
         self.torch_args_config = []
         self.torch_kwargs_config = collections.OrderedDict()
         self.paddle_merged_kwargs_config = collections.OrderedDict()
@@ -769,346 +667,59 @@ class APITestBase:
             self.torch_kwargs_config.pop("name", None)
             return True
 
-        signature_cache = getattr(APITestBase.ana_torch_api_info, "_signature_cache", None)
-        if signature_cache is None:
-            signature_cache = {}
-            APITestBase.ana_torch_api_info._signature_cache = signature_cache
-
-        def get_signature(cache_key, api):
-            if cache_key not in signature_cache:
-                try:
-                    signature_cache[cache_key] = inspect.signature(api)
-                except ValueError:
-                    signature_cache[cache_key] = None
-            return signature_cache[cache_key]
-
         api_name = self.api_config.api_name
-        if api_name in ("paddle.Tensor.__getitem__", "paddle.Tensor.__setitem__"):
-            self.torch_args_config = self.api_config.args
+        parameter_binding = bind_input_parameters(
+            api_name,
+            self.api_config.args,
+            self.api_config.kwargs,
+            api=self.paddle_api,
+        )
+        if parameter_binding.source == "unresolved":
             return True
+        arguments = parameter_binding.arguments
+        if api_name.startswith("paddle.Tensor."):
+            self.torch_args_config, arguments = split_tensor_method_arguments(api_name, arguments)
+        return finish(arguments)
 
-        if api_name in ("paddle.Tensor.view", "paddle.view"):
-            # paddle.view supports variadic int args: view(-1, 4096) in addition to view([-1, 4096])
-            # inspect.bind incorrectly maps the second int to `name` param, so handle manually.
-            args = self.api_config.args
-            rest = args[1:]
-            if len(rest) > 1 and all(isinstance(arg, int) for arg in rest):
-                return finish({"x": args[0], "shape_or_dtype": list(rest)})
+    def generate_input_values(self):
+        return input_rules.generate(self)
 
-            paddle_sig = get_signature(api_name, self.paddle_api)
-            if paddle_sig is None:
-                raise ValueError(f"API {api_name} has no inspectable signature")
-            paddle_bound_args = paddle_sig.bind(*args, **self.api_config.kwargs)
-            return finish(paddle_bound_args.arguments)
+    def _torch_execution_locals(self):
+        if (
+            self.api_config.api_name == "paddle.nn.functional.rnnt_loss"
+            and paddle.device.get_device() == "cpu"
+        ):
+            return {"fused_log_softmax": False}
+        return None
 
-        if api_name in ("paddle.Tensor.reshape", "paddle.reshape"):
-            # paddle.reshape supports variadic int args: reshape(1, 2048, -1) in addition to reshape([1, 2048, -1])
-            # Tensor.reshape signature is (x, shape, name=None), so bind() rejects multiple ints.
-            args = self.api_config.args
-            rest = args[1:]
-            if len(rest) >= 1 and all(isinstance(arg, int) for arg in rest):
-                return finish({"x": args[0], "shape": list(rest)})
-
-        if api_name in no_signature_api_mappings:
-            # For APIs without signatures, use the external mapping dict
-            mapping = no_signature_api_mappings[api_name]
-            return finish(
-                {key: get_value_func(self.api_config) for key, get_value_func in mapping.items()}
-            )
-
-        # For APIs with signatures, use paddle_sig.bind to get arguments.
-        paddle_sig = get_signature(api_name, self.paddle_api)
-        if paddle_sig is None:
-            # _C_ops builtins have no inspectable signature. If the op has a public
-            # API counterpart with the same params, use its signature.
-            public_api_name = _COPS_API_PUBLIC_ALIAS.get(api_name)
-            if public_api_name is None:
-                # No alias and no manual mapping — forward-only, skip torch comparison.
-                return True
-
-            paddle_sig = get_signature(public_api_name, eval(public_api_name))
-            if paddle_sig is None:
-                raise ValueError(f"API {public_api_name} has no inspectable signature")
-            positional_count = sum(
-                1
-                for param in paddle_sig.parameters.values()
-                if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD)
-            )
-            valid_names = set(paddle_sig.parameters)
-            filtered_kwargs = {
-                key: value for key, value in self.api_config.kwargs.items() if key in valid_names
-            }
-            paddle_bound_args = paddle_sig.bind(
-                *self.api_config.args[:positional_count], **filtered_kwargs
-            )
-            return finish(paddle_bound_args.arguments)
-
-        paddle_bound_args = paddle_sig.bind(*self.api_config.args, **self.api_config.kwargs)
-        paddle_args_dict = paddle_bound_args.arguments
-        # fix paddle.arange wrong binding
-        if api_name == "paddle.arange":
-            # if end is not provided, use the 'start' kwargs as end
-            if "end" not in paddle_args_dict:
-                paddle_args_dict["end"] = paddle_args_dict["start"]
-                paddle_args_dict["start"] = 0
-
-        return finish(paddle_args_dict)
-
-    def _handle_list_or_tuple(
-        self, config_items, is_tuple=False, index=None, key=None, list_index=None
-    ):
-        """处理 list 或 tuple"""
-        if list_index is None:
-            list_index = []
-        need_axes_handling = self.api_config.api_name in handle_axes_api
-        need_indices_handling = self.api_config.api_name == "paddle.index_put"
-
-        if need_indices_handling and (index == 1 or key == "indices"):
-            return self._handle_indices_arg(config_items, is_tuple)
-        elif need_axes_handling and (index == 1 or key == "axis"):
-            return self._handle_axis_arg(config_items, is_tuple)
-
-        tmp = []
-        for i, item in enumerate(config_items):
-            current_list_index = [*list_index, i]
-            if isinstance(item, (list, tuple)):
-                is_nested_tuple = isinstance(item, tuple)
-                processed_item = self._handle_list_or_tuple(
-                    item,
-                    is_tuple=is_nested_tuple,
-                    index=index,
-                    key=key,
-                    list_index=current_list_index,
-                )
-            elif isinstance(item, TensorConfig):
-                processed_item = item.get_numpy_tensor(
-                    self.api_config, index=index, key=key, list_index=current_list_index
-                )
-            else:
-                processed_item = item
-            tmp.append(processed_item)
-        return tuple(tmp) if is_tuple else tmp
-
-    def _handle_axis_arg(self, config_items, is_tuple=False):
-        """处理 axis 参数"""
-        x = (
-            self.paddle_args_config[0]
-            if len(self.paddle_args_config) > 0
-            else self.paddle_kwargs_config["x"]
+    def _materialize_paddle_config_value(self, config_value, *, clear_tensor=True):
+        """Materialize a Paddle config tree into live values, optionally clearing cache."""
+        return materialize_config_tree(
+            config_value,
+            self.api_config,
+            "paddle",
+            clear_tensor=clear_tensor,
         )
-        max_dim = max(len(x.shape), 1)  # scalar
 
-        tmp = []
-        used_axes = set()
-        tensor_configs = []
+    def build_paddle_input(self):
+        """Generate Paddle inputs from config and materialize TensorConfig leaves.
 
-        for item in config_items:
-            if isinstance(item, TensorConfig):
-                if item.shape not in [[], [1]] or item.dtype not in ["int32", "int64"]:
-                    raise ValueError(
-                        f"Invalid TensorConfig for axis: shape {item.shape} or dtype {item.dtype}"
-                    )
-                tensor_configs.append(item)
-                tmp.append(0)  # placeholder
-            elif isinstance(item, int):
-                if not (-max_dim <= item < max_dim):
-                    raise ValueError(f"Axis value {item} out of range [-{max_dim}, {max_dim})")
-                positive_axis = item + max_dim if item < 0 else item
-                if positive_axis in used_axes:
-                    raise ValueError(f"Duplicate axis value: {item}")
-                used_axes.add(positive_axis)
-                tmp.append(item)
-            else:
-                raise ValueError(f"Invalid item type for axis: {type(item)}")
-
-        if tensor_configs:
-            available_dims = list(set(range(max_dim)) - used_axes)
-            if len(available_dims) < len(tensor_configs):
-                raise ValueError(
-                    f"Not enough available dimensions ({len(available_dims)}) for {len(tensor_configs)} TensorConfig items"
-                )
-            selected_dims = numpy.random.choice(
-                available_dims, size=len(tensor_configs), replace=False
-            )
-            mask = numpy.random.randint(0, 2, size=len(tensor_configs)).astype(bool)
-            final_dims = numpy.where(mask, selected_dims - max_dim, selected_dims)
-            tensor_idx = 0
-            for i, item in enumerate(config_items):
-                if isinstance(item, TensorConfig):
-                    item.fill_numpy_tensor(final_dims[tensor_idx])
-                    tmp[i] = item.get_numpy_tensor(self.api_config)
-                    tensor_idx += 1
-        return tuple(tmp) if is_tuple else tmp
-
-    def _generate_int_indices(self, item_shape, dim_size):
-        num_elements = numpy.prod(item_shape).item()
-        if num_elements > dim_size:
-            indices_flat = numpy.random.randint(-dim_size, dim_size, size=num_elements)
-        else:
-            indices_flat = numpy.random.choice(dim_size, size=num_elements, replace=False)
-        return indices_flat.reshape(item_shape)
-
-    def _generate_constrained_bool_mask(self, shape, num_true):
-        mask_size = numpy.prod(shape).item()
-        if mask_size < num_true:
-            raise ValueError(
-                f"Cannot generate a mask with {num_true} true values in a {mask_size} element mask"
-            )
-        mask_flat = numpy.zeros(mask_size, dtype="bool")
-        true_indices = numpy.random.choice(mask_size, num_true, replace=False)
-        mask_flat[true_indices] = True
-        return mask_flat.reshape(shape)
-
-    def _broadcast_or_raise(self, shapes):
-        return numpy.broadcast_shapes(*[tuple(s) for s in shapes])
-
-    def _handle_indices_arg(self, config_items, is_tuple=False):
-        x = (
-            self.paddle_args_config[0]
-            if len(self.paddle_args_config) > 0
-            else self.paddle_kwargs_config["x"]
-        )
-        value = (
-            self.paddle_args_config[2]
-            if len(self.paddle_args_config) > 2
-            else self.paddle_kwargs_config["value"]
-        )
-        x_shape = x.shape
-        value_shape = value.shape
-        int_index_shapes = []
-        has_bool_index = False
-        dims_consumed = 0
-        for item in config_items:
-            if item.dtype == "bool":
-                b_rank = len(item.shape)
-                has_bool_index = True
-                dims_consumed += b_rank
-            else:
-                int_index_shapes.append(tuple(item.shape))
-                dims_consumed += 1
-
-        if dims_consumed > len(x_shape):
-            raise ValueError(
-                f"Too many indices: consume {dims_consumed} dims but x has {len(x_shape)} dims"
-            )
-        num_true_needed = -1
-        num_remaining_dims = len(x_shape) - dims_consumed
-        advanced_shape = ()
-        if int_index_shapes:
-            try:
-                advanced_shape = self._broadcast_or_raise(int_index_shapes)
-                # give a default 1
-                if (
-                    has_bool_index
-                    and len(value_shape) > num_remaining_dims
-                    and advanced_shape[-1] == 1
-                    and value_shape[-num_remaining_dims - 1] != 1
-                ):
-                    advanced_shape = (
-                        *advanced_shape[:-1],
-                        value_shape[-num_remaining_dims - 1],
-                    )
-                num_true_needed = advanced_shape[-1]
-            except Exception:
-                raise ValueError(
-                    f"Incompatible integer index shapes for broadcasting: {int_index_shapes}"
-                )
-        elif has_bool_index:
-            if len(value_shape) > num_remaining_dims:
-                advanced_shape = (value_shape[0],)
-                num_true_needed = value_shape[0]
-            else:
-                # give a default 1, other valid(not out of bound) shape also can.
-                advanced_shape = (1,)
-                num_true_needed = 1
-        res_dims = advanced_shape + tuple(x_shape[dims_consumed:])
-        try:
-            # only for checking.
-            self._broadcast_or_raise([value_shape, res_dims])
-        except ValueError:
-            raise ValueError(
-                f"Value shape {value_shape} cannot be broadcast to the indexed shape {res_dims}."
-            )
-        processed_indices = []
-        x_dim_cursor = 0
-        for item in config_items:
-            if item.dtype == "bool":
-                if num_true_needed < 0:
-                    raise ValueError(
-                        "Cannot determine the number of True elements for the boolean mask."
-                    )
-                item.numpy_tensor = self._generate_constrained_bool_mask(
-                    item.shape, num_true_needed
-                )
-                x_dim_cursor += len(item.shape)
-            else:
-                x_dim_to_index = x_shape[x_dim_cursor]
-                indices = self._generate_int_indices(item.shape, x_dim_to_index)
-                item.numpy_tensor = indices.astype(item.dtype)
-                x_dim_cursor += 1
-
-            processed_indices.append(item.numpy_tensor)
-
-        return tuple(processed_indices) if is_tuple else processed_indices
-
-    def gen_numpy_input(self):
-        for i, arg_config in enumerate(self.paddle_args_config):
-            if isinstance(arg_config, (list, tuple)):
-                is_tuple = isinstance(arg_config, tuple)
-                self._handle_list_or_tuple(arg_config, is_tuple=is_tuple, index=i)
-            elif isinstance(arg_config, TensorConfig):
-                arg_config.get_numpy_tensor(self.api_config, index=i)
-        for key, kwarg_config in self.paddle_kwargs_config.items():
-            if isinstance(kwarg_config, (list, tuple)):
-                is_tuple = isinstance(kwarg_config, tuple)
-                self._handle_list_or_tuple(kwarg_config, is_tuple=is_tuple, key=key)
-            elif isinstance(kwarg_config, TensorConfig):
-                kwarg_config.get_numpy_tensor(self.api_config, key=key)
-        return True
-
-    def _handle_list_or_tuple_paddle(self, config_items, is_tuple=False):
-        """处理 list 或 tuple"""
-        tmp = []
-        for item in config_items:
-            if isinstance(item, (list, tuple)):
-                is_nested_tuple = isinstance(item, tuple)
-                processed_item = self._handle_list_or_tuple_paddle(item, is_tuple=is_nested_tuple)
-            elif isinstance(item, TensorConfig):
-                processed_item = item.get_paddle_tensor(self.api_config)
-                item.clear_paddle_tensor()
-            else:
-                processed_item = item
-            tmp.append(processed_item)
-        return tuple(tmp) if is_tuple else tmp
-
-    def gen_paddle_input(self):
-        """Generate paddle input by config, for tensor config initlize paddle tensor by get_paddle_tensor()
-
-        be sure to call gen_numpy_input() before use gen_paddle_input() since gen_paddle_input() do not pass index or key to get_paddle_tensor() or get_numpy_tensor() while gen_numpy_input() pass.
+        Call generate_input_values() first because build_paddle_input() only materializes
+        TensorConfig leaves and does not generate logical input values.
         """
         self.paddle_args = []
         self.paddle_kwargs = collections.OrderedDict()
-        self.paddle_merged_kwargs = collections.OrderedDict()
 
         for arg_config in self.paddle_args_config:
-            if isinstance(arg_config, TensorConfig):
-                self.paddle_args.append(arg_config.get_paddle_tensor(self.api_config))
-                arg_config.clear_paddle_tensor()
-            elif isinstance(arg_config, (list, tuple)):
-                is_tuple = isinstance(arg_config, tuple)
-                self.paddle_args.append(self._handle_list_or_tuple_paddle(arg_config, is_tuple))
-            else:
-                self.paddle_args.append(arg_config)
+            self.paddle_args.append(
+                self._materialize_paddle_config_value(arg_config, clear_tensor=True)
+            )
 
         for key, kwarg_config in self.paddle_kwargs_config.items():
-            if isinstance(kwarg_config, TensorConfig):
-                self.paddle_kwargs[key] = kwarg_config.get_paddle_tensor(self.api_config)
-                kwarg_config.clear_paddle_tensor()
-            elif isinstance(kwarg_config, (list, tuple)):
-                is_tuple = isinstance(kwarg_config, tuple)
-                self.paddle_kwargs[key] = self._handle_list_or_tuple_paddle(kwarg_config, is_tuple)
-            else:
-                self.paddle_kwargs[key] = kwarg_config
+            self.paddle_kwargs[key] = self._materialize_paddle_config_value(
+                kwarg_config,
+                clear_tensor=True,
+            )
 
         if len(self.paddle_args) == 0 and self.api_config.api_name.startswith("paddle.Tensor."):
             self.paddle_args.append(self.paddle_kwargs.popitem(last=False)[1])
@@ -1121,26 +732,12 @@ class APITestBase:
                 self.paddle_args[3] = "gels"
             elif "driver" in self.paddle_kwargs:
                 self.paddle_kwargs["driver"] = "gels"
-        elif self.api_config.api_name == "paddle.nn.functional.cross_entropy":
-            use_softmax = get_arg(self.api_config, 8, "use_softmax", True)
-            if not use_softmax:
-                axis = get_arg(self.api_config, 7, "axis", -1)
-                if len(self.paddle_args) > 0:
-                    self.paddle_args[0] = paddle.nn.functional.softmax(
-                        self.paddle_args[0], axis=axis
-                    )
-                else:
-                    self.paddle_kwargs["input"] = paddle.nn.functional.softmax(
-                        self.paddle_kwargs["input"], axis=axis
-                    )
 
         # In-place ops require a non-leaf tensor as target.  Always copy inputs
         # so the in-place op doesn't hit "Leaf Var can't use inplace strategy".
         # (Previously guarded by need_check_grad(), but forward_only in-place ops
         # still need the copy to avoid Paddle's leaf-variable restriction.)
-        if (
-            self.api_config.api_name[-1] == "_" and self.api_config.api_name[-2:] != "__"
-        ) or self.api_config.api_name == "paddle.Tensor.__setitem__":
+        if requires_inplace_input_copy(self.api_config):
             self.paddle_args, self.paddle_kwargs = self.copy_paddle_input()
 
         return True
@@ -1157,121 +754,255 @@ class APITestBase:
         kwargs = collections.OrderedDict((k, _deep_copy(v)) for k, v in self.paddle_kwargs.items())
         return args, kwargs
 
+    def _iter_tensor_tree_leaves(self, value, *, tensor_type=None, unique=False):
+        if tensor_type is None:
+            # Paddle-only 的默认遍历类型不能为了构造 tuple 而解析 Torch lazy proxy。
+            tensor_type = (
+                (paddle.Tensor, torch.Tensor) if getattr(self, "use_torch", True) else paddle.Tensor
+            )
+        seen = set()
+
+        def visit(item):
+            if isinstance(item, tensor_type):
+                if unique and id(item) in seen:
+                    return
+                if unique:
+                    seen.add(id(item))
+                yield item
+                return
+            if isinstance(item, (list, tuple)):
+                for child in item:
+                    yield from visit(child)
+                return
+            if isinstance(item, dict):
+                for child in item.values():
+                    yield from visit(child)
+
+        yield from visit(value)
+
+    def _collect_tensor_leaves(self, value, result, tensor_type):
+        result.extend(self._iter_tensor_tree_leaves(value, tensor_type=tensor_type))
+
     def get_paddle_input_list(self):
         result = []
 
         for arg in self.paddle_args:
-            if isinstance(arg, paddle.Tensor):
-                result.append(arg)
-            elif isinstance(arg, (tuple, list)):
-                result.extend(item for item in arg if isinstance(item, paddle.Tensor))
+            self._collect_tensor_leaves(arg, result, paddle.Tensor)
 
         # 按 merged_kwargs 顺序遍历，确保 paddle 关键字参数与 torch 参数顺序一致，避免反向比较无法对应
         # torch 参数顺序通过 paddle_sig.bind 绑定，见 ana_torch_api_info()
-        if hasattr(self, "paddle_merged_kwargs_config"):
-            for key in self.paddle_merged_kwargs_config:
+        merged_kwargs_config = getattr(self, "paddle_merged_kwargs_config", None)
+        if merged_kwargs_config is not None:
+            for key in merged_kwargs_config:
                 if key in self.paddle_kwargs:
-                    value = self.paddle_kwargs[key]
-                    if isinstance(value, paddle.Tensor):
-                        result.append(value)
-                    elif isinstance(value, (tuple, list)):
-                        result.extend(item for item in value if isinstance(item, paddle.Tensor))
+                    self._collect_tensor_leaves(self.paddle_kwargs[key], result, paddle.Tensor)
         else:  #  paddle_only
             for key, value in self.paddle_kwargs.items():
-                if isinstance(value, paddle.Tensor):
-                    result.append(value)
-                elif isinstance(value, (tuple, list)):
-                    result.extend(item for item in value if isinstance(item, paddle.Tensor))
+                self._collect_tensor_leaves(value, result, paddle.Tensor)
 
         return [t for t in result if not t.stop_gradient]
 
     def get_torch_input_list(self):
         result = []
         for i in range(len(self.torch_args)):
-            if isinstance(self.torch_args[i], torch.Tensor):
-                result.append(self.torch_args[i])
-            elif isinstance(self.torch_args[i], (tuple, list)):
-                for item in self.torch_args[i]:
-                    if isinstance(item, torch.Tensor):
-                        result.append(item)
+            self._collect_tensor_leaves(self.torch_args[i], result, torch.Tensor)
 
         for _key, value in self.torch_kwargs.items():
-            if isinstance(value, torch.Tensor):
-                result.append(value)
-            elif isinstance(value, (tuple, list)):
-                for item in value:
-                    if isinstance(item, torch.Tensor):
-                        result.append(item)
+            self._collect_tensor_leaves(value, result, torch.Tensor)
 
         return [t for t in result if t.requires_grad]
 
-    def get_cached_numpy(self, dtype, shape, generation_kind="output_grad", scale=1.0):
-        return get_cached_numpy_array(dtype, shape, generation_kind=generation_kind, scale=scale)
+    def _make_numpy_output_grad(self, output):
+        dtype = _dtype_name(output.dtype)
+        from .input_generation.backend_runtime import generate_output_grad_for_runtime
 
-    def _make_torch_output_grad(self, shape, dtype):
-        torch_dtype = self.convert_dtype_to_torch_type(dtype)
-        device = torch.device("cuda", torch.cuda.current_device())
-        if "int" in dtype:
-            return torch.randint(-65535, 65535, tuple(shape), device=device, dtype=torch.int64).to(
-                dtype=torch_dtype
-            )
-        if dtype in ["float8_e5m2", "float8_e4m3fn"]:
-            base_dtype = torch.float16
-        elif dtype == "bfloat16":
-            base_dtype = torch.float32
-        elif dtype.startswith("complex"):
-            real_dtype = torch.float32 if dtype == "complex64" else torch.float64
-            real_part = torch.rand(tuple(shape), device=device, dtype=real_dtype) - 0.5
-            imag_part = torch.rand(tuple(shape), device=device, dtype=real_dtype) - 0.5
-            return (real_part + 1j * imag_part).to(dtype=torch_dtype)
-        else:
-            base_dtype = torch_dtype
-        return (torch.rand(tuple(shape), device=device, dtype=base_dtype) - 0.5).to(
-            dtype=torch_dtype
+        return generate_output_grad_for_runtime(
+            dtype=dtype,
+            shape=output.shape,
+            device="cpu",
+            runtime_config=self.runtime_config,
+            config_fingerprint=self.api_config.config,
         )
 
-    def _make_paddle_output_grad(self, shape, dtype):
-        if "int" in dtype:
-            return paddle.randint(-65535, 65535, tuple(shape), dtype="int64").cast(dtype)
+    @staticmethod
+    def _output_grad_intermediate_dtype(dtype):
         if dtype in ["float8_e5m2", "float8_e4m3fn"]:
-            base_dtype = "float16"
-        elif dtype == "bfloat16":
-            base_dtype = "float32"
-        elif dtype.startswith("complex"):
-            real_dtype = "float32" if dtype == "complex64" else "float64"
-            real_part = paddle.rand(tuple(shape), dtype=real_dtype) - 0.5
-            imag_part = paddle.rand(tuple(shape), dtype=real_dtype) - 0.5
-            return (real_part + 1j * imag_part).cast(dtype)
+            return "float16"
+        if dtype == "bfloat16":
+            return "float32"
+        return dtype
+
+    def _numpy_output_grad_to_paddle(self, numpy_tensor, output):
+        dtype = _dtype_name(output.dtype)
+        intermediate_dtype = self._output_grad_intermediate_dtype(dtype)
+        result_output_grad = paddle.to_tensor(
+            numpy_tensor,
+            dtype=intermediate_dtype,
+            place=output.place,
+        )
+        result_output_grad.stop_gradient = False
+        if dtype in ["bfloat16", "float8_e5m2", "float8_e4m3fn"]:
+            result_output_grad = paddle.cast(result_output_grad, dtype=dtype)
+        return result_output_grad
+
+    def _numpy_output_grad_to_torch(self, numpy_tensor, output):
+        dtype = _dtype_name(output.dtype)
+        result_output_grad = torch.tensor(
+            numpy_tensor,
+            dtype=self.to_torch_dtype(dtype) if dtype != "bfloat16" else torch.float32,
+            device=output.device,
+        )
+        if dtype == "bfloat16":
+            result_output_grad = result_output_grad.to(dtype=torch.bfloat16)
+        return result_output_grad
+
+    def _make_torch_output_grad(self, shape, dtype, device=None):
+        device = device or torch.device("cuda", torch.cuda.current_device())
+        from .input_generation.backend_runtime import generate_output_grad_for_runtime
+
+        return generate_output_grad_for_runtime(
+            dtype=dtype,
+            shape=shape,
+            device=str(device),
+            runtime_config=self.runtime_config,
+            config_fingerprint=self.api_config.config,
+        )
+
+    def _make_paddle_output_grad(self, shape, dtype, place=None):
+        # grad 必须直接生成到输出所在 place，避免跨设备复制改变峰值显存语义。
+        if place is not None and place.is_gpu_place():
+            device = f"gpu:{place.gpu_device_id()}"
         else:
-            base_dtype = dtype
-        return (paddle.rand(tuple(shape), dtype=base_dtype) - 0.5).cast(dtype)
+            device = "cpu"
+        from .input_generation.backend_runtime import generate_output_grad_for_runtime
 
-    def _use_gpu_output_grad(self, output):
-        if not self.gpu_mode_config.enabled or "gpu" not in paddle.device.get_device():
-            return False
-        dtype = str(output.dtype).split(".")[-1]
-        return dtype in ["float32", "float64", "float16", "bfloat16", "complex64", "complex128"]
+        return generate_output_grad_for_runtime(
+            dtype=dtype,
+            shape=shape,
+            device=device,
+            runtime_config=self.runtime_config,
+            config_fingerprint=self.api_config.config,
+        )
 
-    def _get_gpu_output_grad_paddleonly(self, output, index):
-        if len(self.outputs_grad_paddleonly) <= index:
-            dtype = str(output.dtype).split(".")[-1]
-            paddle_grad = self._make_paddle_output_grad(output.shape, dtype)
-            paddle_grad.stop_gradient = False
-            self.outputs_grad_paddleonly.append(paddle_grad)
-        return self.outputs_grad_paddleonly[index]
+    @staticmethod
+    def _output_grad_signature(outputs):
+        return tuple((_dtype_name(output.dtype), tuple(output.shape)) for output in outputs)
 
-    def _get_gpu_output_grad_pair(self, output, index):
-        if len(self.outputs_grad_numpy) <= index:
-            dtype = str(output.dtype).split(".")[-1]
-            torch_grad = self._make_torch_output_grad(output.shape, dtype).detach()
-            paddle_grad = paddle.utils.dlpack.from_dlpack(
-                torch.utils.dlpack.to_dlpack(torch_grad.clone())
+    @staticmethod
+    def _tensor_matches_output_place(tensor, output):
+        if isinstance(tensor, paddle.Tensor) and isinstance(output, paddle.Tensor):
+            if tensor.place.is_cpu_place() and output.place.is_cpu_place():
+                return True
+            if tensor.place.is_gpu_place() and output.place.is_gpu_place():
+                return int(tensor.place.gpu_device_id()) == int(output.place.gpu_device_id())
+            return str(tensor.place) == str(output.place)
+        if isinstance(tensor, torch.Tensor) and isinstance(output, torch.Tensor):
+            tensor_device = 0 if tensor.device.index is None else int(tensor.device.index)
+            output_device = 0 if output.device.index is None else int(output.device.index)
+            return tensor.device.type == output.device.type and tensor_device == output_device
+        return False
+
+    def _make_output_grad_slot(self, output):
+        """由 resolved input backend 创建反向种子，再交给消费框架物化。"""
+        dtype = _dtype_name(output.dtype)
+        backend_name = getattr(self.runtime_config, "input_backend_resolved", None)
+        if backend_name is None:
+            raise ValueError("runtime config has no resolved input backend")
+        if backend_name == "numpy":
+            # NumPy seed 是该 backend 的正式反向输入，随后才按消费框架执行物化。
+            return OutputGradSlot(seed_numpy=self._make_numpy_output_grad(output))
+
+        if isinstance(output, paddle.Tensor):
+            # 设备只决定原生 seed 的生成位置，不能反向改变 resolved backend。
+            device_id = int(output.place.gpu_device_id()) if output.place.is_gpu_place() else None
+        else:
+            device_id = int(output.device.index or 0) if output.device.type == "cuda" else None
+
+        if backend_name == "torch":
+            device = (
+                torch.device("cuda", device_id) if device_id is not None else torch.device("cpu")
             )
+            # Torch seed 保持为唯一所有者，Paddle 消费时通过 DLPack 延迟共享。
+            torch_grad = self._make_torch_output_grad(output.shape, dtype, device=device).detach()
+            return OutputGradSlot(torch_grad=torch_grad)
+
+        if backend_name == "paddle":
+            place = paddle.CUDAPlace(device_id) if device_id is not None else paddle.CPUPlace()
+            paddle_grad = self._make_paddle_output_grad(output.shape, dtype, place=place)
             paddle_grad.stop_gradient = False
-            self.outputs_grad_numpy.append((paddle_grad, torch_grad))
-        return self.outputs_grad_numpy[index]
+            return OutputGradSlot(paddle_grad=paddle_grad)
+        raise ValueError(f"unsupported output-grad backend: {backend_name!r}")
+
+    @staticmethod
+    def _torch_grad_to_paddle(torch_grad, output):
+        if output.place.is_gpu_place():
+            device = torch.device("cuda", int(output.place.gpu_device_id()))
+        else:
+            device = torch.device("cpu")
+        torch_grad = torch_grad.detach().to(device=device)
+        paddle_grad = paddle.utils.dlpack.from_dlpack(torch.utils.dlpack.to_dlpack(torch_grad))
+        if not (output.place.is_cpu_place() or output.place.is_gpu_place()):
+            # 自定义设备不支持直接 DLPack 接收，先在 CPU 建立 Paddle 所有权再复制。
+            paddle_grad = paddle_grad._copy_to(output.place, False)
+        paddle_grad.stop_gradient = False
+        return paddle_grad
+
+    @staticmethod
+    def _paddle_grad_to_torch(paddle_grad, output):
+        if output.device.type == "cuda":
+            place = paddle.CUDAPlace(int(output.device.index or 0))
+        else:
+            place = paddle.CPUPlace()
+        paddle_grad = paddle_grad.detach()._copy_to(place, False)
+        return torch.utils.dlpack.from_dlpack(paddle.utils.dlpack.to_dlpack(paddle_grad))
+
+    def clear_output_grad_cache(self):
+        """Drop all cached output-grad seeds for the current execution."""
+        self.output_grad_slots.clear()
+        self.output_grad_slots_signature = None
+
+    def _output_grad_slot_to_paddle(self, slot, output):
+        if slot.paddle_grad is not None and self._tensor_matches_output_place(
+            slot.paddle_grad, output
+        ):
+            return slot.paddle_grad
+        if slot.paddle_grad is not None:
+            # Paddle backend 仍是唯一值所有者，place 转换不引入其他随机源。
+            paddle_grad = slot.paddle_grad.detach()._copy_to(output.place, False)
+            paddle_grad.stop_gradient = False
+            return paddle_grad
+        if slot.seed_numpy is not None:
+            return self._numpy_output_grad_to_paddle(slot.seed_numpy, output)
+        if slot.torch_grad is not None:
+            return self._torch_grad_to_paddle(slot.torch_grad, output)
+        raise RuntimeError("output grad slot is empty")
+
+    def _output_grad_slot_to_torch(self, slot, output):
+        if slot.torch_grad is not None and self._tensor_matches_output_place(
+            slot.torch_grad, output
+        ):
+            return slot.torch_grad
+        if slot.torch_grad is not None:
+            return slot.torch_grad.detach().to(device=output.device)
+        if slot.seed_numpy is not None:
+            return self._numpy_output_grad_to_torch(slot.seed_numpy, output)
+        if slot.paddle_grad is not None:
+            return self._paddle_grad_to_torch(slot.paddle_grad, output)
+        raise RuntimeError("output grad slot is empty")
+
+    def _prepare_output_grad_slots(self, result_outputs):
+        signature = self._output_grad_signature(result_outputs)
+        if self.output_grad_slots_signature != signature:
+            self.output_grad_slots = []
+            self.output_grad_slots_signature = signature
+        if len(self.output_grad_slots) != len(result_outputs):
+            self.output_grad_slots = []
+            for output in result_outputs:
+                # 输出所在框架不再决定随机源；它只决定最终梯度必须到达的设备。
+                self.output_grad_slots.append(self._make_output_grad_slot(output))
 
     def gen_paddle_output_and_output_grad(self, outputs):
+        """Normalize Paddle outputs and align them with cached output-grad seeds."""
         result_outputs = []
         if isinstance(outputs, paddle.Tensor):
             result_outputs.append(outputs)
@@ -1283,7 +1014,8 @@ class APITestBase:
                 and (output._is_initialized() or output.numel() == 0)
             ]
         elif isinstance(
-            outputs, (paddle.autograd.autograd.Hessian, paddle.autograd.autograd.Jacobian)
+            outputs,
+            (paddle.autograd.autograd.Hessian, paddle.autograd.autograd.Jacobian),
         ):
             result_outputs.append(outputs[:])
         elif isinstance(outputs, tuple):
@@ -1300,7 +1032,11 @@ class APITestBase:
                         if isinstance(item, paddle.Tensor):
                             result_outputs.append(item)
                 elif isinstance(
-                    output, (paddle.autograd.autograd.Hessian, paddle.autograd.autograd.Jacobian)
+                    output,
+                    (
+                        paddle.autograd.autograd.Hessian,
+                        paddle.autograd.autograd.Jacobian,
+                    ),
                 ):
                     result_outputs.extend(output[:])
                 elif (
@@ -1316,66 +1052,16 @@ class APITestBase:
                 else:
                     raise ValueError("outputs format not support")
 
-        paddle_autograd_dtypes = {
-            "float16",
-            "float32",
-            "float64",
-            "bfloat16",
-            "complex64",
-            "complex128",
-        }
         result_outputs = [
             output
             for output in result_outputs
-            if not output.stop_gradient
-            and str(output.dtype).split(".")[-1] in paddle_autograd_dtypes
+            if not output.stop_gradient and str(output.dtype).split(".")[-1] in AUTOGRAD_DTYPES
         ]
 
+        self._prepare_output_grad_slots(result_outputs)
         result_outputs_grads = []
-        if len(self.outputs_grad_numpy) == 0 and len(self.outputs_grad_paddleonly) == 0:
-            for i, output in enumerate(result_outputs):
-                if self._use_gpu_output_grad(output):
-                    self._get_gpu_output_grad_paddleonly(output, i)
-                    continue
-                dtype = str(output.dtype).split(".")[-1]
-                if USE_CACHED_NUMPY:
-                    dtype = "float32" if dtype == "bfloat16" else dtype
-                    numpy_tensor = self.get_cached_numpy(dtype, output.shape)
-                else:
-                    if "int" in dtype:
-                        numpy_tensor = (
-                            numpy.random.randint(-65535, 65535, size=output.shape)
-                        ).astype(dtype)
-                    else:
-                        if dtype in ["float8_e5m2", "float8_e4m3fn"]:
-                            numpy_dtype = "float16"
-                        elif dtype == "bfloat16":
-                            numpy_dtype = "float32"
-                        else:
-                            numpy_dtype = dtype
-                        numpy_tensor = (numpy.random.random(output.shape) - 0.5).astype(numpy_dtype)
-                self.outputs_grad_numpy.append(numpy_tensor)
-        for paddle_grad in self.outputs_grad_paddleonly:
-            result_outputs_grads.append(paddle_grad)
-        for i, numpy_tensor in enumerate(self.outputs_grad_numpy):
-            if isinstance(numpy_tensor, tuple):
-                result_outputs_grads.append(numpy_tensor[0])
-                continue
-            dtype = str(result_outputs[i].dtype).split(".")[-1]
-            if dtype in ["float8_e5m2", "float8_e4m3fn"]:
-                intermediate_dtype = "float16"
-            elif dtype == "bfloat16":
-                intermediate_dtype = "float32"
-            else:
-                intermediate_dtype = dtype
-            result_output_grad = paddle.to_tensor(
-                numpy_tensor,
-                dtype=intermediate_dtype,
-            )
-            result_output_grad.stop_gradient = False
-            if dtype in ["bfloat16", "float8_e5m2", "float8_e4m3fn"]:
-                result_output_grad = paddle.cast(result_output_grad, dtype=dtype)
-            result_outputs_grads.append(result_output_grad)
+        for output, slot in zip(result_outputs, self.output_grad_slots, strict=True):
+            result_outputs_grads.append(self._output_grad_slot_to_paddle(slot, output))
         return result_outputs, result_outputs_grads
 
     def gen_torch_output_and_output_grad(self, outputs):
@@ -1397,213 +1083,14 @@ class APITestBase:
 
         result_outputs = [output for output in result_outputs if output.requires_grad]
 
+        self._prepare_output_grad_slots(result_outputs)
         result_outputs_grads = []
-        if len(self.outputs_grad_numpy) == 0:
-            for i, output in enumerate(result_outputs):
-                if self._use_gpu_output_grad(output):
-                    self._get_gpu_output_grad_pair(output, i)
-                    continue
-                dtype = str(output.dtype).split(".")[-1]
-                if USE_CACHED_NUMPY:
-                    dtype = "float32" if dtype == "bfloat16" else dtype
-                    numpy_tensor = self.get_cached_numpy(dtype, output.shape)
-                else:
-                    if "int" in dtype:
-                        numpy_tensor = (
-                            numpy.random.randint(-65535, 65535, size=output.shape)
-                        ).astype(dtype)
-                    else:
-                        dtype = "float32" if dtype == "bfloat16" else dtype
-                        numpy_tensor = (numpy.random.random(output.shape) - 0.5).astype(dtype)
-                self.outputs_grad_numpy.append(numpy_tensor)
-        for i, numpy_tensor in enumerate(self.outputs_grad_numpy):
-            if isinstance(numpy_tensor, tuple):
-                result_outputs_grads.append(numpy_tensor[1])
-                continue
-            dtype = str(result_outputs[i].dtype).split(".")[1]
-            result_output_grad = torch.tensor(
-                numpy_tensor,
-                dtype=self.convert_dtype_to_torch_type(dtype)
-                if dtype != "bfloat16"
-                else torch.float32,
-            )
-            if dtype == "bfloat16":
-                result_output_grad = result_output_grad.to(dtype=torch.bfloat16)
-            result_outputs_grads.append(result_output_grad)
+        for output, slot in zip(result_outputs, self.output_grad_slots, strict=True):
+            result_outputs_grads.append(self._output_grad_slot_to_torch(slot, output))
         return result_outputs, result_outputs_grads
 
-    def convert_dtype_to_torch_type(self, dtype):
-        # for python built-in types, mappings are int -> torch.int64, bool -> torch.bool, float -> torch.float64, complex -> torch.complex128, None -> None
-        if dtype in [
-            "float32",
-            numpy.float32,
-            paddle.float32,
-            paddle.base.libpaddle.VarDesc.VarType.FP32,
-        ]:
-            return torch.float32
-        elif dtype in [
-            "float16",
-            numpy.float16,
-            paddle.float16,
-            paddle.base.libpaddle.VarDesc.VarType.FP16,
-        ]:
-            return torch.float16
-        elif dtype in [
-            "float64",
-            "float",
-            "double",
-            numpy.float64,
-            paddle.float64,
-            paddle.base.libpaddle.VarDesc.VarType.FP64,
-            float,
-        ]:
-            return torch.float64
-        elif dtype in [
-            "int16",
-            numpy.int16,
-            paddle.int16,
-            paddle.base.libpaddle.VarDesc.VarType.INT16,
-        ]:
-            return torch.int16
-        elif dtype in [
-            "int8",
-            numpy.int8,
-            paddle.int8,
-            paddle.base.libpaddle.VarDesc.VarType.INT8,
-        ]:
-            return torch.int8
-        elif dtype in [
-            "bool",
-            numpy.bool_,
-            paddle.bool,
-            paddle.base.libpaddle.VarDesc.VarType.BOOL,
-            bool,
-        ]:
-            return torch.bool
-        elif dtype in [
-            "bfloat16",
-            "uint16",
-            numpy.uint16,
-            paddle.bfloat16,
-            paddle.base.libpaddle.VarDesc.VarType.BF16,
-        ]:
-            return torch.bfloat16
-        elif dtype in [
-            "uint8",
-            numpy.uint8,
-            paddle.uint8,
-            paddle.base.libpaddle.VarDesc.VarType.UINT8,
-        ]:
-            return torch.uint8
-        elif dtype in [
-            "int32",
-            numpy.int32,
-            paddle.int32,
-            paddle.base.libpaddle.VarDesc.VarType.INT32,
-        ]:
-            return torch.int32
-        elif dtype in [
-            "int64",
-            "int",
-            numpy.int64,
-            paddle.int64,
-            paddle.base.libpaddle.VarDesc.VarType.INT64,
-            int,
-        ]:
-            return torch.int64
-        elif dtype in [
-            "complex64",
-            numpy.complex64,
-            paddle.complex64,
-            paddle.base.libpaddle.VarDesc.VarType.COMPLEX64,
-        ]:
-            return torch.complex64
-        elif dtype in [
-            "complex128",
-            numpy.complex128,
-            paddle.complex128,
-            paddle.base.libpaddle.VarDesc.VarType.COMPLEX128,
-            complex,
-        ]:
-            return torch.complex128
-        elif dtype is None:
-            return None
-        else:
-            raise ValueError(f"Unsupported dtype: {dtype}")
-
-    def gen_paddle_input_with_merged_kwargs(self):
-        self.paddle_args = []
-        self.paddle_kwargs = collections.OrderedDict()
-        self.paddle_merged_kwargs = collections.OrderedDict()
-
-        for i in range(len(self.paddle_args_config)):
-            if isinstance(self.paddle_args_config[i], TensorConfig):
-                self.paddle_args.append(
-                    self.paddle_args_config[i].get_paddle_tensor(self.api_config)
-                )
-            elif isinstance(self.paddle_args_config[i], list):
-                tmp = []
-                for j in range(len(self.paddle_args_config[i])):
-                    if isinstance(self.paddle_args_config[i][j], TensorConfig):
-                        tmp.append(self.paddle_args_config[i][j].get_paddle_tensor(self.api_config))
-                    else:
-                        tmp.append(self.paddle_args_config[i][j])
-                self.paddle_args.append(tmp)
-            elif isinstance(self.paddle_args_config[i], tuple):
-                tmp = []
-                for j in range(len(self.paddle_args_config[i])):
-                    if isinstance(self.paddle_args_config[i][j], TensorConfig):
-                        tmp.append(self.paddle_args_config[i][j].get_paddle_tensor(self.api_config))
-                    else:
-                        tmp.append(self.paddle_args_config[i][j])
-                self.paddle_args.append(tuple(tmp))
-            else:
-                self.paddle_args.append(self.paddle_args_config[i])
-
-        for key, arg_config in self.paddle_kwargs_config.items():
-            if isinstance(arg_config, TensorConfig):
-                self.paddle_kwargs[key] = arg_config.get_paddle_tensor(self.api_config)
-            elif isinstance(arg_config, list):
-                value = []
-                for i in range(len(arg_config)):
-                    if isinstance(arg_config[i], TensorConfig):
-                        value.append(arg_config[i].get_paddle_tensor(self.api_config))
-                    else:
-                        value.append(arg_config[i])
-                self.paddle_kwargs[key] = value
-            elif isinstance(arg_config, tuple):
-                tmp = []
-                for i in range(len(arg_config)):
-                    if isinstance(arg_config[i], TensorConfig):
-                        tmp.append(arg_config[i].get_paddle_tensor(self.api_config))
-                    else:
-                        tmp.append(arg_config[i])
-                self.paddle_kwargs[key] = tuple(tmp)
-            else:
-                self.paddle_kwargs[key] = arg_config
-
-        for key, arg_config in self.paddle_merged_kwargs_config.items():
-            if isinstance(arg_config, TensorConfig):
-                self.paddle_merged_kwargs[key] = arg_config.get_paddle_tensor(self.api_config)
-            elif isinstance(arg_config, list):
-                value = []
-                for i in range(len(arg_config)):
-                    if isinstance(arg_config[i], TensorConfig):
-                        value.append(arg_config[i].get_paddle_tensor(self.api_config))
-                    else:
-                        value.append(arg_config[i])
-                self.paddle_merged_kwargs[key] = value
-            elif isinstance(arg_config, tuple):
-                tmp = []
-                for i in range(len(arg_config)):
-                    if isinstance(arg_config[i], TensorConfig):
-                        tmp.append(arg_config[i].get_paddle_tensor(self.api_config))
-                    else:
-                        tmp.append(arg_config[i])
-                self.paddle_merged_kwargs[key] = tuple(tmp)
-            else:
-                self.paddle_merged_kwargs[key] = arg_config
-        return True
+    def to_torch_dtype(self, dtype):
+        return to_torch_dtype(dtype)
 
     def copy_torch_input(self):
         def _deep_copy(data):
@@ -1617,62 +1104,37 @@ class APITestBase:
         kwargs = collections.OrderedDict((k, _deep_copy(v)) for k, v in self.torch_kwargs.items())
         return args, kwargs
 
-    def _handle_list_or_tuple_torch(self, config_items, is_tuple=False):
-        """处理 list 或 tuple"""
-        tmp = []
-        for item in config_items:
-            if isinstance(item, (list, tuple)):
-                is_nested_tuple = isinstance(item, tuple)
-                processed_item = self._handle_list_or_tuple_torch(item, is_tuple=is_nested_tuple)
-            elif isinstance(item, TensorConfig):
-                processed_item = item.get_torch_tensor(self.api_config)
-                item.clear_torch_tensor()
-            else:
-                processed_item = item
-            tmp.append(processed_item)
-        return tuple(tmp) if is_tuple else tmp
+    def _materialize_torch_config_value(self, config_value, *, convert_dtype=False):
+        """Materialize a Torch config tree and translate explicit dtype values."""
+        return materialize_config_tree(
+            config_value,
+            self.api_config,
+            "torch",
+            convert_dtype=convert_dtype,
+        )
 
-    def gen_torch_input(self):
-        """Generate torch input by config, for tensor config initlize torch tensor by get_torch_tensor()
+    def build_torch_input(self):
+        """Generate Torch inputs from config and materialize TensorConfig leaves.
 
-        be sure to call gen_numpy_input() before use gen_torch_input() since gen_torch_input() do not pass index or key to get_torch_tensor() or get_numpy_tensor() while gen_numpy_input() pass.
+        Call generate_input_values() first because build_torch_input() only materializes
+        TensorConfig leaves and does not generate logical input values.
         """
         self.torch_args = []
         self.torch_kwargs = collections.OrderedDict()
         for arg_config in self.torch_args_config:
-            if isinstance(arg_config, TensorConfig):
-                self.torch_args.append(arg_config.get_torch_tensor(self.api_config))
-                arg_config.clear_torch_tensor()
-            elif isinstance(arg_config, (list, tuple)):
-                is_tuple = isinstance(arg_config, tuple)
-                self.torch_args.append(self._handle_list_or_tuple_torch(arg_config, is_tuple))
-            elif isinstance(arg_config, (paddle.dtype, paddle.base.libpaddle.VarDesc.VarType)):
-                self.torch_args.append(self.convert_dtype_to_torch_type(arg_config))
-            else:
-                self.torch_args.append(arg_config)
+            self.torch_args.append(self._materialize_torch_config_value(arg_config))
 
         for key, arg_config in self.torch_kwargs_config.items():
-            if isinstance(arg_config, TensorConfig):
-                self.torch_kwargs[key] = arg_config.get_torch_tensor(self.api_config)
-                arg_config.clear_torch_tensor()
-            elif isinstance(arg_config, (list, tuple)):
-                is_tuple = isinstance(arg_config, tuple)
-                self.torch_kwargs[key] = self._handle_list_or_tuple_torch(arg_config, is_tuple)
-            elif (
-                isinstance(arg_config, (paddle.dtype, paddle.base.libpaddle.VarDesc.VarType))
-                or key == "dtype"
-            ):
-                self.torch_kwargs[key] = self.convert_dtype_to_torch_type(arg_config)
-            else:
-                self.torch_kwargs[key] = arg_config
+            self.torch_kwargs[key] = self._materialize_torch_config_value(
+                arg_config,
+                convert_dtype=key == "dtype",
+            )
 
-        if (
-            self.api_config.api_name[-1] == "_" and self.api_config.api_name[-2:] != "__"
-        ) or self.api_config.api_name == "paddle.Tensor.__setitem__":
+        if requires_inplace_input_copy(self.api_config):
             self.torch_args, self.torch_kwargs = self.copy_torch_input()
 
         if not self.gpu_mode_config.enabled:
-            torch.cuda.empty_cache()
+            self.release_framework_gpu_cache("torch")
         return True
 
     def np_assert_accuracy(self, np_paddle, np_torch, atol=1e-2, rtol=1e-2):
@@ -1694,86 +1156,13 @@ class APITestBase:
     def paddle_assert_accuracy(
         self, actual_paddle_tensor, expected_paddle_tensor, atol=1e-2, rtol=1e-2
     ):
-        is_check_dtype = self.api_config.api_name not in not_check_dtype
-
-        if not actual_paddle_tensor.is_contiguous():
-            actual_paddle_tensor = actual_paddle_tensor.contiguous()
-        actual_paddle_tensor = actual_paddle_tensor.cpu().detach()
-
-        if not expected_paddle_tensor.is_contiguous():
-            expected_paddle_tensor = expected_paddle_tensor.contiguous()
-        expected_paddle_tensor = expected_paddle_tensor.cpu().detach()
-
-        actual_paddle_dlpack = paddle.utils.dlpack.to_dlpack(actual_paddle_tensor)  # type: ignore[reportGeneralTypeIssues]
-        torch.utils.dlpack.from_dlpack(actual_paddle_dlpack)  # type: ignore[reportGeneralTypeIssues]
-
-        expected_paddle_dlpack = paddle.utils.dlpack.to_dlpack(expected_paddle_tensor)  # type: ignore[reportGeneralTypeIssues]
-        converted_paddle_tensor = torch.utils.dlpack.from_dlpack(expected_paddle_dlpack)  # type: ignore[reportGeneralTypeIssues]
-
-        def error_msg(msg):
-            return (
-                f"Not equal to tolerance rtol={rtol}, atol={atol}\n"
-                f"{msg}\n"
-                f"ACTUAL: (shape={converted_paddle_tensor.shape}, dtype={converted_paddle_tensor.dtype})\n"
-                f"{converted_paddle_tensor}\n"
-                f"DESIRED: (shape={converted_paddle_tensor.shape}, dtype={converted_paddle_tensor.dtype})\n"
-                f"{converted_paddle_tensor}"
-            )
-
-        bitwise_alignment = getattr(self, "bitwise_alignment", False)
-        if not bitwise_alignment and self.api_config.api_name in special_accuracy_atol_rtol:
-            atol, rtol = special_accuracy_atol_rtol[self.api_config.api_name]
-
-        try:
-            torch.testing.assert_close(
-                converted_paddle_tensor,
-                converted_paddle_tensor,
-                rtol=rtol,
-                atol=atol,
-                equal_nan=True,
-                check_dtype=is_check_dtype,
-                msg=error_msg,
-            )
-        except Exception as e:
-            error_str = str(e)
-            if error_str.startswith("Comparing"):
-                if os.environ.get("PADDLEAPITEST_NP_FALLBACK", "0") == "1":
-                    # torch_assert OOM or internal error, fallback to np_assert
-                    print(
-                        "[torch_assert_OOM] torch.testing.assert_close OOM, fallback to np_assert",
-                        flush=True,
-                    )
-                    # numpy does not support bfloat16/float8, cast to float32 for comparison
-                    actual_np = actual_paddle_tensor
-                    expected_np = expected_paddle_tensor
-                    if hasattr(actual_np, "dtype"):
-                        dtype_str = str(actual_np.dtype)
-                        if "bfloat16" in dtype_str or "float8" in dtype_str:
-                            actual_np = (
-                                actual_np.astype("float32")
-                                if hasattr(actual_np, "astype")
-                                else actual_np.float()
-                            )
-                    if hasattr(expected_np, "dtype"):
-                        dtype_str = str(expected_np.dtype)
-                        if "bfloat16" in dtype_str or "float8" in dtype_str:
-                            expected_np = (
-                                expected_np.astype("float32")
-                                if hasattr(expected_np, "astype")
-                                else expected_np.float()
-                            )
-                    self.np_assert_accuracy(
-                        actual_np.numpy() if hasattr(actual_np, "numpy") else actual_np,
-                        expected_np.numpy() if hasattr(expected_np, "numpy") else expected_np,
-                        atol,
-                        rtol,
-                    )
-                else:
-                    raise RuntimeError(
-                        "[torch_assert_OOM] torch.testing.assert_close OOM on large tensor comparison"
-                    )
-            else:
-                raise
+        # Paddle/Paddle 与 Paddle/Torch 共用同一比较设备协议，避免 CINN 固定退回 CPU。
+        return self.torch_assert_accuracy(
+            actual_paddle_tensor,
+            expected_paddle_tensor,
+            atol=atol,
+            rtol=rtol,
+        )
 
     def _torch_assert_accuracy_in_chunks(
         self, actual, expected, atol, rtol, error_msg, working_bytes
@@ -1971,16 +1360,18 @@ class APITestBase:
         return getattr(torch, dtype_name)
 
     @staticmethod
-    def _logical_slab_to_torch(value, index, compare_on_cpu):
+    def _logical_slab_to_torch(value, index, comparison_device):
         slab = value[index].detach()
         if not slab.is_contiguous():
             slab = slab.contiguous()
-        if compare_on_cpu:
+        if comparison_device.type == "cpu":
             slab = slab.cpu()
         if isinstance(slab, paddle.Tensor):
-            return torch.utils.dlpack.from_dlpack(
+            slab = torch.utils.dlpack.from_dlpack(
                 paddle.utils.dlpack.to_dlpack(slab)  # type: ignore[reportGeneralTypeIssues]
             )
+        if slab.device != comparison_device:
+            slab = slab.to(device=comparison_device)
         return slab
 
     def _torch_assert_accuracy_in_logical_slabs(
@@ -1991,7 +1382,7 @@ class APITestBase:
         rtol,
         error_msg,
         working_bytes,
-        compare_on_cpu,
+        comparison_device,
         check_dtype,
     ):
         actual_dtype = self._framework_tensor_torch_dtype(actual)
@@ -2006,10 +1397,8 @@ class APITestBase:
 
         if not check_dtype and actual_dtype != expected_dtype:
             for index in self._logical_slab_indices(shape, max_numel):
-                actual_chunk = self._logical_slab_to_torch(actual, index, compare_on_cpu)
-                expected_chunk = self._logical_slab_to_torch(expected, index, compare_on_cpu)
-                if actual_chunk.device != expected_chunk.device:
-                    expected_chunk = expected_chunk.to(device=actual_chunk.device)
+                actual_chunk = self._logical_slab_to_torch(actual, index, comparison_device)
+                expected_chunk = self._logical_slab_to_torch(expected, index, comparison_device)
 
                 def slab_error_msg(msg, *, slab_index=index):
                     return error_msg(f"logical slab {slab_index}: {msg}")
@@ -2029,14 +1418,12 @@ class APITestBase:
         def chunks():
             offset = 0
             for index in self._logical_slab_indices(shape, max_numel):
-                actual_chunk = self._logical_slab_to_torch(actual, index, compare_on_cpu).reshape(
-                    -1
-                )
-                expected_chunk = self._logical_slab_to_torch(
-                    expected, index, compare_on_cpu
+                actual_chunk = self._logical_slab_to_torch(
+                    actual, index, comparison_device
                 ).reshape(-1)
-                if actual_chunk.device != expected_chunk.device:
-                    expected_chunk = expected_chunk.to(device=actual_chunk.device)
+                expected_chunk = self._logical_slab_to_torch(
+                    expected, index, comparison_device
+                ).reshape(-1)
                 yield offset, actual_chunk, expected_chunk
                 offset += actual_chunk.numel()
 
@@ -2050,6 +1437,128 @@ class APITestBase:
             rtol,
             error_msg,
         )
+
+    @staticmethod
+    def _comparison_cuda_device_id(value):
+        if isinstance(value, torch.Tensor):
+            if value.device.type != "cuda":
+                return None
+            return 0 if value.device.index is None else int(value.device.index)
+        if isinstance(value, paddle.Tensor) and value.place.is_gpu_place():
+            return int(value.place.gpu_device_id())
+        return None
+
+    @staticmethod
+    def _comparison_temporary_bytes(actual, expected):
+        return int(actual.numel()) * max(
+            32,
+            4 * max(_tensor_element_size(actual), _tensor_element_size(expected)) + 16,
+        )
+
+    def _resolve_comparison_workspace(
+        self,
+        actual,
+        estimated_temp_bytes,
+        dual_gpu,
+        *,
+        comparison_device_id=None,
+    ):
+        """按实际比较设备解析并缓存 bounded compare 工作区。"""
+        estimated_temp_bytes = max(0, int(estimated_temp_bytes))
+        device_id = comparison_device_id
+        if device_id is None:
+            device_id = self._comparison_cuda_device_id(actual)
+        if device_id is None:
+            return DEFAULT_COMPARISON_WORKSPACE_BYTES
+        if estimated_temp_bytes <= COMPARISON_WORKSPACE_FAST_PATH_BYTES:
+            # 独占设备上的小比较不做驱动探测，避免大量小叶子产生同步查询。
+            return DEFAULT_COMPARISON_WORKSPACE_BYTES
+
+        cache = getattr(self, "comparison_workspace_cache", None)
+        if cache is None:
+            cache = self.comparison_workspace_cache = {}
+        cache_key = (device_id, bool(dual_gpu))
+        # estimated/numel 与比较内核的 per-element 估算同源，避免另设固定最小块。
+        min_working_bytes = max(
+            1,
+            estimated_temp_bytes // max(1, int(actual.numel())),
+        )
+        if cache_key in cache:
+            # dtype 不同会改变单元素临时量，因此复用设备快照时仍保留当前最小推进量。
+            return max(min_working_bytes, cache[cache_key])
+
+        try:
+            # 同一 case 首次遇到大比较时读取一次物理快照，后续叶子只复用结果。
+            free_bytes, total_bytes = torch.cuda.mem_get_info(device_id)
+            memory_budget = float(getattr(self.gpu_mode_config, "memory_budget", 0.0) or 0.0)
+            comparison_device_id = getattr(self.gpu_mode_config, "comparison_device_id", None)
+            if device_id == comparison_device_id:
+                memory_budget = float(
+                    getattr(
+                        self.gpu_mode_config,
+                        "comparison_memory_budget",
+                        memory_budget,
+                    )
+                    or memory_budget
+                )
+
+            if dual_gpu:
+                # comparison 卡独占一个 worker，但仍要保留运行时和框架 allocator reserve。
+                budget_bytes = int(memory_budget * _GIB) if memory_budget > 0 else 0
+                reserve_bytes = self._gpu_safety_reserve_bytes(total_bytes, budget_bytes)
+                working_bytes = self._comparison_workspace_bytes(
+                    free_bytes,
+                    reserve_bytes,
+                    dual_gpu=True,
+                )
+            else:
+                # memory_reserved 代表本 worker 的 Torch allocator footprint，用于约束新增块。
+                reserved_bytes = torch.cuda.memory_reserved(torch.device("cuda", device_id))
+                working_bytes = self._comparison_workspace_bytes(free_bytes)
+                if memory_budget > 0:
+                    # 单卡只允许预算余量的四分之一用于比较；零余量仅保留单元素推进量。
+                    budget_headroom = max(0, int(memory_budget * _GIB) - reserved_bytes)
+                    working_bytes = min(
+                        working_bytes,
+                        max(min_working_bytes, budget_headroom // 4),
+                    )
+        except Exception:
+            # 查询失败不能放大到 1 GiB；保守分块仍允许 best-effort 继续执行。
+            # 失败结果也写入 case cache，避免后续每个叶子重复触发同一个驱动异常。
+            # 该降级路径不再依赖额外的驱动调用，优先保证比较可以继续推进。
+            working_bytes = max(
+                min_working_bytes,
+                min(COMPARISON_WORKSPACE_FAST_PATH_BYTES, estimated_temp_bytes),
+            )
+            cache[cache_key] = working_bytes
+            return working_bytes
+
+        if dual_gpu and working_bytes < min_working_bytes:
+            # 双卡结果已经搬运到 comparison 卡，无法退回 CPU 或切换设备继续比较。
+            raise GpuMemoryGuardSkip(
+                "comparison GPU capacity guard: no reserved headroom for bounded compare"
+            )
+        working_bytes = max(min_working_bytes, working_bytes)
+        cache[cache_key] = working_bytes
+        return working_bytes
+
+    def _comparison_device(self, actual, expected, *, record_accuracy_tolerance, dual_gpu):
+        """解析比较设备；该策略独立于两侧算子的执行设备。"""
+        # record_accuracy_tolerance 只改变容差与日志，不得绕过 GPU mode 的比较设备协议。
+        # 非 GPU mode 使用 CPU compare，保持低显存路径。
+        # 单卡 GPU mode 允许 CPU kernel 结果显式搬到 GPU 0 后比较。
+        # 双卡模式必须从结果设备解析比较卡，不允许 CPU tensor 隐式降级。
+        if not self.gpu_mode_config.enabled:
+            return torch.device("cpu")
+        if dual_gpu:
+            device_id = self._comparison_cuda_device_id(actual)
+            if device_id is None:
+                device_id = self._comparison_cuda_device_id(expected)
+            if device_id is None:
+                raise RuntimeError("dual GPU comparisons require CUDA tensors on both sides")
+            return torch.device("cuda", device_id)
+        device_id = self.gpu_mode_config.comparison_device_id
+        return torch.device("cuda", 0 if device_id is None else int(device_id))
 
     def torch_assert_accuracy(
         self,
@@ -2073,9 +1582,9 @@ class APITestBase:
             and self.api_config.api_name in special_accuracy_atol_rtol
         ):
             atol, rtol = special_accuracy_atol_rtol[self.api_config.api_name]
-        test_tol = getattr(self, "test_tol", False)
+        record_accuracy_tolerance = getattr(self, "record_accuracy_tolerance", False)
         is_backward = getattr(self, "is_backward", False)
-        if test_tol:
+        if record_accuracy_tolerance:
             atol, rtol = 0.0, 0.0
 
         def is_cpu_tensor(value):
@@ -2086,19 +1595,25 @@ class APITestBase:
             return False
 
         dual_gpu = bool(getattr(self.gpu_mode_config, "dual_gpu", False))
-        compare_on_cpu = not dual_gpu and (
-            test_tol
-            or not self.gpu_mode_config.enabled
-            or is_cpu_tensor(actual)
-            or is_cpu_tensor(expected)
-        )
         tensor_types = (paddle.Tensor, torch.Tensor)
         if not isinstance(actual, tensor_types):
             raise TypeError(f"Expected Paddle or Torch tensor, but got {type(actual)}")
         if not isinstance(expected, tensor_types):
             raise TypeError(f"Expected Paddle or Torch tensor, but got {type(expected)}")
+        if dual_gpu and (is_cpu_tensor(actual) or is_cpu_tensor(expected)):
+            raise RuntimeError("dual GPU comparisons require CUDA tensors on both sides")
+        comparison_device = self._comparison_device(
+            actual,
+            expected,
+            record_accuracy_tolerance=record_accuracy_tolerance,
+            dual_gpu=dual_gpu,
+        )
+        comparison_device_id = comparison_device.index if comparison_device.type == "cuda" else None
 
-        if not dual_gpu and (not actual.is_contiguous() or not expected.is_contiguous()):
+        # DLPack 只负责跨框架表示转换，转换后的 Tensor 还要统一搬到比较设备。
+        # 因此 CPU kernel 与 GPU compare 的组合不会因源 Tensor 在 CPU 而退回 CPU compare。
+
+        if not actual.is_contiguous() or not expected.is_contiguous():
             actual_shape = tuple(actual.shape)
             expected_shape = tuple(expected.shape)
             actual_dtype = self._framework_tensor_torch_dtype(actual)
@@ -2125,7 +1640,13 @@ class APITestBase:
                 )
 
             try:
-                working_bytes = int(getattr(self, "comparison_working_bytes", 1024**3))
+                estimated_temp_bytes = self._comparison_temporary_bytes(actual, expected)
+                working_bytes = self._resolve_comparison_workspace(
+                    actual,
+                    estimated_temp_bytes,
+                    dual_gpu,
+                    comparison_device_id=comparison_device_id,
+                )
                 self._torch_assert_accuracy_in_logical_slabs(
                     actual,
                     expected,
@@ -2133,10 +1654,10 @@ class APITestBase:
                     rtol,
                     slab_error_msg,
                     working_bytes,
-                    compare_on_cpu,
+                    comparison_device,
                     is_check_dtype,
                 )
-                if test_tol:
+                if record_accuracy_tolerance:
                     log_accuracy_tolerance(
                         "Identical",
                         self.api_config.api_name,
@@ -2149,7 +1670,7 @@ class APITestBase:
                 return
             except Exception as err:
                 error_str = str(err)
-                if test_tol:
+                if record_accuracy_tolerance:
                     error_info = error_str.split("\n", maxsplit=2)[1] if "\n" in error_str else None
                     if error_info and (
                         error_info.startswith("Tensor-likes") or error_info.startswith("Scalars")
@@ -2170,7 +1691,7 @@ class APITestBase:
             if not actual.is_contiguous():
                 actual = actual.contiguous()
             actual = actual.detach()
-            if compare_on_cpu:
+            if comparison_device.type == "cpu":
                 actual = actual.cpu()
             actual_tensor = torch.utils.dlpack.from_dlpack(
                 paddle.utils.dlpack.to_dlpack(actual)  # type: ignore[reportGeneralTypeIssues]
@@ -2179,7 +1700,7 @@ class APITestBase:
             if not actual.is_contiguous():
                 actual = actual.contiguous()
             actual_tensor = actual.detach()
-            if compare_on_cpu:
+            if comparison_device.type == "cpu":
                 actual_tensor = actual_tensor.cpu()
         else:
             raise TypeError(f"Expected Paddle or Torch tensor, but got {type(actual)}")
@@ -2188,7 +1709,7 @@ class APITestBase:
             if not expected.is_contiguous():
                 expected = expected.contiguous()
             expected = expected.detach()
-            if compare_on_cpu:
+            if comparison_device.type == "cpu":
                 expected = expected.cpu()
             expected_tensor = torch.utils.dlpack.from_dlpack(
                 paddle.utils.dlpack.to_dlpack(expected)  # type: ignore[reportGeneralTypeIssues]
@@ -2197,13 +1718,15 @@ class APITestBase:
             if not expected.is_contiguous():
                 expected = expected.contiguous()
             expected_tensor = expected.detach()
-            if compare_on_cpu:
+            if comparison_device.type == "cpu":
                 expected_tensor = expected_tensor.cpu()
         else:
             raise TypeError(f"Expected Paddle or Torch tensor, but got {type(expected)}")
 
-        if actual_tensor.device != expected_tensor.device:
-            expected_tensor = expected_tensor.to(device=actual_tensor.device)
+        if actual_tensor.device != comparison_device:
+            actual_tensor = actual_tensor.to(device=comparison_device)
+        if expected_tensor.device != comparison_device:
+            expected_tensor = expected_tensor.to(device=comparison_device)
 
         if actual_tensor.shape != expected_tensor.shape:
             raise AssertionError(
@@ -2227,68 +1750,18 @@ class APITestBase:
             )
 
         try:
-            working_bytes = 1024**3
-            estimated_temp_bytes = actual_tensor.numel() * max(
-                32,
-                4 * max(actual_tensor.element_size(), expected_tensor.element_size()) + 16,
+            estimated_temp_bytes = self._comparison_temporary_bytes(
+                actual_tensor,
+                expected_tensor,
             )
-            # Small tensors always use torch.testing.assert_close directly. Avoid
-            # querying the CUDA driver for a working budget on that hot path.
-            needs_chunk_budget = estimated_temp_bytes > working_bytes
-            if actual_tensor.is_cuda and needs_chunk_budget:
-                insufficient_dual_headroom = False
-                try:
-                    free_bytes, total_bytes = torch.cuda.mem_get_info(actual_tensor.device)
-                    min_working_bytes = 256 * 1024**2
-                    memory_budget = float(
-                        getattr(self.gpu_mode_config, "memory_budget", 0.0) or 0.0
-                    )
-                    comparison_device_id = getattr(
-                        self.gpu_mode_config, "comparison_device_id", None
-                    )
-                    if actual_tensor.device.index == comparison_device_id:
-                        memory_budget = float(
-                            getattr(
-                                self.gpu_mode_config,
-                                "comparison_memory_budget",
-                                memory_budget,
-                            )
-                            or memory_budget
-                        )
-
-                    if dual_gpu:
-                        budget_bytes = int(memory_budget * (1024**3)) if memory_budget > 0 else 0
-                        reserve_bytes = self._dual_comparison_safety_reserve_bytes(
-                            total_bytes, budget_bytes
-                        )
-                        working_bytes = self._dual_comparison_workspace_bytes(
-                            free_bytes, reserve_bytes
-                        )
-                        insufficient_dual_headroom = working_bytes == 0
-                    else:
-                        reserved_bytes = torch.cuda.memory_reserved(actual_tensor.device)
-                        max_working_bytes = 32 * 1024**3
-                        # Physical headroom is a hard limit. The configured minimum
-                        # below is only a performance target when free memory permits.
-                        working_bytes = max(1, min(max_working_bytes, free_bytes // 5))
-
-                    if memory_budget > 0 and not dual_gpu:
-                        budget_headroom = max(
-                            0,
-                            int(memory_budget * (1024**3)) - reserved_bytes,
-                        )
-                        working_bytes = min(
-                            working_bytes,
-                            max(min_working_bytes, budget_headroom // 5),
-                        )
-                except Exception:
-                    pass
-                if insufficient_dual_headroom:
-                    raise RuntimeError(
-                        "[torch_assert_OOM] comparison card lacks the reserved headroom "
-                        "for a bounded GPU comparison"
-                    )
+            working_bytes = self._resolve_comparison_workspace(
+                actual_tensor,
+                estimated_temp_bytes,
+                dual_gpu,
+                comparison_device_id=comparison_device_id,
+            )
             if self._should_chunk_accuracy_compare(estimated_temp_bytes, working_bytes):
+                self.record_memory_governance_metric("chunk_compare")
                 self._torch_assert_accuracy_in_chunks(
                     actual_tensor,
                     expected_tensor,
@@ -2297,7 +1770,7 @@ class APITestBase:
                     error_msg,
                     working_bytes,
                 )
-                if test_tol:
+                if record_accuracy_tolerance:
                     log_accuracy_tolerance(
                         "Identical",
                         self.api_config.api_name,
@@ -2325,7 +1798,7 @@ class APITestBase:
                 check_dtype=is_check_dtype,
                 msg=error_msg,
             )
-            if test_tol:
+            if record_accuracy_tolerance:
                 log_accuracy_tolerance(
                     "Identical",
                     self.api_config.api_name,
@@ -2356,7 +1829,7 @@ class APITestBase:
                     actual_cpu.numpy(), expected_cpu.numpy(), atol=atol, rtol=rtol
                 )
                 return
-            if test_tol:
+            if record_accuracy_tolerance:
                 error_info = error_str.split("\n", maxsplit=2)[1] if "\n" in error_str else None
                 if error_info and (
                     error_info.startswith("Tensor-likes") or error_info.startswith("Scalars")
@@ -2375,7 +1848,16 @@ class APITestBase:
 
     def _should_chunk_accuracy_compare(self, estimated_temp_bytes, working_bytes):
         """Use bounded GPU workspaces when a full comparison would exceed the budget."""
+        # 只有预估临时量超过当前工作区时才切 slab，避免小比较引入额外 kernel 调度。
         return bool(estimated_temp_bytes > working_bytes)
+
+    @staticmethod
+    def _comparison_workspace_bytes(free_bytes, reserve_bytes=0, dual_gpu=False):
+        """Pick a conservative comparison workspace from the remaining headroom."""
+        if dual_gpu:
+            return APITestBase._dual_comparison_workspace_bytes(free_bytes, reserve_bytes)
+        max_workspace = 32 * 1024**3
+        return max(1, min(max_workspace, int(free_bytes) // 4))
 
     @staticmethod
     def _dual_comparison_workspace_bytes(free_bytes, reserve_bytes):
@@ -2383,197 +1865,397 @@ class APITestBase:
         max_workspace = 64 * 1024**3
         min_workspace = 256 * 1024**2
         available_bytes = max(0, int(free_bytes) - int(reserve_bytes))
-        half_available = available_bytes // 2
-        if half_available <= 0:
+        if available_bytes <= 0:
             return 0
-        if half_available < min_workspace:
-            return half_available
-        return min(max_workspace, max(min_workspace, half_available))
+        target_workspace = (available_bytes * 2) // 3
+        if target_workspace < min_workspace:
+            return target_workspace
+        return min(max_workspace, max(min_workspace, target_workspace))
 
     @staticmethod
-    def _dual_comparison_safety_reserve_bytes(total_bytes, budget_bytes):
-        """Keep a small physical reserve without double-counting allocator state."""
-        minimum_reserve = 1 * 1024**3
+    def _gpu_safety_reserve_bytes(total_bytes, budget_bytes):
+        """仅保留固定运行时余量，不再按大卡容量百分比扣减。"""
+        minimum_reserve = 256 * 1024**2
         total_bytes = max(0, int(total_bytes))
         budget_bytes = max(0, int(budget_bytes))
         if budget_bytes > 0 and budget_bytes < total_bytes:
             return max(minimum_reserve, total_bytes - budget_bytes)
-        return max(minimum_reserve, total_bytes // 20)
+        return minimum_reserve
 
     def test(self):
         pass
 
     def clear_tensor(self):
-        if not hasattr(self, "torch_kwargs_config"):
+        if not self._clear_tensor_config_cache("clear_tensor", self.api_config):
             return
-        for _key, arg_config in self.torch_kwargs_config.items():
-            if isinstance(arg_config, TensorConfig):
-                arg_config.clear_tensor()
-            elif isinstance(arg_config, (list, tuple)):
-                for i in range(len(arg_config)):
-                    if isinstance(arg_config[i], TensorConfig):
-                        arg_config[i].clear_tensor()
         if self.gpu_mode_config.enabled:
-            gpu_mode_maybe_empty_cache(self.gpu_mode_config)
+            gpu_mode_memory_decision(self.gpu_mode_config, use_torch=self.use_torch)
         else:
-            torch.cuda.empty_cache()
-            paddle.device.cuda.empty_cache()
+            self.release_framework_gpu_cache()
 
-    def _for_each_tensor_config(self, callback):
-        """Apply callback to every TensorConfig in the parsed argument tree."""
-        seen = set()
+    def _tensor_config_roots(self):
+        return (
+            getattr(self, "paddle_args_config", ()),
+            getattr(self, "paddle_kwargs_config", {}),
+            getattr(self, "paddle_merged_kwargs_config", {}),
+            getattr(self, "torch_args_config", ()),
+            getattr(self, "torch_kwargs_config", {}),
+        )
 
-        def visit(value):
-            if isinstance(value, TensorConfig):
-                if id(value) not in seen:
-                    seen.add(id(value))
-                    callback(value)
-            elif isinstance(value, (list, tuple)):
-                for item in value:
-                    visit(item)
-            elif isinstance(value, dict):
-                for item in value.values():
-                    visit(item)
+    def _clear_tensor_config_cache(self, clear_method_name, *args):
+        # 共享物化模块按对象身份去重，避免 merged/torch/paddle 别名重复释放。
+        return clear_tensor_configs(
+            *self._tensor_config_roots(),
+            clear_method=clear_method_name,
+            clear_args=args,
+        )
 
-        for value in getattr(self, "paddle_args_config", ()):
-            visit(value)
-        visit(getattr(self, "paddle_kwargs_config", {}))
+    def _map_tensor_tree(self, value, tensor_mapper):
+        if isinstance(value, paddle.Tensor):
+            return tensor_mapper(value)
+        if self.use_torch and isinstance(value, torch.Tensor):
+            return tensor_mapper(value)
+        if isinstance(value, list):
+            return [self._map_tensor_tree(item, tensor_mapper) for item in value]
+        if isinstance(value, tuple):
+            return tuple(self._map_tensor_tree(item, tensor_mapper) for item in value)
+        if isinstance(value, dict):
+            return type(value)(
+                (key, self._map_tensor_tree(item, tensor_mapper)) for key, item in value.items()
+            )
+        return value
 
     def move_tensor_tree_to_cpu(self, value):
         """Recursively move framework tensors to CPU without changing containers."""
-        if isinstance(value, (torch.Tensor, paddle.Tensor)):
-            return value.cpu()
-        if isinstance(value, list):
-            return [self.move_tensor_tree_to_cpu(item) for item in value]
-        if isinstance(value, tuple):
-            return tuple(self.move_tensor_tree_to_cpu(item) for item in value)
-        if isinstance(value, dict):
-            return type(value)(
-                (key, self.move_tensor_tree_to_cpu(item)) for key, item in value.items()
-            )
-        return value
+        return self._map_tensor_tree(value, lambda tensor: tensor.cpu())
 
     def move_tensor_tree_to_gpu(self, value, device_id):
         """Recursively move framework tensors to one logical GPU."""
-        if isinstance(value, torch.Tensor):
-            return value.to(
-                device=torch.device("cuda", device_id),
-                non_blocking=False,
-            )
+
+        def move_tensor(tensor):
+            if isinstance(tensor, torch.Tensor):
+                return tensor.to(
+                    device=torch.device("cuda", device_id),
+                    non_blocking=False,
+                )
+            return tensor.cuda(device_id=device_id, blocking=True)
+
+        return self._map_tensor_tree(value, move_tensor)
+
+    def iter_unique_tensor_tree_leaves(self, value):
+        """Yield unique framework tensor leaves from a result tree."""
+        yield from self._iter_tensor_tree_leaves(value, unique=True)
+
+    @staticmethod
+    def tensor_is_gpu(value):
         if isinstance(value, paddle.Tensor):
-            return value.cuda(device_id=device_id, blocking=True)
-        if isinstance(value, list):
-            return [self.move_tensor_tree_to_gpu(item, device_id) for item in value]
-        if isinstance(value, tuple):
-            return tuple(self.move_tensor_tree_to_gpu(item, device_id) for item in value)
-        if isinstance(value, dict):
-            return type(value)(
-                (key, self.move_tensor_tree_to_gpu(item, device_id)) for key, item in value.items()
-            )
-        return value
+            return value.place.is_gpu_place()
+        if isinstance(value, torch.Tensor):
+            return value.device.type != "cpu"
+        return False
+
+    @staticmethod
+    def tensor_gpu_device_id(value):
+        if isinstance(value, paddle.Tensor):
+            return int(value.place.gpu_device_id())
+        if isinstance(value, torch.Tensor):
+            return 0 if value.device.index is None else int(value.device.index)
+        raise TypeError(f"Expected Paddle or Torch tensor, but got {type(value)}")
 
     def tensor_tree_nbytes(self, value):
         """Estimate logical bytes held by unique tensor leaves in a result tree."""
-        seen = set()
+        return sum(
+            int(tensor.numel()) * _tensor_element_size(tensor)
+            for tensor in self.iter_unique_tensor_tree_leaves(value)
+        )
 
-        def visit(item):
-            if isinstance(item, (torch.Tensor, paddle.Tensor)):
-                if id(item) in seen:
-                    return 0
-                seen.add(id(item))
-                return int(item.numel()) * _tensor_element_size(item)
-            if isinstance(item, (list, tuple)):
-                return sum(visit(child) for child in item)
-            if isinstance(item, dict):
-                return sum(visit(child) for child in item.values())
+    def _unique_gpu_storage_bytes(self, *trees):
+        """返回多棵运行时 Tensor 树当前实际占用的唯一 GPU storage 下界。"""
+        storage_bytes = {}
+        for tree in trees:
+            for tensor in self.iter_unique_tensor_tree_leaves(tree):
+                if not self.tensor_is_gpu(tensor):
+                    continue
+                framework = "paddle" if isinstance(tensor, paddle.Tensor) else "torch"
+                try:
+                    if isinstance(tensor, paddle.Tensor):
+                        # Paddle offset 以字节表示；holder 基址在非零 offset view 间保持一致。
+                        pointer = int(tensor.data_ptr()) - int(tensor._offset())
+                        allocated_bytes = int(tensor._holder_size())
+                    else:
+                        storage = tensor.untyped_storage()
+                        pointer = int(storage.data_ptr())
+                        allocated_bytes = int(storage.nbytes())
+                    if allocated_bytes < 0:
+                        raise ValueError("negative tensor storage size")
+                except (AttributeError, RuntimeError, TypeError, ValueError):
+                    # 非标准 Tensor 不一定暴露 storage；降级时不推断未知 view 关系。
+                    try:
+                        pointer = int(tensor.data_ptr())
+                    except (AttributeError, RuntimeError, TypeError, ValueError):
+                        pointer = id(tensor)
+                    allocated_bytes = int(tensor.numel()) * _tensor_element_size(tensor)
+                key = (framework, self.tensor_gpu_device_id(tensor), pointer)
+                storage_bytes[key] = max(storage_bytes.get(key, 0), allocated_bytes)
+        return sum(storage_bytes.values())
+
+    def enforce_paddle_backward_capacity(self, inputs, outputs, output_grads):
+        """在真实输出 shape 已知后拒绝物理容量必然无法完成的 Paddle backward。"""
+        if not self.gpu_mode_config.enabled or not inputs or not outputs or not output_grads:
+            return
+        memory = _query_gpu_memory(None)
+        if memory is None:
+            return
+        _, total_bytes = memory
+        capacity_bytes = max(
+            0,
+            int(total_bytes) - self._gpu_safety_reserve_bytes(total_bytes, 0),
+        )
+        live_bytes = self._unique_gpu_storage_bytes(inputs, outputs, output_grads)
+        output_grad_bytes = self._unique_gpu_storage_bytes(output_grads)
+        input_sizes = [
+            # 新输入梯度只覆盖当前 view 的逻辑元素，不会复制完整 backing storage。
+            self.tensor_tree_nbytes(input_tensor)
+            for input_tensor in inputs
+            if self.tensor_is_gpu(input_tensor)
+        ]
+        if not input_sizes:
+            return
+        # GradTensorHolder 会复制 seed，且有效 backward 至少形成一个输入梯度 storage。
+        required_bytes = live_bytes + output_grad_bytes + min(input_sizes)
+        if required_bytes <= capacity_bytes:
+            return
+        raise GpuMemoryGuardSkip(
+            "Paddle backward protocol exceeds physical GPU capacity: "
+            f"required={required_bytes / _GIB:.2f} GiB, "
+            f"capacity={capacity_bytes / _GIB:.2f} GiB, "
+            "basis=actual_input_output_grad_storage"
+        )
+
+    @staticmethod
+    def is_missing_compare_value(value):
+        """Return whether a compare leaf means "no value" on both accuracy paths."""
+        return value is None or (
+            isinstance(value, paddle.Tensor)
+            and not value._is_initialized()
+            and int(value.numel()) != 0
+        )
+
+    def tensor_tree_leaf_count(self, actual, expected):
+        """Count comparable leaves with the same structure rules used by compare_tensor_tree."""
+        if (
+            isinstance(actual, dict)
+            and isinstance(expected, dict)
+            and actual.keys() == expected.keys()
+        ):
+            return sum(self.tensor_tree_leaf_count(actual[key], expected[key]) for key in actual)
+        if isinstance(actual, (list, tuple)) and isinstance(expected, (list, tuple)):
+            if len(actual) != len(expected):
+                return max(len(actual), len(expected), 1)
+            return sum(
+                self.tensor_tree_leaf_count(actual_item, expected_item)
+                for actual_item, expected_item in zip(actual, expected, strict=False)
+            )
+        return 1
+
+    def compare_tensor_tree(
+        self,
+        actual,
+        expected,
+        compare_leaf,
+        report_structure_error,
+        *,
+        tensor_index=0,
+        tensor_count=None,
+    ):
+        """遍历嵌套输出结构；调用方只负责叶子比较和错误落盘。"""
+        if tensor_count is None:
+            tensor_count = max(1, self.tensor_tree_leaf_count(actual, expected))
+
+        def report(reason, index, **details):
+            report_structure_error(
+                reason,
+                tensor_position=f"{index + 1}/{tensor_count}",
+                tensor_index=index,
+                tensor_count=tensor_count,
+                **details,
+            )
+
+        def visit(left, right, index):
+            if isinstance(left, dict):
+                if not isinstance(right, dict):
+                    report(
+                        "type_mismatch",
+                        index,
+                        actual_type=type(left).__name__,
+                        expected_type=type(right).__name__,
+                    )
+                    return 1, False
+                if left.keys() != right.keys():
+                    report(
+                        "key_mismatch",
+                        index,
+                        actual_keys=list(left.keys()),
+                        expected_keys=list(right.keys()),
+                    )
+                    return max(len(left), len(right), 1), False
+                consumed = 0
+                for key in left:
+                    child_consumed, ok = visit(left[key], right[key], index + consumed)
+                    consumed += child_consumed
+                    if not ok:
+                        return max(consumed, 1), False
+                return max(consumed, 1), True
+            if isinstance(left, (list, tuple)):
+                if not isinstance(right, (list, tuple)):
+                    report(
+                        "type_mismatch",
+                        index,
+                        actual_type=type(left).__name__,
+                        expected_type=type(right).__name__,
+                    )
+                    return 1, False
+                if len(left) != len(right):
+                    report(
+                        "count_mismatch",
+                        index,
+                        actual_count=len(left),
+                        expected_count=len(right),
+                    )
+                    return max(len(left), len(right), 1), False
+                consumed = 0
+                for left_item, right_item in zip(left, right, strict=False):
+                    child_consumed, ok = visit(left_item, right_item, index + consumed)
+                    consumed += child_consumed
+                    if not ok:
+                        return max(consumed, 1), False
+                return max(consumed, 1), True
+            if isinstance(right, (dict, list, tuple)):
+                report(
+                    "type_mismatch",
+                    index,
+                    actual_type=type(left).__name__,
+                    expected_type=type(right).__name__,
+                )
+                return 1, False
+            return 1, compare_leaf(left, right, index, tensor_count)
+
+        _, ok = visit(actual, expected, tensor_index)
+        return ok
+
+    def _reference_workspace_bytes(self, convert_result):
+        if not self.gpu_mode_config.enabled:
+            return 0
+        if not convert_result.code.workspace_required:
             return 0
 
-        return visit(value)
+        from .paddle_to_torch import adaptive_workspace_bytes
 
-    def spill_tensor_tree_slot_to_cpu(self, values, index=0):
-        """Replace one result-tree slot with a CPU copy, then release its GPU source."""
+        return adaptive_workspace_bytes(torch)
+
+    def tensor_tree_has_gpu_tensor(self, value):
+        """Return whether a result tree contains at least one GPU tensor leaf."""
+        return any(
+            self.tensor_is_gpu(tensor) for tensor in self.iter_unique_tensor_tree_leaves(value)
+        )
+
+    def tensor_tree_gpu_device_ids(self, value):
+        """Collect unique CUDA device ids used by a result tree."""
+        device_ids = []
+        seen_device_ids = set()
+
+        def add_device_id(device_id):
+            device_id = int(device_id)
+            if device_id not in seen_device_ids:
+                seen_device_ids.add(device_id)
+                device_ids.append(device_id)
+
+        for tensor in self.iter_unique_tensor_tree_leaves(value):
+            if self.tensor_is_gpu(tensor):
+                add_device_id(self.tensor_gpu_device_id(tensor))
+        return device_ids
+
+    def spill_tensor_tree_slot_to_cpu(self, values, index=0, release_cache=False):
+        """Replace one result-tree slot with a CPU copy, then optionally release its GPU source."""
         source = values[index]
+        if not self.tensor_tree_has_gpu_tensor(source):
+            return False
+        device_ids = self.tensor_tree_gpu_device_ids(source)
         values[index] = self.move_tensor_tree_to_cpu(source)
         del source
-        if self.gpu_mode_config.enabled:
-            gpu_mode_memory_decision(self.gpu_mode_config, force=True)
+        if release_cache and self.gpu_mode_config.enabled:
+            for device_id in device_ids:
+                try:
+                    self.release_framework_gpu_cache(
+                        device_id=device_id,
+                        collect_cycles=True,
+                    )
+                except Exception:
+                    pass
+        self.record_memory_governance_metric("spill_result_tree")
+        return True
 
     def detach_tensor_tree(self, value):
         """Detach every framework tensor while preserving the argument tree."""
-        if isinstance(value, (torch.Tensor, paddle.Tensor)):
-            return value.detach()
-        if isinstance(value, list):
-            return [self.detach_tensor_tree(item) for item in value]
-        if isinstance(value, tuple):
-            return tuple(self.detach_tensor_tree(item) for item in value)
-        if isinstance(value, dict):
-            return type(value)((key, self.detach_tensor_tree(item)) for key, item in value.items())
-        return value
+        return self._map_tensor_tree(value, lambda tensor: tensor.detach())
 
     def save_original_inputs_to_cpu(self):
         """Save config inputs on CPU before either framework can mutate them."""
-        self._for_each_tensor_config(
-            lambda config: config.save_original_tensor_to_cpu(self.api_config)
+        # 快照和物化共用 identity 去重，保证共享 TensorConfig 只保存一次。
+        clear_tensor_configs(
+            *self._tensor_config_roots(),
+            clear_method="save_cpu_copy",
+            clear_args=(self.api_config,),
         )
 
     def clear_original_cpu_inputs(self):
-        self._for_each_tensor_config(lambda config: config.clear_original_cpu_tensor())
+        # CPU 快照释放也走同一 owning module，避免生命周期分散回调用方。
+        clear_tensor_configs(
+            *self._tensor_config_roots(),
+            clear_method="clear_cpu_copy",
+        )
+
+    def clear_generated_input_values(self):
+        """框架输入取得所有权后释放 GPU 生成源，避免跨阶段长期驻留。"""
+        # 生成值清理必须传 api_config，values.py 才能同步删除路径索引。
+        clear_tensor_configs(
+            *self._tensor_config_roots(),
+            clear_method="clear_generated_input_value",
+            clear_args=(self.api_config,),
+        )
 
     def estimate_input_bytes(self):
-        """Estimate total configured input bytes for memory probe gating."""
-        total_bytes = 0
-
-        def visit(config):
-            nonlocal total_bytes
-            dtype = getattr(config, "dtype", "float32")
-            total_bytes += int(config.numel()) * _dtype_element_size(dtype)
-
-        self._for_each_tensor_config(visit)
-        return total_bytes
+        """Estimate unique configured input storage bytes for memory probe gating."""
+        return tensor_config_tree_nbytes(*self._tensor_config_roots(), storage=True)
 
     def clear_paddle_tensor(self):
-        if not hasattr(self, "torch_kwargs_config"):
+        if not self._clear_tensor_config_cache("clear_paddle_tensor"):
             return
-        for _key, arg_config in self.torch_kwargs_config.items():
-            if isinstance(arg_config, TensorConfig):
-                arg_config.clear_paddle_tensor()
-            elif isinstance(arg_config, (list, tuple)):
-                for i in range(len(arg_config)):
-                    if isinstance(arg_config[i], TensorConfig):
-                        arg_config[i].clear_paddle_tensor()
         if self.gpu_mode_config.enabled:
-            gpu_mode_maybe_empty_cache(self.gpu_mode_config)
+            gpu_mode_memory_decision(self.gpu_mode_config, use_torch=self.use_torch)
         else:
-            paddle.device.cuda.empty_cache()
+            self.release_framework_gpu_cache("paddle")
 
-    def clear_torch_tensor(self, probe_bytes=None):
-        if not hasattr(self, "torch_kwargs_config"):
+    def clear_torch_tensor(
+        self,
+        probe_bytes=None,
+        *,
+        force=False,
+        required_headroom_bytes=None,
+    ):
+        # force/headroom 与配置缓存释放合并为一次 allocator 决策，避免同阶段重复同步。
+        cache_cleared = self._clear_tensor_config_cache("clear_torch_tensor")
+        if not cache_cleared and not force and required_headroom_bytes is None:
             return
-        for _key, arg_config in self.torch_kwargs_config.items():
-            if isinstance(arg_config, TensorConfig):
-                arg_config.clear_torch_tensor()
-            elif isinstance(arg_config, (list, tuple)):
-                for i in range(len(arg_config)):
-                    if isinstance(arg_config[i], TensorConfig):
-                        arg_config[i].clear_torch_tensor()
         if self.gpu_mode_config.enabled:
-            gpu_mode_maybe_empty_cache(
+            return gpu_mode_memory_decision(
                 self.gpu_mode_config,
+                force=force,
                 probe_bytes=probe_bytes,
+                required_headroom_bytes=required_headroom_bytes,
             )
-        else:
-            torch.cuda.empty_cache()
-
-    def clear_numpy_tensor(self):
-        if not hasattr(self, "torch_kwargs_config"):
-            return
-        for _key, arg_config in self.torch_kwargs_config.items():
-            if isinstance(arg_config, TensorConfig):
-                arg_config.clear_numpy_tensor()
-            elif isinstance(arg_config, (list, tuple)):
-                for i in range(len(arg_config)):
-                    if isinstance(arg_config[i], TensorConfig):
-                        arg_config[i].clear_numpy_tensor()
+        if cache_cleared:
+            self.release_framework_gpu_cache("torch")
 
     def is_forward_only(self):
         api = self.api_config.api_name[self.api_config.api_name.rindex(".") + 1 :]

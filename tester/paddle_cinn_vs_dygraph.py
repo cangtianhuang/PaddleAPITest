@@ -3,13 +3,12 @@ from __future__ import annotations
 import paddle
 from paddle.jit import to_static
 
-from .base import CUDA_ERROR, CUDA_OOM, APITestBase
-from .log_writer.log_worker import write_to_log
+from .base import APITestBase
 
 
 class APITestCINNVSDygraph(APITestBase):
     def __init__(self, api_config, **kwargs):
-        # CINN 只执行 Paddle kernel，不应丢失 worker 的 test_cpu 设备协议。
+        # CINN 不执行 Torch reference；Torch 只作为统一比较实现，不能改变 GPU 调度语义。
         super().__init__(
             api_config,
             use_torch=False,
@@ -20,16 +19,16 @@ class APITestCINNVSDygraph(APITestBase):
 
     def test(self):
         if self.need_skip():
-            print("[Skip]", flush=True)
+            self.report_case_result("skip")
             return
 
         if not self.ana_paddle_api_info():
-            print("ana_paddle_api_info failed", flush=True)
+            self.report_case_result("config_parse", "ana_paddle_api_info failed")
             return
 
         try:
-            if not self.gen_numpy_input():
-                print("gen_numpy_input failed", flush=True)
+            if not self.generate_input_values():
+                self.report_case_result("config_input", "generate_input_values failed")
                 return
         except Exception as err:
             log_type, fatal = self.report_runtime_error(err, "config_input", "input")
@@ -37,8 +36,8 @@ class APITestCINNVSDygraph(APITestBase):
                 raise
             return
 
-        if not self.gen_paddle_input():
-            print("gen_paddle_input failed", flush=True)
+        if not self.build_paddle_input():
+            self.report_case_result("paddle_error", "build_paddle_input failed")
             return
 
         try:
@@ -66,37 +65,20 @@ class APITestCINNVSDygraph(APITestBase):
             else:
                 dynamic_fwd_output = func(self.paddle_args, self.paddle_kwargs)
         except Exception as err:
-            if self.should_ignore_paddle_error(str(err)):
-                print(f"[Pass] {self.api_config.config}", flush=True)
-                write_to_log("pass", self.api_config.config)
-                return
-            if any(cuda_err in str(err) for cuda_err in CUDA_ERROR):
-                print(
-                    f"[cuda error] dynamic forward {self.api_config.config}\n{err!s}",
-                )
-                write_to_log("paddle_cuda", self.api_config.config)
-                raise
-            if any(cuda_err in str(err) for cuda_err in CUDA_OOM):
-                print(
-                    f"[oom] dynamic forward {self.api_config.config}\n{err!s}",
-                )
-                write_to_log("oom", self.api_config.config)
-                raise
-            print(
-                f"[paddle error] dynamic forward {self.api_config.config}\n{err!s}",
-                flush=True,
+            _, fatal = self.report_runtime_error(
+                err,
+                "paddle_error",
+                "dynamic forward",
+                allow_ignore_paddle=True,
             )
-            write_to_log("paddle_error", self.api_config.config)
+            if fatal:
+                raise
             return
 
         try:
-            paddle.base.core.eager._for_test_check_cuda_error()
+            self.check_operator_cuda_error()
         except Exception as err:
-            print(
-                f"[cuda error] dynamic forward {self.api_config.config}\n{err!s}",
-                flush=True,
-            )
-            write_to_log("paddle_cuda", self.api_config.config)
+            self.report_runtime_error(err, "paddle_cuda", "dynamic forward cuda check")
             raise
 
         need_check_grad = self.test_backward and self.need_check_grad()
@@ -104,9 +86,10 @@ class APITestCINNVSDygraph(APITestBase):
             try:
                 dynamic_bwd_output = None
                 dynamic_inputs_list = self.get_paddle_input_list()
-                dynamic_outputs_list, dynamic_grads_input_list = (
-                    self.gen_paddle_output_and_output_grad(dynamic_fwd_output)
-                )
+                (
+                    dynamic_outputs_list,
+                    dynamic_grads_input_list,
+                ) = self.gen_paddle_output_and_output_grad(dynamic_fwd_output)
                 if (
                     not dynamic_inputs_list
                     or not dynamic_outputs_list
@@ -121,45 +104,27 @@ class APITestCINNVSDygraph(APITestBase):
                     )
             except Exception as err:
                 if str(err).startswith("Too large tensor to get cached numpy: "):
-                    print(
-                        f"[numpy error] dynamic backward {self.api_config.config}\n{err!s}",
-                        flush=True,
+                    self.report_runtime_error(
+                        err,
+                        "config_input",
+                        "dynamic backward",
+                        force_log_type="config_input",
                     )
-                    write_to_log("config_input", self.api_config.config)
                     return
-                if self.should_ignore_paddle_error(str(err)):
-                    print(f"[Pass] {self.api_config.config}", flush=True)
-                    write_to_log("pass", self.api_config.config)
-                    return
-                if any(cuda_err in str(err) for cuda_err in CUDA_ERROR):
-                    print(
-                        f"[cuda error] dynamic backward {self.api_config.config}\n{err!s}",
-                        flush=True,
-                    )
-                    write_to_log("paddle_cuda", self.api_config.config)
-                    raise
-                if any(cuda_err in str(err) for cuda_err in CUDA_OOM):
-                    print(
-                        f"[oom] dynamic backward {self.api_config.config}\n{err!s}",
-                        flush=True,
-                    )
-                    write_to_log("oom", self.api_config.config)
-                    raise
-                print(
-                    f"[paddle error] dynamic backward {self.api_config.config}\n{err!s}",
-                    flush=True,
+                _, fatal = self.report_runtime_error(
+                    err,
+                    "paddle_error",
+                    "dynamic backward",
+                    allow_ignore_paddle=True,
                 )
-                write_to_log("paddle_error", self.api_config.config)
+                if fatal:
+                    raise
                 return
 
             try:
-                paddle.base.core.eager._for_test_check_cuda_error()
+                self.check_operator_cuda_error()
             except Exception as err:
-                print(
-                    f"[cuda error] dynamic backward {self.api_config.config}\n{err!s}",
-                    flush=True,
-                )
-                write_to_log("paddle_cuda", self.api_config.config)
+                self.report_runtime_error(err, "paddle_cuda", "dynamic backward cuda check")
                 raise
 
         try:
@@ -239,43 +204,27 @@ class APITestCINNVSDygraph(APITestBase):
                 )
         except Exception as err:
             if str(err).startswith("Too large tensor to get cached numpy: "):
-                print(
-                    f"[numpy error] static backward {self.api_config.config}\n{err!s}",
-                    flush=True,
+                self.report_runtime_error(
+                    err,
+                    "config_input",
+                    "static",
+                    force_log_type="config_input",
                 )
-                write_to_log("config_input", self.api_config.config)
                 return
-            if self.should_ignore_paddle_error(str(err)):
-                print(f"[Pass] {self.api_config.config}", flush=True)
-                write_to_log("pass", self.api_config.config)
-                return
-            if any(cuda_err in str(err) for cuda_err in CUDA_ERROR):
-                print(
-                    f"[cuda error] static {self.api_config.config}\n{err!s}",
-                )
-                write_to_log("paddle_cuda", self.api_config.config)
-                raise
-            if any(cuda_err in str(err) for cuda_err in CUDA_OOM):
-                print(
-                    f"[oom] static {self.api_config.config}\n{err!s}",
-                )
-                write_to_log("oom", self.api_config.config)
-                raise
-            print(
-                f"[paddle error] static {self.api_config.config}\n{err!s}",
-                flush=True,
+            _, fatal = self.report_runtime_error(
+                err,
+                "paddle_error",
+                "static",
+                allow_ignore_paddle=True,
             )
-            write_to_log("paddle_error", self.api_config.config)
+            if fatal:
+                raise
             return
 
         try:
-            paddle.base.core.eager._for_test_check_cuda_error()
+            self.check_operator_cuda_error()
         except Exception as err:
-            print(
-                f"[cuda error] static {self.api_config.config}\n{err!s}",
-                flush=True,
-            )
-            write_to_log("paddle_cuda", self.api_config.config)
+            self.report_runtime_error(err, "paddle_cuda", "static cuda check")
             raise
 
         if not self.compare(dynamic_fwd_output, static_fwd_output):
@@ -285,20 +234,19 @@ class APITestCINNVSDygraph(APITestBase):
             if not self.compare(dynamic_bwd_output, static_bwd_output, is_backward=True):  # type: ignore[reportGeneralTypeIssues]
                 return
 
-        print(f"[Pass] {(self.api_config.config,)}\n", flush=True)
-        write_to_log("pass", self.api_config.config)
+        self.report_case_result("pass")
 
     def compare(self, dygraph_output, static_output, is_backward=False):
         backward_str = "backward " if is_backward else ""
         self.is_backward = is_backward
         if isinstance(dygraph_output, paddle.Tensor):
             if not isinstance(static_output, paddle.Tensor):
-                print(
-                    f"[match error] {backward_str}{self.api_config.config}\ntype not match,",
-                    f"dygraph: {type(dygraph_output)}, static: {type(static_output)}\n",
-                    flush=True,
+                self.report_case_result(
+                    "config_parse",
+                    "match error",
+                    phase=backward_str.strip() or None,
+                    error=f"type not match, dygraph: {type(dygraph_output)}, static: {type(static_output)}",
                 )
-                write_to_log("config_parse", self.api_config.config)
                 return False
             try:
                 self.paddle_assert_accuracy(dygraph_output, static_output)
@@ -307,22 +255,22 @@ class APITestCINNVSDygraph(APITestBase):
                 return False
         elif isinstance(dygraph_output, (list, tuple)):
             if not isinstance(static_output, (list, tuple)):
-                print(
-                    f"[match error] {backward_str}{self.api_config.config}\ntype not match,",
-                    f"dygraph: {type(dygraph_output)}, static: {type(static_output)}\n",
-                    flush=True,
+                self.report_case_result(
+                    "config_parse",
+                    "match error",
+                    phase=backward_str.strip() or None,
+                    error=f"type not match, dygraph: {type(dygraph_output)}, static: {type(static_output)}",
                 )
-                write_to_log("config_parse", self.api_config.config)
                 return False
             dygraph_output = list(dygraph_output)
             static_output = list(static_output)
             if len(dygraph_output) != len(static_output):
-                print(
-                    f"[match error] {backward_str}{self.api_config.config}\nlength not match,",
-                    f"dygraph: {len(dygraph_output)}, static: {len(static_output)}\n",
-                    flush=True,
+                self.report_case_result(
+                    "config_parse",
+                    "match error",
+                    phase=backward_str.strip() or None,
+                    error=f"length not match, dygraph: {len(dygraph_output)}, static: {len(static_output)}",
                 )
-                write_to_log("config_parse", self.api_config.config)
                 return False
             for i, (dygraph_item, static_item) in enumerate(
                 zip(dygraph_output, static_output, strict=False)
@@ -332,12 +280,13 @@ class APITestCINNVSDygraph(APITestBase):
                 if not isinstance(dygraph_item, paddle.Tensor) or not isinstance(
                     static_item, paddle.Tensor
                 ):
-                    print(
-                        f"[match error] {backward_str}{self.api_config.config}\ntype not match at {i},",
-                        f"dygraph: {type(dygraph_item)}, static: {type(static_item)}\n",
-                        flush=True,
+                    self.report_case_result(
+                        "config_parse",
+                        "match error",
+                        phase=backward_str.strip() or None,
+                        tensor_position=f"{i + 1}/{len(dygraph_output)}",
+                        error=f"type not match, dygraph: {type(dygraph_item)}, static: {type(static_item)}",
                     )
-                    write_to_log("config_parse", self.api_config.config)
                     return False
                 try:
                     self.paddle_assert_accuracy(dygraph_item, static_item)
@@ -349,11 +298,11 @@ class APITestCINNVSDygraph(APITestBase):
         elif dygraph_output is None and static_output is None:
             pass
         else:
-            print(
-                f"[match error] {backward_str}{self.api_config.config}\ntype not match,",
-                f"dygraph: {type(dygraph_output)}, static: {type(static_output)}\n",
-                flush=True,
+            self.report_case_result(
+                "config_parse",
+                "match error",
+                phase=backward_str.strip() or None,
+                error=f"type not match, dygraph: {type(dygraph_output)}, static: {type(static_output)}",
             )
-            write_to_log("config_parse", self.api_config.config)
             return False
         return True

@@ -9,11 +9,11 @@ import signal
 import subprocess
 import sys
 import time
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import yaml
+from tester.reporting import log_runtime
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_CONFIG = Path("test_pipeline/run_config.yaml")
@@ -41,7 +41,7 @@ RETEST_KEYS = {
     "error_configs",
     "log_dir_template",
     "skip_unavailable",
-    # Backward-compatible legacy keys. Keep accepted, but do not show in templates.
+    # Accepted keys kept out of generated templates.
     "skip_missing",
     "skip_empty",
 }
@@ -49,6 +49,7 @@ ENGINE_ARG_TYPES = {
     "paddle_only": bool,
     "paddle_cinn": bool,
     "accuracy": bool,
+    "accuracy_dual_gpu": bool,
     "paddle_gpu_performance": bool,
     "torch_gpu_performance": bool,
     "paddle_torch_gpu_performance": bool,
@@ -64,8 +65,8 @@ ENGINE_ARG_TYPES = {
     "use_gpu_mode": bool,
     "atol": (int, float),
     "rtol": (int, float),
-    "manual_threshold_config_file": str,
-    "test_tol": bool,
+    "accuracy_manual_threshold_config": str,
+    "record_accuracy_tolerance": bool,
     "test_backward": bool,
     "timeout": int,
     "show_runtime_status": bool,
@@ -73,14 +74,11 @@ ENGINE_ARG_TYPES = {
     "custom_device_vs_gpu": bool,
     "custom_device_vs_gpu_mode": str,
     "bitwise_alignment": bool,
-    "generate_failed_tests": bool,
-    "exit_on_error": bool,
     "use_dump": bool,
     "dump_dir": str,
     "use_compute_sanitizer": bool,
     "sanitizer_command": str,
     "sanitizer_error_exitcode": int,
-    "_sanitizer_child": bool,
 }
 
 
@@ -142,7 +140,9 @@ def validate_yaml_config(config: dict[str, Any]) -> None:
     output = ensure_mapping(config, "output")
     reject_unknown_keys("output", output, OUTPUT_KEYS)
     if not output.get("log_dir"):
-        raise ValueError("output.log_dir 不能为空")
+        output["log_dir"] = str(
+            log_runtime.default_log_dir(single=bool(input_config.get("api_config")))
+        )
     require_type("output.log_dir", output["log_dir"], str)
 
     retest = retest_config(config)
@@ -294,7 +294,7 @@ def apply_overrides(config: dict[str, Any], args: argparse.Namespace) -> None:
         "num_gpus": args.num_gpus,
         "num_workers_per_gpu": args.num_workers_per_gpu,
         "gpu_ids": args.gpu_ids,
-        "manual_threshold_config_file": args.manual_threshold_config_file,
+        "accuracy_manual_threshold_config": args.accuracy_manual_threshold_config,
     }
     for key, value in simple_engine_overrides.items():
         if value is not None:
@@ -499,7 +499,7 @@ def stop_process(pid_file: Path) -> int:
 def latest_log(log_dir: Path) -> Path | None:
     try:
         logs = sorted(
-            log_dir.glob("log_*.log"),
+            log_dir.glob("log_[0-9]*.log"),
             key=lambda path: path.stat().st_mtime,
             reverse=True,
         )
@@ -537,10 +537,9 @@ def show_status(pid_file: Path, engine: str, log_dir: Path) -> int:
     return 0
 
 
-def prepare_log_file(log_dir: Path) -> Path:
+def prepare_log_dir(log_dir: Path) -> Path:
     log_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return log_dir / f"log_{timestamp}.log"
+    return log_dir
 
 
 def cleanup_pid_when_done(pid: int, pid_file: Path) -> None:
@@ -551,58 +550,45 @@ def cleanup_pid_when_done(pid: int, pid_file: Path) -> None:
         pid_file.unlink(missing_ok=True)
 
 
-def run_foreground(command: list[str], env: dict[str, str], log_file: Path) -> int:
-    print(f"开始    日志 {display_path(log_file)} | Ctrl+C 终止")
+def run_foreground(command: list[str], env: dict[str, str], log_dir: Path) -> int:
+    print(f"开始    日志目录 {display_path(log_dir)} | Ctrl+C 终止")
     process = subprocess.Popen(
         command,
         cwd=PROJECT_ROOT,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
         start_new_session=True,
     )
-    with log_file.open("a", encoding="utf-8") as log_handle:
-        assert process.stdout is not None
+    try:
+        return process.wait()
+    except KeyboardInterrupt:
+        print("\n[中断] 正在停止测试进程", flush=True)
         try:
-            for line in process.stdout:
-                print(line, end="")
-                log_handle.write(line)
-        except KeyboardInterrupt:
-            print("\n[中断] 正在停止测试进程", flush=True)
+            os.killpg(process.pid, signal.SIGINT)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=30)
+        except subprocess.TimeoutExpired:
             try:
-                try:
-                    os.killpg(process.pid, signal.SIGINT)
-                except ProcessLookupError:
-                    pass
-                remaining_output, _ = process.communicate(timeout=30)
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 try:
-                    os.killpg(process.pid, signal.SIGTERM)
+                    os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass
-                try:
-                    remaining_output, _ = process.communicate(timeout=10)
-                except subprocess.TimeoutExpired:
-                    try:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                    remaining_output, _ = process.communicate()
-            if remaining_output:
-                print(remaining_output, end="")
-                log_handle.write(remaining_output)
-            shutil.rmtree(log_file.parent / ".tmp", ignore_errors=True)
-            return_code = process.returncode
-            return 130 if return_code is None or return_code < 0 else return_code
-    return process.wait()
+                process.wait()
+        shutil.rmtree(log_dir / ".tmp", ignore_errors=True)
+        return 130 if process.returncode is None or process.returncode < 0 else process.returncode
 
 
 def run_background(
     command: list[str],
     env: dict[str, str],
-    log_file: Path,
+    log_dir: Path,
     pid_file: Path,
     engine: str,
     manage_command: str,
@@ -615,16 +601,14 @@ def run_background(
         pid_file.unlink(missing_ok=True)
 
     pid_file.parent.mkdir(parents=True, exist_ok=True)
-    log_handle = log_file.open("a", encoding="utf-8")
     process = subprocess.Popen(
         command,
         cwd=PROJECT_ROOT,
         env=env,
-        stdout=log_handle,
-        stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
-    log_handle.close()
     pid_file.write_text(f"{process.pid}\n", encoding="utf-8")
 
     cleaner_code = (
@@ -656,19 +640,25 @@ def run_background(
 
     time.sleep(1)
     if not process_running(process.pid):
-        print(f"[错误] 启动失败 | {engine}.py | 日志 {display_path(log_file)}")
+        print(f"[错误] 启动失败 | {engine}.py | 日志目录 {display_path(log_dir)}")
         pid_file.unlink(missing_ok=True)
         return 1
 
-    print(f"已启动  PID {process.pid} | 日志 {display_path(log_file)}")
+    log_file = latest_log(log_dir)
+    log_display = display_path(log_file) if log_file else display_path(log_dir)
+    print(f"已启动  PID {process.pid} | 日志 {log_display}")
     print(f"状态    {manage_command} --status")
     print(f"终止    {manage_command} --stop")
-    print(f"跟踪    tail -f {display_path(log_file)}")
+    if log_file:
+        print(f"跟踪    tail -f {display_path(log_file)}")
     return 0
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="PaddleAPITest runner")
+    parser = argparse.ArgumentParser(
+        description="PaddleAPITest runner",
+        epilog="未识别的参数会自动透传给 engine。",
+    )
     parser.add_argument("-c", "--config", default=str(DEFAULT_CONFIG), help="YAML 任务配置文件")
     parser.add_argument("--stop", action="store_true", help="终止后台任务")
     parser.add_argument("--status", action="store_true", help="查看后台任务状态")
@@ -699,10 +689,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--gpu-ids", help="覆盖 engine_args.gpu_ids")
     parser.add_argument(
-        "--manual-threshold-config-file",
-        "--manual_threshold_config_file",
-        dest="manual_threshold_config_file",
-        help="覆盖 engine_args.manual_threshold_config_file",
+        "--accuracy_manual_threshold_config",
+        dest="accuracy_manual_threshold_config",
+        help="覆盖 engine_args.accuracy_manual_threshold_config",
     )
     parser.add_argument(
         "--set-env", action="append", default=[], help="追加或覆盖环境变量 KEY=VALUE"
@@ -713,8 +702,10 @@ def parse_args() -> argparse.Namespace:
         default=[],
         help="追加或覆盖 engine 参数 KEY=VALUE",
     )
-    parser.add_argument("passthrough", nargs=argparse.REMAINDER, help="-- 后原样透传给 engine")
-    return parser.parse_args()
+    # 未声明参数属于 engine 协议，不能在外层入口提前拒绝。
+    args, passthrough = parser.parse_known_args()
+    args.passthrough = passthrough
+    return args
 
 
 def run_once(
@@ -751,7 +742,7 @@ def run_once(
             print(f"环境    {' | '.join(environment)}")
         return 0
 
-    log_file = prepare_log_file(log_dir)
+    prepare_log_dir(log_dir)
     foreground = force_foreground or bool(runner.get("foreground"))
     mode = "前台" if foreground else "后台"
     label_field = f" | 轮次 {label}" if label else ""
@@ -763,7 +754,6 @@ def run_once(
         "--api_config_file",
         "--api_config_file_pattern",
         "--log_dir",
-        "--_sanitizer_child",
     }
     if engine_args.get("num_gpus") == -1:
         hidden_options.add("--num_gpus")
@@ -778,9 +768,9 @@ def run_once(
     ]
     print(f"参数    {' | '.join(display_args)}")
     if foreground:
-        return run_foreground(command, env, log_file)
+        return run_foreground(command, env, log_dir)
     manage_command = f"python run.py -c {shlex.quote(display_path(config_path))}"
-    return run_background(command, env, log_file, pid_file, engine, manage_command)
+    return run_background(command, env, log_dir, pid_file, engine, manage_command)
 
 
 def run_retest_plan(config_path: Path, config: dict[str, Any], passthrough: list[str]) -> int:

@@ -4,63 +4,31 @@ import time
 
 import paddle
 
-from .api_config.config_analyzer import TensorConfig
 from .base import APITestBase
-from .log_writer.log_worker import write_to_log
-
-
-def tensor_numel(tensor_config):
-    numel = 1
-    for i in tensor_config.shape:
-        numel = numel * i
-    return numel
-
-
-def get_tensor_configs(api_config):
-    tensor_configs = []
-    for arg_config in api_config.args:
-        if isinstance(arg_config, TensorConfig):
-            tensor_configs.append(arg_config)
-        elif isinstance(arg_config, (list, tuple)):
-            for j in range(len(arg_config)):
-                if isinstance(arg_config[j], TensorConfig):
-                    tensor_configs.append(arg_config[j])
-
-    for _key, arg_config in api_config.kwargs.items():
-        if isinstance(arg_config, TensorConfig):
-            tensor_configs.append(arg_config)
-        elif isinstance(arg_config, (list, tuple)):
-            for j in range(len(arg_config)):
-                if isinstance(arg_config[j], TensorConfig):
-                    tensor_configs.append(arg_config[j])
-    return tensor_configs
-
-
-def total_numel(api_config):
-    tensor_configs = get_tensor_configs(api_config)
-    numel = 0
-    for tensor_config in tensor_configs:
-        numel = numel + tensor_numel(tensor_config)
-    return numel
+from .input_generation.materialization import tensor_config_tree_numel
 
 
 class APITestPaddleGPUPerformance(APITestBase):
     def __init__(self, api_config, **kwargs):
-        super().__init__(api_config)
+        super().__init__(
+            api_config,
+            use_torch=False,
+            runtime_config=kwargs.get("runtime_config"),
+        )
         self.test_amp = kwargs.get("test_amp", False)
 
     def test(self):
         if self.need_skip(paddle_only=True):
-            print("[Skip]", flush=True)
+            self.report_case_result("skip")
             return
 
         if not self.ana_paddle_api_info():
-            print("ana_paddle_api_info failed", flush=True)
+            self.report_case_result("config_parse", "ana_paddle_api_info failed")
             return
 
         try:
-            if not self.gen_numpy_input():
-                print("gen_numpy_input failed")
+            if not self.generate_input_values():
+                self.report_case_result("config_input", "generate_input_values failed")
                 return
         except Exception as err:
             log_type, fatal = self.report_runtime_error(err, "config_input", "input")
@@ -69,10 +37,10 @@ class APITestPaddleGPUPerformance(APITestBase):
             return
 
         try:
-            if not self.gen_paddle_input():
-                print("gen_paddle_input failed", flush=True)
+            if not self.build_paddle_input():
+                self.report_case_result("paddle_error", "build_paddle_input failed")
                 return
-            numel = total_numel(self.api_config)
+            numel = tensor_config_tree_numel(self.api_config.args, self.api_config.kwargs)
             test_loop = 2147483647 * 20 // numel
             if self.test_amp:
                 with paddle.amp.auto_cast():
@@ -136,10 +104,15 @@ class APITestPaddleGPUPerformance(APITestBase):
                 "failed",
             )
             if self.should_ignore_paddle_error(str(err)):
+                self.report_runtime_error(
+                    err,
+                    "paddle_error",
+                    "forward",
+                    allow_ignore_paddle=True,
+                )
                 return
-            if "CUDA error" in str(err) or "memory corruption" in str(err):
-                raise err
-            if "CUDA out of memory" in str(err) or "Out of memory error" in str(err):
+            _, fatal = self.report_runtime_error(err, "paddle_error", "forward")
+            if fatal:
                 raise err
             return
 
@@ -193,10 +166,15 @@ class APITestPaddleGPUPerformance(APITestBase):
                 "failed",
             )
             if self.should_ignore_paddle_error(str(err)):
+                self.report_runtime_error(
+                    err,
+                    "paddle_error",
+                    "backward",
+                    allow_ignore_paddle=True,
+                )
                 return
-            if "CUDA error" in str(err) or "memory corruption" in str(err):
-                raise err
-            if "CUDA out of memory" in str(err) or "Out of memory error" in str(err):
+            _, fatal = self.report_runtime_error(err, "paddle_error", "backward")
+            if fatal:
                 raise err
             return
 

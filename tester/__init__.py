@@ -3,7 +3,6 @@
 from typing import TYPE_CHECKING, Any
 
 __all__ = [
-    "USE_CACHED_NUMPY",
     "APIConfig",
     "APITestAccuracy",
     "APITestAccuracyStable",
@@ -17,21 +16,15 @@ __all__ = [
     "APITestTorchGPUPerformance",
     "TensorConfig",
     "analyse_configs",
-    "cached_numpy",
     "paddle_to_torch",
+    "prepare_process_runtime",
 ]
 
 if TYPE_CHECKING:
     from . import paddle_to_torch
     from .accuracy import APITestAccuracy
     from .accuracy_stable import APITestAccuracyStable
-    from .api_config import (
-        USE_CACHED_NUMPY,
-        APIConfig,
-        TensorConfig,
-        analyse_configs,
-        cached_numpy,
-    )
+    from .api_config import APIConfig, TensorConfig, analyse_configs
     from .base import APITestBase
     from .paddle_cinn_vs_dygraph import APITestCINNVSDygraph
     from .paddle_device_vs_cpu import APITestCustomDeviceVSCPU
@@ -40,6 +33,17 @@ if TYPE_CHECKING:
     from .paddle_only import APITestPaddleOnly
     from .paddle_torch_gpu_performance import APITestPaddleTorchGPUPerformance
     from .torch_gpu_performance import APITestTorchGPUPerformance
+
+
+def prepare_process_runtime(options):
+    """按 engine 已冻结的配置准备当前进程使用的输入 backend。"""
+    runtime_config = getattr(options, "runtime_config", None)
+    if runtime_config is None:
+        raise ValueError("runtime_config must be frozen before process runtime preparation")
+
+    from .input_generation.backend_runtime import prepare_input_backend
+
+    return prepare_input_backend(runtime_config.input_backend_policy)
 
 
 def __getattr__(name: str) -> Any:
@@ -102,13 +106,4 @@ def __getattr__(name: str) -> Any:
         from .api_config import analyse_configs
 
         return analyse_configs
-    elif name == "USE_CACHED_NUMPY":
-        from .api_config import USE_CACHED_NUMPY
-
-        return USE_CACHED_NUMPY
-    elif name == "cached_numpy":
-        from .api_config import cached_numpy
-
-        return cached_numpy
-
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -9,11 +9,12 @@ from pathlib import Path
 import numpy as np
 import paddle
 
-from .log_writer.log_worker import write_to_log
 from .paddle_device_vs_cpu import APITestCustomDeviceVSCPU
 
 
 class APITestPaddleDeviceVSGPU(APITestCustomDeviceVSCPU):
+    input_operation_mode = "custom_device_vs_gpu"
+
     def __init__(self, api_config, **kwargs):
         # 继承 CustomDevice vs CPU 的基本功能
         super().__init__(api_config, **kwargs)
@@ -27,10 +28,7 @@ class APITestPaddleDeviceVSGPU(APITestCustomDeviceVSCPU):
         self.bcecmd_path = Path(kwargs.get("bcecmd_path", "./bcecmd")).resolve()
         self.bos_conf_path = kwargs.get("bos_conf_path", "./conf")
 
-        # 设置随机种子确保一致性
-        if self.random_seed != 0:
-            np.random.seed(self.random_seed)
-            paddle.seed(self.random_seed)
+        # 随机状态由 APITestBase 的 config-local policy 管理，避免构造阶段污染全局 RNG。
 
     def _get_config_hash(self):
         """生成API配置的哈希值，用于文件名"""
@@ -151,19 +149,19 @@ class APITestPaddleDeviceVSGPU(APITestCustomDeviceVSCPU):
             elif device_type == "cpu":
                 paddle.set_device("cpu")
             else:
-                print(f"[error] No custom device available", flush=True)
+                self.report_case_result("paddle_crash", "no custom device available")
                 return None, None
 
             if not self.ana_paddle_api_info():
-                print("ana_paddle_api_info failed", flush=True)
+                self.report_case_result("config_parse", "ana_paddle_api_info failed")
                 return None, None
 
-            if not self.gen_numpy_input():
-                print("gen_numpy_input failed", flush=True)
+            if not self.generate_input_values():
+                self.report_case_result("config_input", "generate_input_values failed")
                 return None, None
 
-            if not self.gen_paddle_input():
-                print("gen_paddle_input failed", flush=True)
+            if not self.build_paddle_input():
+                self.report_case_result("paddle_error", "build_paddle_input failed")
                 return None, None
 
             paddle_output = self.paddle_api(*tuple(self.paddle_args), **self.paddle_kwargs)
@@ -307,7 +305,7 @@ class APITestPaddleDeviceVSGPU(APITestCustomDeviceVSCPU):
                 f"[compare] Accuracy check passed for {self.api_config.config}",
                 flush=True,
             )
-            write_to_log("pass", self.api_config.config)
+            self.report_case_result("pass")
             return True
 
         except Exception as e:
@@ -321,9 +319,9 @@ class APITestPaddleDeviceVSGPU(APITestCustomDeviceVSCPU):
         elif self.operation_mode == "download":
             self._test_download_mode()
         else:
-            print(
-                "[error] operation_mode 不能为空，请指定 --operation_mode=upload 或 download",
-                flush=True,
+            self.report_case_result(
+                "config_parse",
+                "operation_mode is required: use upload or download",
             )
             return
 
