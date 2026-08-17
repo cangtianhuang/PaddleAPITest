@@ -74,6 +74,8 @@ class InputBackend(Protocol):
 
     def maximum(self, x, y): ...
 
+    def remainder(self, x, y): ...
+
     def abs(self, value): ...
 
     def sort(self, value): ...
@@ -221,6 +223,10 @@ class NumPyInputBackend:
     def maximum(self, x, y):
         return numpy.maximum(x, y)
 
+    def remainder(self, x, y):
+        # 统一取模语义，保证 GPU/CPU 生成器的循环 index 行为一致。
+        return numpy.remainder(x, y)
+
     def abs(self, value):
         return numpy.abs(value)
 
@@ -315,6 +321,18 @@ class TorchInputBackend:
             stream_kind,
         )
         self._generator = self._torch_module.Generator(device=self._device)
+        self._generator.manual_seed(seed)
+
+    def reset_input_random_state(self, input_random_state):
+        """重置当前 case 的私有 generator，保持跨 case 随机流独立。"""
+        stream_kind = getattr(input_random_state, "stream_kind", "")
+        if not stream_kind.startswith("output_grad:"):
+            stream_kind = "torch"
+        seed = derive_input_seed(
+            getattr(input_random_state, "seed", 0),
+            getattr(input_random_state, "config_fingerprint", ""),
+            stream_kind,
+        )
         self._generator.manual_seed(seed)
 
     def _torch(self):
@@ -507,6 +525,11 @@ class TorchInputBackend:
         torch = self._torch()
         return torch.maximum(self.asarray(x, copy=False), self.asarray(y, copy=False))
 
+    def remainder(self, x, y):
+        # 使用设备端 remainder，避免将大批量 index 拉回 CPU 计算。
+        torch = self._torch()
+        return torch.remainder(self.asarray(x, copy=False), y)
+
     def abs(self, value):
         torch = self._torch()
         return torch.abs(self.asarray(value, copy=False))
@@ -629,6 +652,23 @@ class PaddleInputBackend:
             stream_kind,
         )
         # Paddle 只有设备级默认 generator；初始化私有状态后立即恢复进程原状态。
+        process_state = self._generator.get_state()
+        try:
+            self._generator.manual_seed(seed)
+            self._random_state = self._generator.get_state()
+        finally:
+            self._generator.set_state(process_state)
+
+    def reset_input_random_state(self, input_random_state):
+        """重置当前 case 的设备 generator 快照，不污染进程级随机状态。"""
+        stream_kind = getattr(input_random_state, "stream_kind", "")
+        if not stream_kind.startswith("output_grad:"):
+            stream_kind = "paddle"
+        seed = derive_input_seed(
+            getattr(input_random_state, "seed", 0),
+            getattr(input_random_state, "config_fingerprint", ""),
+            stream_kind,
+        )
         process_state = self._generator.get_state()
         try:
             self._generator.manual_seed(seed)
@@ -864,6 +904,10 @@ class PaddleInputBackend:
             )
             return paddle.cast(result, result_dtype)
         return paddle.maximum(x_tensor, y_tensor)
+
+    def remainder(self, x, y):
+        # Paddle backend 保持与 NumPy/Torch 相同的非负 index 取模结果。
+        return self._paddle().remainder(self.asarray(x, copy=False), y)
 
     def abs(self, value):
         return self._paddle().abs(self.asarray(value, copy=False))

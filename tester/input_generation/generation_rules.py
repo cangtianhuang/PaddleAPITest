@@ -216,14 +216,29 @@ class _InputValueWriter:
         return read_input_value(self._api_config, tensor_config)
 
     def _write_value(self, input_binding, input_value, update_config):
-        # 暂存值始终由 backend 拷贝持有，隔离规则内部后续的原地修改。
-        stored_input_value = self._input_backend.asarray(input_value, copy=True)
+        # Torch 原生随机结果通常是新分配的；转移其所有权可省掉一次 GPU clone。
+        # Paddle 无可靠视图标记，仍保持复制以隔离规则内的原地修改。
+        copy_value = not self._can_transfer_ownership(input_value)
+        stored_input_value = self._input_backend.asarray(input_value, copy=copy_value)
         self._input_value_by_path[input_binding.path] = InputValue(
             input_binding.path,
             stored_input_value,
             self._input_backend.name,
         )
         self._update_config_by_path[input_binding.path] = update_config
+
+    def _can_transfer_ownership(self, input_value):
+        """判断值是否可由 writer 独占，避免破坏规则的别名隔离。"""
+        backend_name = self._input_backend.name
+        if backend_name != "torch":
+            return False
+        # 同一对象已被其他路径保存时，后续写入必须建立独立 storage。
+        if any(item.generated_value is input_value for item in self._input_value_by_path.values()):
+            return False
+        # 视图共享底层 storage，转移视图会让调用方仍可原地改变已保存输入。
+        if getattr(input_value, "_base", None) is not None:
+            return False
+        return True
 
 
 class InputRuleContext:
@@ -2007,6 +2022,14 @@ def generate_repeat_interleave_inputs(rule: InputRuleContext):
 def generate_put_along_axis_inputs(rule: InputRuleContext):
     """输入规则：按输入 shape 与 axis 生成合法 indices 和相容 values。"""
 
+    def generate_unique_indices(dim_size, width, prefix_shape=()):
+        """用随机循环偏移批量生成每个切片内无重复的 index。"""
+        if width == 0:
+            return rule.ops.zeros(prefix_shape + (0,), dtype="int64")
+        offsets = rule.ops.randint(0, dim_size, shape=prefix_shape + (1,))
+        base = rule.ops.arange(width, dtype="int64")
+        return rule.ops.remainder(offsets + base, dim_size)
+
     def generate_random_tensor_input_value(input_binding, shape):
         scalar_spec = InputTensorSpec(
             shape=tuple(shape),
@@ -2029,9 +2052,11 @@ def generate_put_along_axis_inputs(rule: InputRuleContext):
                 if axis < len(current_shape):
                     dim_size = x_shape[axis]
                     if dim_size > 0:
-                        axis_indices = rule.ops.choice(
-                            dim_size, shape=new_shape[axis], replace=False
-                        )
+                        width = new_shape[axis]
+                        if width <= dim_size:
+                            axis_indices = generate_unique_indices(dim_size, width)
+                        else:
+                            axis_indices = rule.ops.choice(dim_size, shape=width, replace=False)
                         axis_indices = rule.ops.cast(axis_indices, "int64")
                         idx_tuple = tuple(
                             [slice(None)] * axis
@@ -2052,8 +2077,11 @@ def generate_put_along_axis_inputs(rule: InputRuleContext):
             return indices
         if 0 <= axis < x_dims:
             dim_size = x_shape[axis]
+            width = current_shape[-1]
+            if width <= dim_size:
+                return generate_unique_indices(dim_size, width, current_shape[:-1])
             for idx in rule.ops.ndindex(tuple(current_shape[:-1])):
-                indices[idx] = rule.ops.choice(dim_size, shape=current_shape[-1], replace=False)
+                indices[idx] = rule.ops.choice(dim_size, shape=width, replace=False)
         return indices
 
     def write_related_input_values(input_binding):
