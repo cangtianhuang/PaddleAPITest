@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import os
 
 from . import log_runtime as runtime
@@ -18,6 +19,9 @@ from .log_schema import (
 _result_offsets = {}
 _inorder_offsets = {}
 _inorder_completed_offsets = {}
+_INORDER_STATE_FILENAME = ".inorder_state.json"
+_INORDER_BUILD_FILENAME = ".log_inorder.build"
+_COPY_BUFFER_SIZE = 4 * 1024 * 1024
 _CSV_SPECS = (
     ("tol", TOL_HEADER, ("API", "dtype", "config", "mode")),
     ("stable", STABLE_HEADER, ("API", "dtype", "config", "comp")),
@@ -28,6 +32,95 @@ def _reset_aggregation_state():
     _result_offsets.clear()
     _inorder_offsets.clear()
     _inorder_completed_offsets.clear()
+    _load_inorder_state()
+
+
+def _inorder_state_path():
+    return runtime.TEST_LOG_PATH / _INORDER_STATE_FILENAME
+
+
+def _inorder_build_path():
+    return runtime.TEST_LOG_PATH / _INORDER_BUILD_FILENAME
+
+
+def _write_inorder_state():
+    """持久化 source offset，保证删除 .tmp 前可以恢复聚合进度。"""
+    # state 必须在 source 清理前落盘，主进程重启才能避免重复或丢失。
+    state_path = _inorder_state_path()
+    temp_path = state_path.with_name(f".{state_path.name}.tmp")
+    state = {
+        "build_offset": _inorder_build_path().stat().st_size,
+        "sources": {file_path.name: offset for file_path, offset in _inorder_offsets.items()},
+    }
+    try:
+        with temp_path.open("w", encoding="utf-8") as state_file:
+            json.dump(state, state_file, sort_keys=True)
+            state_file.write("\n")
+            runtime.sync_file(state_file)
+        os.replace(temp_path, state_path)
+        runtime.sync_directory(state_path.parent)
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+
+def _copy_file_prefix(source_path, target_path, size):
+    """复制指定长度并持久化，供 build 恢复和最终发布共用。"""
+    remaining = size
+    with source_path.open("rb") as source, target_path.open("wb") as target:
+        while remaining:
+            chunk = source.read(min(_COPY_BUFFER_SIZE, remaining))
+            if not chunk:
+                raise ValueError(f"{source_path} ended before {size} bytes")
+            target.write(chunk)
+            remaining -= len(chunk)
+        runtime.sync_file(target)
+    runtime.sync_directory(target_path.parent)
+
+
+def _prepare_inorder_build(expected_size):
+    """将 build 恢复到 state 指定的安全长度。"""
+    build_path = _inorder_build_path()
+    if not build_path.exists():
+        out_path = runtime.TEST_LOG_PATH / "log_inorder.log"
+        if expected_size:
+            if not out_path.exists():
+                raise FileNotFoundError(f"missing recoverable {build_path}")
+            _copy_file_prefix(out_path, build_path, expected_size)
+        else:
+            with build_path.open("wb") as target:
+                runtime.sync_file(target)
+            runtime.sync_directory(build_path.parent)
+
+    actual_size = build_path.stat().st_size
+    if actual_size < expected_size:
+        raise ValueError(f"inorder build is shorter than state: {actual_size} < {expected_size}")
+    if actual_size > expected_size:
+        # build 写入后、state 更新前退出时，超出安全点的尾部必须回退。
+        with build_path.open("r+b") as build_file:
+            build_file.truncate(expected_size)
+            runtime.sync_file(build_file)
+    return build_path
+
+
+def _load_inorder_state():
+    """加载上次聚合提交点，并截断未提交的 build 尾部。"""
+    state_path = _inorder_state_path()
+    try:
+        if state_path.exists():
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            expected_size = int(state["build_offset"])
+            for name, offset in state.get("sources", {}).items():
+                _inorder_offsets[runtime.TMP_LOG_PATH / name] = int(offset)
+        else:
+            # 无 state 时，已发布日志长度是唯一可信的 build 基线。
+            out_path = runtime.TEST_LOG_PATH / "log_inorder.log"
+            expected_size = out_path.stat().st_size if out_path.exists() else 0
+        _prepare_inorder_build(expected_size)
+        if not state_path.exists():
+            # 首次追加前建立基线，崩溃后才能按旧 offset 回退。
+            _write_inorder_state()
+    except (OSError, TypeError, ValueError) as err:
+        raise RuntimeError(f"failed to recover inorder aggregation state: {err}") from err
 
 
 def _read_pending_result_bytes(file_path):
@@ -50,14 +143,9 @@ def _read_pending_result_bytes(file_path):
     return data, offset, file_size
 
 
-def _save_result_offsets(pending_offsets, cleanup):
-    """保存读取偏移，并按需删除已消费的临时文件。"""
+def _save_result_offsets(pending_offsets):
+    """保存读取偏移；source 清理由整轮聚合成功后统一执行。"""
     _result_offsets.update(pending_offsets)
-    if not cleanup:
-        return
-    for file_path in pending_offsets:
-        file_path.unlink(missing_ok=True)
-        _result_offsets.pop(file_path, None)
 
 
 def _copy_inorder_range(file_path, out_f, start_offset, end_offset):
@@ -93,20 +181,22 @@ def mark_inorder_case_complete(pid, completed_offset):
 
 
 def _flush_completed_inorder_logs():
-    """按 worker 一次读取所有已完成 case，并在成功后推进聚合 offset。"""
+    """按 worker 增量复制完整 case，并持久化 source offset。"""
     if not _inorder_completed_offsets:
         return True
-    out_file = runtime.TEST_LOG_PATH / "log_inorder.log"
+    out_file = _inorder_build_path()
     try:
         with out_file.open("ab") as out_f:
             for file_path, end_offset in list(_inorder_completed_offsets.items()):
                 start_offset = _inorder_offsets.get(file_path, 0)
                 if end_offset < start_offset:
                     start_offset = 0
+                end_offset = min(end_offset, file_path.stat().st_size)
                 _copy_inorder_range(file_path, out_f, start_offset, end_offset)
-                out_f.flush()
+                runtime.sync_file(out_f)
                 _inorder_offsets[file_path] = end_offset
                 _inorder_completed_offsets.pop(file_path, None)
+        _write_inorder_state()
         return True
     except Exception as err:
         print(f"Error flushing case blocks to {out_file}: {err}", flush=True)
@@ -131,7 +221,8 @@ def _aggregate_text_logs(log_files, out_file, cleanup):
         elif all_lines:
             with out_file.open("a") as f:
                 f.writelines(f"{line}\n" for line in sorted(all_lines))
-        _save_result_offsets(pending_offsets, cleanup)
+                runtime.sync_file(f)
+        _save_result_offsets(pending_offsets)
     except Exception as err:
         print(f"Error writing to {out_file}: {err}", flush=True)
         return False
@@ -149,39 +240,76 @@ def _aggregate_result_logs(cleanup, tmp_exists):
 
 
 def _aggregate_inorder_logs(cleanup, tmp_exists):
-    """刷出安全 block，并聚合已停止 worker 的剩余输出。"""
+    """恢复完整 case，发布 build 后再清理 worker 临时日志。"""
     if not tmp_exists:
-        return True
+        return _publish_inorder_build() if cleanup else True
     if not _flush_completed_inorder_logs():
         return False
     log_files = sorted(runtime.TMP_LOG_PATH.glob("log_*.log"))
     if not log_files:
+        return _publish_inorder_build() if cleanup else True
+    if not cleanup:
         return True
 
-    out_file = runtime.TEST_LOG_PATH / "log_inorder.log"
-    try:
-        with out_file.open("ab") as out_f:
-            for file_path in log_files:
-                try:
-                    start_offset = _inorder_offsets.get(file_path, 0)
-                    end_offset = file_path.stat().st_size
-                    if end_offset < start_offset:
-                        start_offset = 0
-                    _copy_inorder_range(file_path, out_f, start_offset, end_offset)
-                    out_f.flush()
-                    if cleanup:
-                        _inorder_offsets[file_path] = end_offset
-                        file_path.unlink()
-                        _inorder_offsets.pop(file_path, None)
-                        _inorder_completed_offsets.pop(file_path, None)
-                    else:
-                        _inorder_offsets[file_path] = end_offset
-                except Exception as err:
-                    print(f"Error reading {file_path}: {err}", flush=True)
-                    return False
-    except Exception as err:
-        print(f"Error writing to {out_file}: {err}", flush=True)
+    # 主进程重启时，完整 end 之后的内容可以恢复；未闭合尾部不进入 build。
+    for file_path in log_files:
+        start_offset = _inorder_offsets.get(file_path, 0)
+        end_offset = _find_last_complete_case_end(file_path, start_offset)
+        if end_offset > start_offset:
+            _inorder_completed_offsets[file_path] = end_offset
+    if not _flush_completed_inorder_logs():
         return False
+    return _publish_inorder_build()
+
+
+def _find_last_complete_case_end(file_path, start_offset):
+    """扫描 source 尾部，只把完整结束标记之前的字节视为可恢复。"""
+    # 正常增量路径不扫描历史文件，避免每批次退化为全量解析。
+    last_complete = start_offset
+    with file_path.open("rb") as source:
+        source.seek(start_offset)
+        while line := source.readline():
+            if line.startswith(b"<<< CASE "):
+                last_complete = source.tell()
+    return last_complete
+
+
+def _publish_inorder_build():
+    """将已 fsync 的 build 原子发布为最终日志。"""
+    # build 保留到 source 清理成功，cleanup 重试始终复用同一份内容。
+    build_path = _inorder_build_path()
+    out_path = runtime.TEST_LOG_PATH / "log_inorder.log"
+    publish_path = out_path.with_name(f".{out_path.name}.publish.tmp")
+    try:
+        # 发布副本独立于 build，原子替换后仍可继续 cleanup 重试。
+        _copy_file_prefix(build_path, publish_path, build_path.stat().st_size)
+        os.replace(publish_path, out_path)
+        runtime.sync_directory(out_path.parent)
+        return True
+    except Exception as err:
+        print(f"Error publishing {build_path} to {out_path}: {err}", flush=True)
+        return False
+    finally:
+        publish_path.unlink(missing_ok=True)
+
+
+def _cleanup_inorder_sources():
+    """最终日志发布成功后删除 worker source 和聚合状态。"""
+    # source 删除是最后一步；之前任意失败都必须保留它用于恢复。
+    for file_path in sorted(runtime.TMP_LOG_PATH.glob("log_*.log")):
+        try:
+            file_path.unlink(missing_ok=True)
+            _inorder_offsets.pop(file_path, None)
+        except FileNotFoundError:
+            _inorder_offsets.pop(file_path, None)
+        except Exception as err:
+            print(f"Error cleaning {file_path}: {err}", flush=True)
+            return False
+    _inorder_completed_offsets.clear()
+    _inorder_state_path().unlink(missing_ok=True)
+    _inorder_build_path().unlink(missing_ok=True)
+    runtime.sync_directory(runtime.TEST_LOG_PATH)
+    _inorder_offsets.clear()
     return True
 
 
@@ -212,7 +340,27 @@ def _aggregate_csv_logs(log_files, out_file, header, cleanup):
                 if row:
                     pending_rows.append(row)
 
-        if pending_rows:
+        if cleanup:
+            # cleanup 可能重复执行，已有 CSV 行必须幂等保留而不是再次追加。
+            existing_rows = []
+            if out_file.exists():
+                with out_file.open(newline="") as source:
+                    reader = csv.reader(source)
+                    existing_header = next(reader, None)
+                    if existing_header not in (None, header):
+                        raise ValueError(f"unexpected CSV header in {out_file}: {existing_header}")
+                    existing_rows = [row for row in reader if row]
+            rows = list(dict.fromkeys(tuple(row) for row in existing_rows + pending_rows))
+            temp_file = out_file.with_name(f".{out_file.name}.aggregate.tmp")
+            with temp_file.open("w", newline="") as target:
+                writer = csv.writer(target)
+                writer.writerow(header)
+                writer.writerows(rows)
+                runtime.sync_file(target)
+            os.replace(temp_file, out_file)
+            runtime.sync_directory(out_file.parent)
+            temp_file.unlink(missing_ok=True)
+        elif pending_rows:
             buffer = io.StringIO(newline="")
             writer = csv.writer(buffer)
             if not out_file.exists() or out_file.stat().st_size == 0:
@@ -220,7 +368,8 @@ def _aggregate_csv_logs(log_files, out_file, header, cleanup):
             writer.writerows(pending_rows)
             with out_file.open("a", newline="") as out_f:
                 out_f.write(buffer.getvalue())
-        _save_result_offsets(pending_offsets, cleanup)
+                runtime.sync_file(out_f)
+        _save_result_offsets(pending_offsets)
     except Exception as err:
         print(f"Error aggregating CSV into {out_file}: {err}", flush=True)
         return False
@@ -315,11 +464,38 @@ def _aggregate_comp_logs(cleanup, tmp_exists):
         for prefix in LOG_PREFIXES.values():
             log_files = list(dim_dir.glob(f"{prefix}_*.txt"))
             results.append(_aggregate_text_logs(log_files, out_dim_dir / f"{prefix}.txt", cleanup))
-        if cleanup and not any(dim_dir.iterdir()):
-            dim_dir.rmdir()
-    if cleanup and comp_tmp_dir.exists() and not any(comp_tmp_dir.iterdir()):
-        comp_tmp_dir.rmdir()
     return has_comp, all(results)
+
+
+def _cleanup_result_sources():
+    """所有派生结果发布成功后，统一清除 worker 结果 source。"""
+    # 文本、CSV、comp 输出全部成功后，才允许清理任何结果 source。
+    source_files = []
+    for prefix in LOG_PREFIXES.values():
+        source_files.extend(runtime.TMP_LOG_PATH.glob(f"{prefix}_*.txt"))
+    source_files.extend(runtime.TMP_LOG_PATH.glob("tol_*.csv"))
+    source_files.extend(runtime.TMP_LOG_PATH.glob("stable_*.csv"))
+    source_files.extend(runtime.TMP_LOG_PATH.glob("comp/**/*.txt"))
+    source_files.extend(runtime.TMP_LOG_PATH.glob("comp/**/*.csv"))
+    try:
+        for file_path in source_files:
+            file_path.unlink(missing_ok=True)
+        for directory in (
+            sorted(
+                (path for path in (runtime.TMP_LOG_PATH / "comp").rglob("*") if path.is_dir()),
+                reverse=True,
+            )
+            if (runtime.TMP_LOG_PATH / "comp").exists()
+            else ()
+        ):
+            if not any(directory.iterdir()):
+                directory.rmdir()
+        for file_path in source_files:
+            _result_offsets.pop(file_path, None)
+        return True
+    except Exception as err:
+        print(f"Error cleaning result sources: {err}", flush=True)
+        return False
 
 
 def _find_duplicate_classifications(log_dir):
@@ -448,18 +624,22 @@ def _aggregate_logs(*, final, cleanup):
         has_comp, comp_success = _aggregate_comp_logs(cleanup_tmp, tmp_exists)
         results.append(comp_success)
     all_success = all(results)
-
+    if final:
+        final_results = [
+            _sort_csv(runtime.TEST_LOG_PATH / f"{name}.csv", columns)
+            for name, _, columns in _CSV_SPECS
+        ]
+        if has_comp:
+            final_results.append(_sync_comp_main_summary())
+        all_success = all(final_results) and all_success
+    if cleanup_tmp and all_success:
+        # 只有所有派生输出都成功后，source 才允许被删除。
+        all_success = _cleanup_result_sources() and _cleanup_inorder_sources()
     if not final:
         if cleanup_tmp and all_success:
             _remove_empty_tmp_dir()
         return all_success
 
-    final_results = [
-        _sort_csv(runtime.TEST_LOG_PATH / f"{name}.csv", columns) for name, _, columns in _CSV_SPECS
-    ]
-    if has_comp:
-        final_results.append(_sync_comp_main_summary())
-    all_success = all(final_results) and all_success
     if all_success:
         _remove_empty_tmp_dir()
     log_counts = _count_result_logs()

@@ -1019,7 +1019,8 @@ def _init_worker_runtime(
     prepare_runtime=True,
     redirect_output=False,
 ):
-    init_log(options.log_dir)
+    # worker 只初始化日志分片；聚合恢复和状态提交由主进程独占。
+    init_log(options.log_dir, reset_aggregation=False)
 
     if gpu_id is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = _visible_gpu_ids(gpu_id, comparison_gpu_id)
@@ -1265,7 +1266,7 @@ def _sanitizer_worker_loop(
     result_queue,
     options,
 ):
-    init_log(options.log_dir)
+    init_log(options.log_dir, reset_aggregation=False)
     log_worker.redirect_stdio()
 
     sanitizer_cmd = getattr(options, "sanitizer_cmd", None) or shlex.split(
